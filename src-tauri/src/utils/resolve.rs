@@ -7,6 +7,8 @@ use once_cell::sync::OnceCell;
 use percent_encoding::percent_decode_str;
 use serde_yaml::Mapping;
 use std::net::TcpListener;
+use tauri::utils::config::WindowEffectsConfig;
+use tauri::window::Effect;
 use tauri::{App, Manager};
 
 use url::Url;
@@ -136,20 +138,26 @@ pub fn create_window() {
 
     #[cfg(target_os = "windows")]
     let _ = tauri::WebviewWindowBuilder::new(
-                &app_handle,
-                "main".to_string(),
-                tauri::WebviewUrl::App("index.html".into()),
-            )
-            .title("Clash Verge")
-            .visible(false)
-            .inner_size(890.0, 700.0)
-            .min_inner_size(620.0, 550.0)
-            .decorations(false)
-            .maximizable(true)
-            .additional_browser_args("--enable-features=msWebView2EnableDraggableRegions --disable-features=OverscrollHistoryNavigation,msExperimentalScrolling")
-            .transparent(true)
-            .shadow(false)
-            .build();
+        &app_handle,
+        "main".to_string(),
+        tauri::WebviewUrl::App("index.html".into()),
+    )
+    .title("Clash Verge")
+    .visible(false)
+    .inner_size(890.0, 700.0)
+    .min_inner_size(620.0, 550.0)
+    .decorations(true)
+    .maximizable(true)
+    .additional_browser_args("--enable-features=msWebView2EnableDraggableRegions,OverlayScrollbar,msOverlayScrollbarWinStyle,msOverlayScrollbarWinStyleAnimation --disable-features=OverscrollHistoryNavigation")
+    .transparent(true)
+    .effects(WindowEffectsConfig {
+        effects: vec![Effect::Mica],
+        radius: None,
+        state: None,
+        color: None,
+    })
+    .shadow(true)
+    .build();
 
     #[cfg(target_os = "macos")]
     let _ = tauri::WebviewWindowBuilder::new(
