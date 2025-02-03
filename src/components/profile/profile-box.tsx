@@ -27,7 +27,7 @@ export const ProfileBox = styled(Box)(({
 
   const borderSelect = {
     "light-true": {
-      borderLeft: `3px solid ${primary.main}`,
+      borderLeft: `3px solid ${tokens.colorBrandStroke1}`,
       width: `calc(100% + 3px)`,
       marginLeft: `-3px`,
     },
@@ -35,7 +35,7 @@ export const ProfileBox = styled(Box)(({
       width: "100%",
     },
     "dark-true": {
-      borderLeft: `3px solid ${primary.main}`,
+      borderLeft: `3px solid ${tokens.colorBrandStroke1}`,
       width: `calc(100% + 3px)`,
       marginLeft: `-3px`,
     },

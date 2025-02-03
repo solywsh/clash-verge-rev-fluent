@@ -54,7 +54,7 @@ const ProxyPage = () => {
       // contentStyle={{ height: "100%" }}
       contentStyle={{
         height: "100%",
-        paddingInline: "16px",
+        paddingInline: "12px",
         boxSizing: "border-box",
       }}
       title={t("Proxy Groups")}

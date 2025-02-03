@@ -145,18 +145,30 @@ export function FluentSettingItem({
   const canClick = !!onClick;
 
   const right = canClick ? (
-    <>
-      {children}
-      <ChevronRightRegular style={{ fontSize: 20, marginRight: 5 }} />
-    </>
+    <div style={{ display: "flex", alignItems: "center" }}>
+      <div onClick={(e) => e.stopPropagation()}>{children}</div>
+      <ChevronRightRegular
+        style={{ fontSize: 20, marginRight: 5, marginLeft: 12 }}
+      />
+    </div>
   ) : (
-    children
+    <div
+      style={{ display: "flex", alignItems: "center" }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {children}
+    </div>
   );
 
   return (
     <Expander
       content={content}
-      left={label}
+      left={
+        <>
+          {label}
+          {extra}
+        </>
+      }
       right={right}
       className={{
         header: mergeClasses(classes.header, canClick && classes.canClick),

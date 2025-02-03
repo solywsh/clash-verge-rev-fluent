@@ -142,7 +142,10 @@ export const ProxyGroups = (props: Props) => {
     <div style={{ position: "relative", height: "100%" }}>
       <Virtuoso
         ref={virtuosoRef}
-        style={{ height: "calc(100%)" }}
+        style={{ height: "calc(100%)", marginRight: "-12px" }}
+        components={{
+          Footer: () => <div style={{ height: "32px" }} />,
+        }}
         totalCount={renderList.length}
         increaseViewportBy={256}
         scrollerRef={(ref) => {
@@ -151,7 +154,7 @@ export const ProxyGroups = (props: Props) => {
           }
         }}
         itemContent={(index) => (
-          <>
+          <div style={{ marginRight: 12 }}>
             <ProxyRender
               key={renderList[index].key}
               item={renderList[index]}
@@ -163,7 +166,7 @@ export const ProxyGroups = (props: Props) => {
               index={index}
               renderList={renderList}
             />
-          </>
+          </div>
         )}
       />
 

@@ -5,12 +5,14 @@ import { useMatch, useResolvedPath } from "react-router-dom";
 
 interface Props {
   to: string;
-  children: string;
+  children: string | null;
   icon: React.ReactNode[];
 }
 export const useListItemStyle = makeStyles({
   item: {
     columnGap: "12px !important",
+    height: "36px",
+    whiteSpace: "nowrap",
     marginBottom: "4px !important",
     borderRadius: "4px !important",
     outline: "none !important",
@@ -56,7 +58,7 @@ export function FluentLayoutItem(props: Props) {
       }}
       content={{ style: { fontWeight: "500" } }}
     >
-      {children.replace(/\s/g, "")}
+      {children?.replace(/\s/g, "")}
     </Tab>
   );
 }

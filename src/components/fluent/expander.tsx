@@ -1,4 +1,9 @@
-import { Button, makeStyles, mergeClasses } from "@fluentui/react-components";
+import {
+  Button,
+  makeStyles,
+  mergeClasses,
+  shorthands,
+} from "@fluentui/react-components";
 import { createContext, useContext, useState } from "react";
 import { tokens } from "../../pages/_fluent_theme";
 import { ChevronDownRegular } from "@fluentui/react-icons";
@@ -23,10 +28,11 @@ const useStyle = makeStyles({
     flexDirection: "column",
     borderRadius: tokens.borderRadiusMedium,
     inlineSize: "100%",
-    background: tokens.surface1,
+    // background: tokens.surface1,
   },
   expandHeader: {
     borderRadius: tokens.borderRadiusMedium,
+    background: tokens.surface1,
     display: "flex",
     alignItems: "center",
     fontSize: tokens.fontSizeBase300,
@@ -47,7 +53,8 @@ const useStyle = makeStyles({
     borderRadius: tokens.borderRadiusSmall,
     borderStartStartRadius: tokens.borderRadiusNone,
     borderStartEndRadius: tokens.borderRadiusNone,
-    transform: "translateY(-100%)",
+    opacity: 0,
+    transform: "translateY(-20px)",
   },
   expanded: {},
   icon: {
@@ -62,7 +69,8 @@ const useStyle = makeStyles({
   },
   expandedContent: {
     transform: "translateY(0)",
-    transition: `${tokens.durationFast} ${tokens.curveEasyEase} transform`,
+    opacity: 1,
+    transition: `all ${tokens.durationFast} ${tokens.curveDecelerateMid}`,
   },
   chevronButton: {
     color: tokens.colorNeutralForeground2 + " !important",
@@ -180,19 +188,19 @@ export function Expander(props: ExpanderProps) {
           ) : null}
         </div>
       </div>
-      {realExpanded && (
-        <div
-          className={mergeClasses(
-            classes.expandContent,
-            realExpanded && classes.expandedContent,
-            classNames?.content,
-          )}
-        >
+      <div
+        className={mergeClasses(
+          classes.expandContent,
+          realExpanded && classes.expandedContent,
+          classNames?.content,
+        )}
+      >
+        {realExpanded && (
           <ListContext.Provider value={realExpanded ?? null}>
             {props.content}
           </ListContext.Provider>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

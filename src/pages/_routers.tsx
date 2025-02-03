@@ -29,6 +29,7 @@ import {
   NetworkCheckRegular,
   PlugConnectedRegular,
   Settings16Regular,
+  SettingsRegular,
   TextAlignLeftRegular,
   TopSpeedRegular,
 } from "@fluentui/react-icons";
@@ -37,21 +38,13 @@ export const routers = [
   {
     label: "Label-Proxies",
     path: "/",
-    icon: [
-      <WifiRoundedIcon />,
-      <ProxiesSvg />,
-      <NetworkCheckRegular fontSize={16} />,
-    ],
+    icon: [<WifiRoundedIcon />, <ProxiesSvg />, <NetworkCheckRegular />],
     element: <ProxiesPage />,
   },
   {
     label: "Label-Profiles",
     path: "/profile",
-    icon: [
-      <DnsRoundedIcon />,
-      <ProfilesSvg />,
-      <BroadActivityFeedRegular fontSize={16} />,
-    ],
+    icon: [<DnsRoundedIcon />, <ProfilesSvg />, <BroadActivityFeedRegular />],
     element: <ProfilesPage />,
   },
   {
@@ -60,44 +53,32 @@ export const routers = [
     icon: [
       <LanguageRoundedIcon />,
       <ConnectionsSvg />,
-      <PlugConnectedRegular fontSize={16} />,
+      <PlugConnectedRegular />,
     ],
     element: <ConnectionsPage />,
   },
   {
     label: "Label-Rules",
     path: "/rules",
-    icon: [
-      <ForkRightRoundedIcon />,
-      <RulesSvg />,
-      <GroupListRegular fontSize={16} />,
-    ],
+    icon: [<ForkRightRoundedIcon />, <RulesSvg />, <GroupListRegular />],
     element: <RulesPage />,
   },
   {
     label: "Label-Logs",
     path: "/logs",
-    icon: [
-      <SubjectRoundedIcon />,
-      <LogsSvg />,
-      <TextAlignLeftRegular fontSize={16} />,
-    ],
+    icon: [<SubjectRoundedIcon />, <LogsSvg />, <TextAlignLeftRegular />],
     element: <LogsPage />,
   },
   {
     label: "Label-Test",
     path: "/test",
-    icon: [
-      <WifiTetheringRoundedIcon />,
-      <TestSvg />,
-      <TopSpeedRegular fontSize={16} />,
-    ],
+    icon: [<WifiTetheringRoundedIcon />, <TestSvg />, <TopSpeedRegular />],
     element: <TestPage />,
   },
   {
     label: "Label-Settings",
     path: "/settings",
-    icon: [<SettingsRoundedIcon />, <SettingsSvg />, <Settings16Regular />],
+    icon: [<SettingsRoundedIcon />, <SettingsSvg />, <SettingsRegular />],
     element: <SettingsPage />,
   },
 ].map((router) => ({

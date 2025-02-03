@@ -10,6 +10,9 @@
 // *::-webkit-scrollbar-corner {
 //   background-color: unset !important;
 // }
+:root {
+  interpolate-size: allow-keywords;
+}
 
 body {
   background-color: transparent !important;
@@ -49,7 +52,9 @@ body {
 }
 
 .layout__left {
-  padding: 0 16px !important;
+  flex: 1 0 auto;
+  padding: 0 4px !important;
+  padding-bottom: 12px !important;
 }
 
 @keyframes page-enter {

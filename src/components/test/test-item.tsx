@@ -12,6 +12,8 @@ import {
   styled,
   alpha,
 } from "@mui/material";
+import { Button } from "@fluentui/react-components";
+import { tokens } from "../../pages/_fluent_theme";
 import { BaseLoading } from "@/components/base";
 import { LanguageRounded } from "@mui/icons-material";
 import { Notice } from "@/components/base";
@@ -165,45 +167,54 @@ export const TestItem = (props: Props) => {
           }}
         >
           {delay === -2 && (
-            <Widget>
+            <Button appearance="transparent" disabled>
               <BaseLoading />
-            </Widget>
+            </Button>
           )}
 
           {delay === -1 && (
-            <Widget
+            <Button
               className="the-check"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 onDelay();
               }}
-              sx={({ palette }) => ({
-                ":hover": { bgcolor: alpha(palette.primary.main, 0.15) },
-              })}
+              // sx={({ palette }) => ({
+              //   ":hover": { bgcolor: alpha(palette.primary.main, 0.15) },
+              // })}
+              appearance="subtle"
             >
               {t("Test")}
-            </Widget>
+            </Button>
           )}
 
           {delay >= 0 && (
             // 显示延迟
-            <Widget
+            <Button
               className="the-delay"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 onDelay();
               }}
-              color={delayManager.formatDelayColor(delay)}
-              sx={({ palette }) => ({
-                ":hover": {
-                  bgcolor: alpha(palette.primary.main, 0.15),
-                },
-              })}
+              // color={delayManager.formatDelayColor(delay)}
+              // sx={({ palette }) => ({
+              //   ":hover": {
+              //     bgcolor: alpha(palette.primary.main, 0.15),
+              //   },
+              // })}
+              style={{
+                color: {
+                  "error.main": tokens.colorPaletteRedForeground1,
+                  "success.main": tokens.colorStatusSuccessForeground1,
+                  "warning.main": tokens.colorStatusWarningForeground1,
+                }[delayManager.formatDelayColor(delay)],
+              }}
+              appearance="subtle"
             >
               {delayManager.formatDelay(delay)}
-            </Widget>
+            </Button>
           )}
         </Box>
       </TestBox>

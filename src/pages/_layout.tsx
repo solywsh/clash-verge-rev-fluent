@@ -39,14 +39,25 @@ import {
   Caption1Stronger,
   makeStyles,
   Toaster,
+  mergeClasses,
 } from "@fluentui/react-components";
-import { FluentProviderWithTheme } from "./_fluent_theme";
+import { FluentProviderWithTheme, tokens } from "./_fluent_theme";
 import { FluentLayoutItem } from "../components/fluent/layout-item";
+import { NavigationRegular } from "@fluentui/react-icons";
 
 const appWindow = getCurrentWebviewWindow();
 export let portableFlag = false;
 
 dayjs.extend(relativeTime);
+
+const useStyle = makeStyles({
+  sidebar: {
+    transition: `width ${tokens.durationNormal} ${tokens.curveDecelerateMid}`,
+  },
+  traffic: {
+    transition: `opacity ${tokens.durationNormal} ${tokens.curveDecelerateMid}`,
+  },
+});
 
 const OS = getSystem();
 
@@ -118,6 +129,9 @@ const Layout = () => {
     }
   }, [language, start_page]);
 
+  const [sideBarExpand, setSideBarExpand] = React.useState(true);
+  const { sidebar, traffic } = useStyle();
+
   return (
     <SWRConfig value={{ errorRetryCount: 3 }}>
       <ThemeProvider theme={theme}>
@@ -155,8 +169,11 @@ const Layout = () => {
                 : {},
             ]}
           >
-            <div className="layout__left">
-              <div className="the-logo" data-tauri-drag-region="true">
+            <div
+              className={mergeClasses("layout__left", sidebar)}
+              style={{ width: sideBarExpand ? "244px" : "48px" }}
+            >
+              {/* <div className="the-logo" data-tauri-drag-region="true">
                 <div
                   style={{
                     height: "27px",
@@ -178,7 +195,7 @@ const Layout = () => {
                   <LogoSvg fill={isDark ? "white" : "black"} />
                 </div>
                 {<UpdateButton className="the-newbtn" />}
-              </div>
+              </div> */}
 
               {/* <List className="the-menu">
               {routers.map((router) => (
@@ -191,9 +208,19 @@ const Layout = () => {
                 </LayoutItem>
               ))}
             </List> */}
+              <Button
+                style={{ marginTop: 20 }}
+                icon={<NavigationRegular fontSize={20} />}
+                appearance="subtle"
+                size="large"
+                onClick={() => setSideBarExpand(!sideBarExpand)}
+              />
               {renderFluentSideBar()}
 
-              <div className="the-traffic">
+              <div
+                className={mergeClasses("the-traffic", traffic)}
+                style={{ opacity: sideBarExpand ? 1 : 0 }}
+              >
                 <LayoutTraffic />
               </div>
             </div>

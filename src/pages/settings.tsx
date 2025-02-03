@@ -87,7 +87,7 @@ const SettingPage = () => {
         </ButtonGroup>
       }
     >
-      <Grid container spacing={{ xs: 1.5, lg: 1.5 }} sx={{ pb: 1 }}>
+      <Grid container columns={1} spacing={{ xs: 1.5, lg: 1.5 }} sx={{ pb: 1 }}>
         <Grid item xs={12} md={6}>
           <Box
             sx={{

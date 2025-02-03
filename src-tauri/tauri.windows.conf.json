@@ -30,6 +30,7 @@
       {
         "additionalBrowserArgs": "--disable-features=OverscrollHistoryNavigation --enable-features=msWebView2EnableDraggableRegions,OverlayScrollbar,msOverlayScrollbarWinStyle,msOverlayScrollbarWinStyleAnimation",
         "transparent": true,
+        "title": "Clash Verge",
         "windowEffects": {
           "effects": ["mica"]
         }
