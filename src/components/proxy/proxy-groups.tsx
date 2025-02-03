@@ -142,7 +142,7 @@ export const ProxyGroups = (props: Props) => {
     <div style={{ position: "relative", height: "100%" }}>
       <Virtuoso
         ref={virtuosoRef}
-        style={{ height: "calc(100% - 16px)" }}
+        style={{ height: "calc(100%)" }}
         totalCount={renderList.length}
         increaseViewportBy={256}
         scrollerRef={(ref) => {
@@ -160,6 +160,8 @@ export const ProxyGroups = (props: Props) => {
               onCheckAll={handleCheckAll}
               onHeadState={onHeadState}
               onChangeProxy={handleChangeProxy}
+              index={index}
+              renderList={renderList}
             />
           </>
         )}

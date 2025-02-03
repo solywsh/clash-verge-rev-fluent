@@ -34,7 +34,7 @@ const useStyle = makeStyles({
     paddingBlock: "17px",
     padding: "8px",
     backgroundClip: "padding-box",
-    border: `1px solid ${tokens.colorNeutralStroke2}`,
+    border: `1px solid ${tokens.itemBorderColor1}`,
     color: tokens.colorNeutralForeground1,
 
     ":hover": {

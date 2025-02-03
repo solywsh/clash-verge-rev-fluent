@@ -7,7 +7,8 @@ import { getRules } from "@/services/api";
 import { BaseEmpty, BasePage } from "@/components/base";
 import RuleItem from "@/components/rule/rule-item";
 import { ProviderButton } from "@/components/rule/provider-button";
-import { BaseSearchBox } from "@/components/base/base-search-box";
+import { FluentBaseSearchBox as BaseSearchBox } from "@/components/base/base-search-box";
+import { tokens } from "./_fluent_theme";
 import { useTheme } from "@mui/material/styles";
 import { ScrollTopButton } from "@/components/layout/scroll-top-button";
 
@@ -64,7 +65,8 @@ const RulesPage = () => {
         sx={{
           margin: "10px",
           borderRadius: "8px",
-          bgcolor: isDark ? "#282a36" : "#ffffff",
+          // bgcolor: isDark ? "#282a36" : "#ffffff",
+          bgcolor: tokens.surface1,
           position: "relative",
         }}
       >

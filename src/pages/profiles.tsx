@@ -3,6 +3,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLockFn } from "ahooks";
 import { Box, Button, IconButton, Stack, Divider, Grid2 } from "@mui/material";
 import {
+  Button as FluentButton,
+  Input,
+  Spinner,
+} from "@fluentui/react-components";
+import {
+  ArrowClockwiseRegular,
+  ClipboardPasteRegular,
+  DismissRegular,
+  DocumentBulletListRegular,
+  FireFilled,
+} from "@fluentui/react-icons";
+import { tokens } from "./_fluent_theme";
+import {
   DndContext,
   closestCenter,
   KeyboardSensor,
@@ -279,32 +292,50 @@ const ProfilePage = () => {
       contentStyle={{ height: "100%" }}
       header={
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <IconButton
+          {/* <IconButton
             size="small"
             color="inherit"
             title={t("Update All Profiles")}
             onClick={onUpdateAll}
           >
             <RefreshRounded />
-          </IconButton>
+          </IconButton> */}
+          <FluentButton
+            icon={<ArrowClockwiseRegular />}
+            title={t("Update All Profiles")}
+            onClick={onUpdateAll}
+            appearance="subtle"
+          />
 
-          <IconButton
+          {/* <IconButton
             size="small"
             color="inherit"
             title={t("View Runtime Config")}
             onClick={() => configRef.current?.open()}
           >
             <TextSnippetOutlined />
-          </IconButton>
+          </IconButton> */}
+          <FluentButton
+            icon={<DocumentBulletListRegular />}
+            title={t("View Runtime Config")}
+            onClick={() => configRef.current?.open()}
+            appearance="subtle"
+          />
 
-          <IconButton
+          {/* <IconButton
             size="small"
             color="primary"
             title={t("Reactivate Profiles")}
             onClick={() => onEnhance(true)}
           >
             <LocalFireDepartmentRounded />
-          </IconButton>
+          </IconButton> */}
+          <FluentButton
+            icon={<FireFilled />}
+            title={t("Reactivate Profiles")}
+            onClick={() => onEnhance(true)}
+            appearance="subtle"
+          />
         </Box>
       }
     >
@@ -320,35 +351,45 @@ const ProfilePage = () => {
           alignItems: "center",
         }}
       >
-        <BaseStyledTextField
+        {/* <BaseStyledTextField */}
+        <Input
           value={url}
-          variant="outlined"
+          // variant="outlined"
           onChange={(e) => setUrl(e.target.value)}
           placeholder={t("Profile URL")}
-          InputProps={{
-            sx: { pr: 1 },
-            endAdornment: !url ? (
-              <IconButton
-                size="small"
-                sx={{ p: 0.5 }}
-                title={t("Paste")}
-                onClick={onCopyLink}
-              >
-                <ContentPasteRounded fontSize="inherit" />
-              </IconButton>
-            ) : (
-              <IconButton
-                size="small"
-                sx={{ p: 0.5 }}
-                title={t("Clear")}
-                onClick={() => setUrl("")}
-              >
-                <ClearRounded fontSize="inherit" />
-              </IconButton>
-            ),
-          }}
+          contentAfter={
+            <FluentButton
+              onClick={!url ? onCopyLink : () => setUrl("")}
+              icon={!url ? <ClipboardPasteRegular /> : <DismissRegular />}
+              size="small"
+              appearance="transparent"
+            />
+          }
+          style={{ flex: 1 }}
+          // InputProps={{
+          //   sx: { pr: 1 },
+          //   endAdornment: !url ? (
+          //     <IconButton
+          //       size="small"
+          //       sx={{ p: 0.5 }}
+          //       title={t("Paste")}
+          //       onClick={onCopyLink}
+          //     >
+          //       <ContentPasteRounded fontSize="inherit" />
+          //     </IconButton>
+          //   ) : (
+          //     <IconButton
+          //       size="small"
+          //       sx={{ p: 0.5 }}
+          //       title={t("Clear")}
+          //       onClick={() => setUrl("")}
+          //     >
+          //       <ClearRounded fontSize="inherit" />
+          //     </IconButton>
+          //   ),
+          // }}
         />
-        <LoadingButton
+        {/* <LoadingButton
           disabled={!url || disabled}
           loading={loading}
           variant="contained"
@@ -357,15 +398,28 @@ const ProfilePage = () => {
           onClick={onImport}
         >
           {t("Import")}
-        </LoadingButton>
-        <Button
+        </LoadingButton> */}
+        <FluentButton
+          disabled={!url || disabled}
+          onClick={onImport}
+          icon={loading ? <Spinner size="tiny" /> : null}
+        >
+          {t("Import")}
+        </FluentButton>
+        {/* <Button
           variant="contained"
           size="small"
           sx={{ borderRadius: "6px" }}
           onClick={() => viewerRef.current?.create()}
         >
           {t("New")}
-        </Button>
+        </Button> */}
+        <FluentButton
+          appearance="primary"
+          onClick={() => viewerRef.current?.create()}
+        >
+          {t("New")}
+        </FluentButton>
       </Stack>
       <Box
         sx={{
