@@ -40,7 +40,7 @@
     "@types/json-schema": "^7.0.15",
     "ahooks": "^3.8.4",
     "axios": "^1.7.9",
-    "@fluentui/react-components": "^9.54.4",
+    "@fluentui/react-components": "^9.58.2",
     "@fluentui/react-icons": "^2.0.247",
     "cli-color": "^2.0.4",
     "dayjs": "1.11.13",
