@@ -1,6 +1,12 @@
 import { tokens } from "../../pages/_fluent_theme";
 import { Expander } from "../fluent/expander";
-import { makeStyles, mergeClasses } from "@fluentui/react-components";
+import {
+  makeStyles,
+  mergeClasses,
+  Subtitle1,
+  Subtitle2,
+  Title3,
+} from "@fluentui/react-components";
 import {
   alpha,
   Box,
@@ -50,6 +56,10 @@ const useStyle = makeStyles({
 });
 
 let currentGroupName = "";
+
+export function resetCurrentGroupName() {
+  currentGroupName = "";
+}
 
 export const ProxyRender = (props: RenderProps) => {
   const {
@@ -422,10 +432,7 @@ export const ProxyRender = (props: RenderProps) => {
   return null;
 };
 
-const StyledPrimary = styled("span")`
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.5;
+const StyledPrimary = styled(Subtitle1)`
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -18,6 +18,7 @@ import { useVerge } from "@/hooks/use-verge";
 import { BasePage } from "@/components/base";
 import { ProxyGroups } from "@/components/proxy/proxy-groups";
 import { ProviderButton } from "@/components/proxy/provider-button";
+import { resetCurrentGroupName } from "../components/proxy/proxy-render";
 
 const ProxyPage = () => {
   const { t } = useTranslation();
@@ -47,6 +48,8 @@ const ProxyPage = () => {
       onChangeMode("rule");
     }
   }, [curMode]);
+
+  useEffect(() => () => resetCurrentGroupName(), []);
 
   return (
     <BasePage

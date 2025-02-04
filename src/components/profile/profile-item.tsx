@@ -339,7 +339,7 @@ export const ProfileItem = (props: Props) => {
               backdropFilter: "blur(2px)",
             }}
           >
-            <CircularProgress color="inherit" size={20} />
+            <CircularProgress color={"inherit"} size={20} />
           </Box>
         )}
         <Box position="relative">

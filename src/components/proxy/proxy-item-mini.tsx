@@ -72,7 +72,7 @@ export const ProxyItemMini = (props: Props) => {
           // const bgcolor = mode === "light" ? "#ffffff" : "#24252f";
           const bgcolor = tokens.surface1;
           const showDelay = delay > 0;
-          const selectColor = theme.colorBrandBackground;
+          const selectColor = tokens.colorCompoundBrandStrokeHover;
 
           return {
             "&:hover .the-check": { display: !showDelay ? "block" : "none" },
@@ -91,8 +91,8 @@ export const ProxyItemMini = (props: Props) => {
               borderLeft: `3px solid ${selectColor}`,
               bgcolor:
                 mode === "light"
-                  ? alpha(selectColor, 0.15)
-                  : alpha(selectColor, 0.08),
+                  ? alpha(primary.main, 0.15)
+                  : alpha(primary.main, 0.35),
             },
             backgroundColor: bgcolor,
           };

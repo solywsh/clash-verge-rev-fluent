@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
-import { darkTheme, lightTheme, tokens } from "../../pages/_fluent_theme";
+import { useFluentTheme } from "../../pages/_fluent_theme";
 import { useTheme } from "@mui/material";
 import { useThemeMode } from "../../services/states";
 
@@ -35,8 +35,7 @@ export const TrafficGraph = forwardRef<TrafficRef>((props, ref) => {
   const cacheRef = useRef<TrafficData | null>(null);
 
   const { palette } = useTheme();
-  const theme = useThemeMode();
-  const themeValue = theme === "light" ? lightTheme : darkTheme;
+  const themeValue = useFluentTheme();
 
   useImperativeHandle(ref, () => ({
     appendData: (data: TrafficData) => {

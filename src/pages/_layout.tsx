@@ -209,7 +209,7 @@ const Layout = () => {
               ))}
             </List> */}
               <Button
-                style={{ marginTop: 20 }}
+                style={{ marginTop: 12 }}
                 icon={<NavigationRegular fontSize={20} />}
                 appearance="subtle"
                 size="large"

@@ -120,6 +120,8 @@ pub fn run() {
             cmds::list_webdav_backup,
             cmds::delete_webdav_backup,
             cmds::restore_webdav_backup,
+            // color
+            cmds::system_accent_color,
         ]);
 
     #[cfg(debug_assertions)]

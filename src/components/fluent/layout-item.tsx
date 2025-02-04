@@ -16,6 +16,9 @@ export const useListItemStyle = makeStyles({
     marginBottom: "4px !important",
     borderRadius: "4px !important",
     outline: "none !important",
+    "&::after": {
+      backgroundColor: tokens.colorCompoundBrandStrokeHover + " !important",
+    },
     "&:hover": {
       backgroundColor: tokens.overlay1 + " !important",
       "&::before": {
@@ -27,6 +30,9 @@ export const useListItemStyle = makeStyles({
     },
     "&:active": {
       backgroundColor: tokens.overlay1Pressed + " !important",
+      "& > span": {
+        opacity: 0.8,
+      },
       "&::before": {
         backgroundColor: "rgba(0, 0, 0, 0)",
       },
@@ -34,6 +40,10 @@ export const useListItemStyle = makeStyles({
   },
   selected: {
     backgroundColor: tokens.overlay1 + " !important",
+
+    "&:hover": {
+      backgroundColor: tokens.overlay1Pressed + " !important",
+    },
   },
   iconOverride: {
     color: tokens.colorNeutralForeground1 + " !important",

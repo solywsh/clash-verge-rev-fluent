@@ -10,6 +10,7 @@ use network_interface::NetworkInterface;
 use serde_yaml::Mapping;
 use std::collections::HashMap;
 use sysproxy::{Autoproxy, Sysproxy};
+use windows::UI::ViewManagement::{UIColorType, UISettings};
 type CmdResult<T = ()> = Result<T, String>;
 use reqwest_dav::list_cmd::ListFile;
 use tauri::Manager;
@@ -416,6 +417,15 @@ pub async fn restore_webdav_backup(filename: String) -> CmdResult<()> {
 pub async fn restart_app() -> CmdResult<()> {
     feat::restart_app();
     Ok(())
+}
+
+#[tauri::command]
+pub fn system_accent_color() -> Option<String> {
+    let settings = UISettings::new().ok()?;
+    // You can change `UIColorType` variant to get different shading
+    let color = settings.GetColorValue(UIColorType::Accent).ok()?;
+    let color_rgb = format!("rgb({},{},{})", color.R, color.G, color.B);
+    Some(color_rgb)
 }
 
 #[cfg(not(windows))]

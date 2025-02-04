@@ -12,7 +12,7 @@ import {
   styled,
   alpha,
 } from "@mui/material";
-import { Button } from "@fluentui/react-components";
+import { Button, Spinner } from "@fluentui/react-components";
 import { tokens } from "../../pages/_fluent_theme";
 import { BaseLoading } from "@/components/base";
 import { LanguageRounded } from "@mui/icons-material";
@@ -167,8 +167,9 @@ export const TestItem = (props: Props) => {
           }}
         >
           {delay === -2 && (
-            <Button appearance="transparent" disabled>
-              <BaseLoading />
+            <Button appearance="transparent" disabled style={{ height: 32 }}>
+              {/* <BaseLoading /> */}
+              <Spinner size="extra-tiny" />
             </Button>
           )}
 

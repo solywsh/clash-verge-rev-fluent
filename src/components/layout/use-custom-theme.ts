@@ -5,6 +5,7 @@ import { useSetThemeMode, useThemeMode } from "@/services/states";
 import { defaultTheme, defaultDarkTheme } from "@/pages/_theme";
 import { useVerge } from "@/hooks/use-verge";
 import { useTheme } from "@mui/material/styles";
+import { useFluentTheme } from "../../pages/_fluent_theme";
 const appWindow = getCurrentWebviewWindow();
 
 /**
@@ -34,6 +35,8 @@ export const useCustomTheme = () => {
     };
   }, [theme_mode]);
 
+  const fluentTheme = useFluentTheme();
+
   const theme = useMemo(() => {
     const setting = theme_setting || {};
     const dt = mode === "light" ? defaultTheme : defaultDarkTheme;
@@ -47,15 +50,46 @@ export const useCustomTheme = () => {
         },
         palette: {
           mode,
-          primary: { main: setting.primary_color || dt.primary_color },
-          secondary: { main: setting.secondary_color || dt.secondary_color },
+          primary: {
+            main:
+              fluentTheme.colorCompoundBrandStrokeHover ||
+              setting.primary_color ||
+              dt.primary_color,
+          },
+          secondary: {
+            main:
+              fluentTheme.colorPaletteLightGreenBackground2 ||
+              setting.secondary_color ||
+              dt.secondary_color,
+          },
           info: { main: setting.info_color || dt.info_color },
-          error: { main: setting.error_color || dt.error_color },
-          warning: { main: setting.warning_color || dt.warning_color },
-          success: { main: setting.success_color || dt.success_color },
+          error: {
+            main:
+              fluentTheme.colorStatusDangerForeground1 ||
+              setting.error_color ||
+              dt.error_color,
+          },
+          warning: {
+            main:
+              fluentTheme.colorStatusWarningForeground1 ||
+              setting.warning_color ||
+              dt.warning_color,
+          },
+          success: {
+            main:
+              fluentTheme.colorStatusSuccessForeground1 ||
+              setting.success_color ||
+              dt.success_color,
+          },
           text: {
-            primary: setting.primary_text || dt.primary_text,
-            secondary: setting.secondary_text || dt.secondary_text,
+            primary:
+              fluentTheme.colorNeutralForeground1 ||
+              setting.primary_text ||
+              dt.primary_text,
+            secondary:
+              fluentTheme.colorNeutralForeground2 ||
+              setting.secondary_text ||
+              dt.secondary_text,
           },
           background: {
             paper: dt.background_color,
