@@ -345,7 +345,7 @@ const ProfilePage = () => {
         sx={{
           pt: 1,
           mb: 0.5,
-          mx: "10px",
+          mx: "20px",
           height: "36px",
           display: "flex",
           alignItems: "center",
@@ -425,8 +425,8 @@ const ProfilePage = () => {
         sx={{
           pt: 1,
           mb: 0.5,
-          pl: "10px",
-          mr: "10px",
+          pl: "20px",
+          mr: "20px",
           height: "calc(100% - 68px)",
           overflowY: "auto",
         }}

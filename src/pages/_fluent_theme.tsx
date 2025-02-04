@@ -17,6 +17,10 @@ export const lightTheme = {
   surface1: "rgba(255, 255, 255, 0.6)",
   surface2: "rgba(255, 255, 255, 0.8)",
   itemBorderColor1: "#eaeaea",
+  controlFillDefault: "hsla(0, 0%, 100%, 70%)",
+  controlFillSecondary: "hsla(0, 0%, 98%, 50%)",
+  controlFillTertiary: "hsla(0, 0%, 98%, 30%)",
+  controlFillinputActive: "hsl(0, 0%, 100%)",
 };
 
 export const darkTheme = {
@@ -27,6 +31,10 @@ export const darkTheme = {
   surface1: "rgba(255, 255, 255, 0.04)",
   surface2: "rgba(255, 255, 255, 0.08)",
   itemBorderColor1: "#1d1d1d",
+  controlFillDefault: "hsla(0, 0%, 100%, .061)",
+  controlFillSecondary: "hsla(0, 0%, 100%, 0.084)",
+  controlFillTertiary: "hsla(0, 0%, 100%, 0.033)",
+  controlFillinputActive: "hsla(0, 0%, 12%, 70%)",
 };
 
 export const tokens = themeToTokensObject(lightTheme);
@@ -47,4 +55,9 @@ export function FluentProviderWithTheme({
       {children}
     </FluentProvider>
   );
+}
+
+export function useFluentTheme() {
+  const theme = useThemeMode();
+  return theme === "light" ? lightTheme : darkTheme;
 }

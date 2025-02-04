@@ -6,7 +6,8 @@ import { BaseLoading } from "@/components/base";
 import delayManager from "@/services/delay";
 import { useVerge } from "@/hooks/use-verge";
 import { useTranslation } from "react-i18next";
-import { tokens } from "../../pages/_fluent_theme";
+import { tokens, useFluentTheme } from "../../pages/_fluent_theme";
+import { Spinner } from "@fluentui/react-components";
 
 interface Props {
   group: IProxyGroupItem;
@@ -49,6 +50,8 @@ export const ProxyItemMini = (props: Props) => {
     setDelay(await delayManager.checkDelay(proxy.name, group.name, timeout));
   });
 
+  const theme = useFluentTheme();
+
   return (
     <ListItemButton
       dense
@@ -69,7 +72,7 @@ export const ProxyItemMini = (props: Props) => {
           // const bgcolor = mode === "light" ? "#ffffff" : "#24252f";
           const bgcolor = tokens.surface1;
           const showDelay = delay > 0;
-          const selectColor = mode === "light" ? primary.main : primary.light;
+          const selectColor = theme.colorBrandBackground;
 
           return {
             "&:hover .the-check": { display: !showDelay ? "block" : "none" },
@@ -88,8 +91,8 @@ export const ProxyItemMini = (props: Props) => {
               borderLeft: `3px solid ${selectColor}`,
               bgcolor:
                 mode === "light"
-                  ? alpha(primary.main, 0.15)
-                  : alpha(primary.main, 0.35),
+                  ? alpha(selectColor, 0.15)
+                  : alpha(selectColor, 0.08),
             },
             backgroundColor: bgcolor,
           };
@@ -182,7 +185,8 @@ export const ProxyItemMini = (props: Props) => {
       >
         {delay === -2 && (
           <Widget>
-            <BaseLoading />
+            {/* <BaseLoading /> */}
+            <Spinner size="extra-tiny" />
           </Widget>
         )}
         {!proxy.provider && delay !== -2 && (

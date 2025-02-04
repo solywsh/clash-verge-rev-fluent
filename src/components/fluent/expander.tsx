@@ -20,6 +20,7 @@ export interface ExpanderProps {
   onExpandChange?: (expanded: boolean) => void;
   defaultExpanded?: boolean;
   onClick?: () => void;
+  style?: React.CSSProperties;
 }
 
 const useStyle = makeStyles({
@@ -130,6 +131,7 @@ export function Expander(props: ExpanderProps) {
     onExpandChange,
     defaultExpanded,
     onClick,
+    style = {},
   } = props;
   const [isExpanded, setIsExpanded] = useState(expanded ?? defaultExpanded);
   const isControlled = expanded !== undefined;
@@ -151,7 +153,10 @@ export function Expander(props: ExpanderProps) {
 
   return (
     <div
-      style={isChildOfList ? { background: "transparent" } : undefined}
+      style={{
+        ...(isChildOfList ? { background: "transparent" } : {}),
+        ...style,
+      }}
       className={mergeClasses(
         classes.root,
         classNames?.root,
@@ -188,18 +193,20 @@ export function Expander(props: ExpanderProps) {
           ) : null}
         </div>
       </div>
-      <div
-        className={mergeClasses(
-          classes.expandContent,
-          realExpanded && classes.expandedContent,
-          classNames?.content,
-        )}
-      >
-        {realExpanded && (
-          <ListContext.Provider value={realExpanded ?? null}>
-            {props.content}
-          </ListContext.Provider>
-        )}
+      <div style={{ overflow: "hidden" }}>
+        <div
+          className={mergeClasses(
+            classes.expandContent,
+            realExpanded && classes.expandedContent,
+            classNames?.content,
+          )}
+        >
+          {realExpanded && (
+            <ListContext.Provider value={realExpanded ?? null}>
+              {props.content}
+            </ListContext.Provider>
+          )}
+        </div>
       </div>
     </div>
   );

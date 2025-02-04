@@ -51,7 +51,7 @@ const RulesPage = () => {
         sx={{
           pt: 1,
           mb: 0.5,
-          mx: "10px",
+          mx: "20px",
           height: "36px",
           display: "flex",
           alignItems: "center",
@@ -64,6 +64,7 @@ const RulesPage = () => {
         height="calc(100% - 65px)"
         sx={{
           margin: "10px",
+          mx: "20px",
           borderRadius: "8px",
           // bgcolor: isDark ? "#282a36" : "#ffffff",
           bgcolor: tokens.surface1,

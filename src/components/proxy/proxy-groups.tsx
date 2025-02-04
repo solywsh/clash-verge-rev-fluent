@@ -142,7 +142,8 @@ export const ProxyGroups = (props: Props) => {
     <div style={{ position: "relative", height: "100%" }}>
       <Virtuoso
         ref={virtuosoRef}
-        style={{ height: "calc(100%)", marginRight: "-12px" }}
+        style={{ height: "calc(100%)", paddingInline: 20 }}
+        className="proxy-virtouso-scroller"
         components={{
           Footer: () => <div style={{ height: "32px" }} />,
         }}
@@ -154,7 +155,7 @@ export const ProxyGroups = (props: Props) => {
           }
         }}
         itemContent={(index) => (
-          <div style={{ marginRight: 12 }}>
+          <div>
             <ProxyRender
               key={renderList[index].key}
               item={renderList[index]}

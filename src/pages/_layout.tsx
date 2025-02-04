@@ -171,7 +171,7 @@ const Layout = () => {
           >
             <div
               className={mergeClasses("layout__left", sidebar)}
-              style={{ width: sideBarExpand ? "244px" : "48px" }}
+              style={{ width: sideBarExpand ? "200px" : "48px" }}
             >
               {/* <div className="the-logo" data-tauri-drag-region="true">
                 <div

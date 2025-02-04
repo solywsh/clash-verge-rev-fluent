@@ -172,7 +172,7 @@ const TestPage = () => {
         sx={{
           pt: 1.25,
           mb: 0.5,
-          px: "10px",
+          px: "20px",
           height: "calc(100vh - 100px)",
           overflow: "auto",
           position: "relative",

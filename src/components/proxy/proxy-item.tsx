@@ -74,7 +74,7 @@ export const ProxyItem = (props: Props) => {
   });
 
   return (
-    <ListItem sx={sx}>
+    <ListItem sx={sx} className={(props as any).className}>
       <ListItemButton
         dense
         selected={selected}

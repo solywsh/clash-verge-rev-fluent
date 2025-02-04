@@ -49,6 +49,8 @@ const useStyle = makeStyles({
   },
 });
 
+let currentGroupName = "";
+
 export const ProxyRender = (props: RenderProps) => {
   const {
     indent,
@@ -95,9 +97,10 @@ export const ProxyRender = (props: RenderProps) => {
         }}
         canExpand
         defaultExpanded={headState?.open}
-        onExpandChange={(expanded) =>
-          onHeadState(group.name, { open: expanded })
-        }
+        onExpandChange={(expanded) => {
+          currentGroupName = group.name;
+          onHeadState(group.name, { open: expanded });
+        }}
         // style={{
         //   background: tokens.surface2,
         //   border: `1px solid ${tokens.colorNeutralStroke3}`,
@@ -188,6 +191,8 @@ export const ProxyRender = (props: RenderProps) => {
         onLocation={() => onLocation(group)}
         onCheckDelay={() => onCheckAll(group.name)}
         onHeadState={(p) => onHeadState(group.name, p)}
+        // @ts-expect-error
+        className={currentGroupName === group.name ? "curve-item-enter" : ""}
       />
     );
   }
@@ -200,6 +205,8 @@ export const ProxyRender = (props: RenderProps) => {
         showType={headState?.showType}
         sx={{ py: 0, pl: 2, bgcolor: tokens.surface1 }}
         onClick={() => onChangeProxy(group, proxy!)}
+        // @ts-expect-error
+        className={currentGroupName === group.name ? "curve-item-enter" : ""}
       />
     );
   }
@@ -241,6 +248,7 @@ export const ProxyRender = (props: RenderProps) => {
     }, [proxyCol, group, headState]);
     return (
       <Box
+        className={currentGroupName === group.name ? "curve-item-enter" : ""}
         sx={{
           height: 56,
           display: "grid",

@@ -210,6 +210,7 @@ export const FluentProxyHead = (props: Props) => {
     <Box
       sx={{ display: "flex", alignItems: "center", gap: 0.5, ...sx }}
       aria-label="proxy-content"
+      className={(props as any).className}
     >
       <Button
         size="small"

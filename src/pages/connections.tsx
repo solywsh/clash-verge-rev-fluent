@@ -199,7 +199,7 @@ const ConnectionsPage = () => {
         sx={{
           pt: 1,
           mb: 0.5,
-          mx: "10px",
+          mx: "20px",
           height: "36px",
           display: "flex",
           alignItems: "center",
@@ -226,6 +226,7 @@ const ConnectionsPage = () => {
         sx={{
           userSelect: "text",
           margin: "10px",
+          mx: "20px",
           borderRadius: "8px",
           // bgcolor: isDark ? "#282a36" : "#ffffff",
           bgcolor: tokens.surface1,
