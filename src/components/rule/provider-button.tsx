@@ -80,6 +80,7 @@ export const ProviderButton = () => {
           <FluentButton
             style={{ textTransform: "capitalize" }}
             onClick={() => setOpen(true)}
+            className="fds"
           >
             {t("Rule Provider")}
           </FluentButton>

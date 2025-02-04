@@ -359,10 +359,11 @@ const ProfilePage = () => {
           placeholder={t("Profile URL")}
           contentAfter={
             <FluentButton
+              className="fds-subtle"
               onClick={!url ? onCopyLink : () => setUrl("")}
               icon={!url ? <ClipboardPasteRegular /> : <DismissRegular />}
               size="small"
-              appearance="transparent"
+              appearance="subtle"
             />
           }
           style={{ flex: 1 }}
@@ -403,6 +404,7 @@ const ProfilePage = () => {
           disabled={!url || disabled}
           onClick={onImport}
           icon={loading ? <Spinner size="tiny" /> : null}
+          className="fds"
         >
           {t("Import")}
         </FluentButton>

@@ -268,7 +268,8 @@ export function FluentBaseSearchBox(props: SearchProps) {
           <>
             <FluentTooltip content={t("Match Case")} relationship="label">
               <Button
-                appearance="transparent"
+                className="fds-subtle"
+                appearance="subtle"
                 size="small"
                 aria-label={matchCase ? "active" : "inactive"}
                 onClick={() => {
@@ -285,7 +286,8 @@ export function FluentBaseSearchBox(props: SearchProps) {
             </FluentTooltip>
             <FluentTooltip content={t("Match Whole Word")} relationship="label">
               <Button
-                appearance="transparent"
+                className="fds-subtle"
+                appearance="subtle"
                 size="small"
                 aria-label={matchCase ? "active" : "inactive"}
                 onClick={() => {
@@ -305,7 +307,8 @@ export function FluentBaseSearchBox(props: SearchProps) {
               relationship="label"
             >
               <Button
-                appearance="transparent"
+                className="fds-subtle"
+                appearance="subtle"
                 size="small"
                 aria-label={matchCase ? "active" : "inactive"}
                 onClick={() => {

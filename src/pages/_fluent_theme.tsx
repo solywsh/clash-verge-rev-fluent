@@ -21,6 +21,7 @@ export const lightTheme = {
   controlFillSecondary: "hsla(0, 0%, 98%, 50%)",
   controlFillTertiary: "hsla(0, 0%, 98%, 30%)",
   controlFillinputActive: "hsl(0, 0%, 100%)",
+  colorSubtleBackgroundHover: "hsla(0, 0%, 0%, 3.73%)",
 };
 
 export const darkTheme = {
@@ -35,6 +36,7 @@ export const darkTheme = {
   controlFillSecondary: "hsla(0, 0%, 100%, 0.084)",
   controlFillTertiary: "hsla(0, 0%, 100%, 0.033)",
   controlFillinputActive: "hsla(0, 0%, 12%, 70%)",
+  colorSubtleBackgroundHover: "hsla(0, 0%, 100%, 6.05%)",
 };
 
 export const tokens = themeToTokensObject(lightTheme);

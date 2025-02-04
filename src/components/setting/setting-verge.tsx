@@ -265,6 +265,7 @@ const SettingVerge = ({ onError }: Props) => {
           icon={<CopyRegular />}
           onClick={onCopyClashEnv}
           style={{ marginLeft: 12 }}
+          className="fds"
         ></FluentButton>
       </FluentSettingItem>
 

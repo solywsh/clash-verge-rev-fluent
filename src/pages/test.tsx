@@ -150,7 +150,10 @@ const TestPage = () => {
           >
             {t("Test All")}
           </Button> */}
-          <FluentButton onClick={() => emit("verge://test-all")}>
+          <FluentButton
+            onClick={() => emit("verge://test-all")}
+            className="fds"
+          >
             {t("Test All")}
           </FluentButton>
           {/* <Button
@@ -160,7 +163,10 @@ const TestPage = () => {
           >
             {t("New")}
           </Button> */}
-          <FluentButton onClick={() => viewerRef.current?.create()}>
+          <FluentButton
+            onClick={() => viewerRef.current?.create()}
+            className="fds"
+          >
             {t("New")}
           </FluentButton>
         </Box>

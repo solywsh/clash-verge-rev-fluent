@@ -82,6 +82,7 @@ const LogPage = () => {
               onClick={() => {
                 clearLogs(logLevel);
               }}
+              className="fds"
             >
               {t("Clear")}
             </FluentButton>

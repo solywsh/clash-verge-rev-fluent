@@ -189,7 +189,7 @@ const ConnectionsPage = () => {
               )
             }
           />
-          <FluentButton onClick={onCloseAll}>
+          <FluentButton onClick={onCloseAll} className="fds">
             <span style={{ whiteSpace: "nowrap" }}>{t("Close All")}</span>
           </FluentButton>
         </Box>

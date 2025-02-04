@@ -213,6 +213,7 @@ export const FluentProxyHead = (props: Props) => {
       className={(props as any).className}
     >
       <Button
+        className="fds-subtle"
         size="small"
         color="inherit"
         title={t("Location")}
@@ -222,6 +223,7 @@ export const FluentProxyHead = (props: Props) => {
       />
 
       <Button
+        className="fds-subtle"
         size="small"
         color="inherit"
         title={t("Delay check")}
@@ -237,6 +239,7 @@ export const FluentProxyHead = (props: Props) => {
       />
 
       <Button
+        className="fds-subtle"
         size="small"
         color="inherit"
         title={
@@ -258,6 +261,7 @@ export const FluentProxyHead = (props: Props) => {
       />
 
       <Button
+        className="fds-subtle"
         color="inherit"
         title={t("Delay check URL")}
         onClick={() =>
@@ -268,6 +272,7 @@ export const FluentProxyHead = (props: Props) => {
       />
 
       <Button
+        className="fds-subtle"
         color="inherit"
         title={showType ? t("Proxy basic") : t("Proxy detail")}
         onClick={() => onHeadState({ showType: !showType })}
@@ -276,6 +281,7 @@ export const FluentProxyHead = (props: Props) => {
       />
 
       <Button
+        className="fds-subtle"
         color="inherit"
         title={t("Filter")}
         onClick={() =>

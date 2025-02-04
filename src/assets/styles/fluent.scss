@@ -110,14 +110,37 @@ body {
   }
 }
 
-.fui-Button.fui-MenuButton:not(.no-fds) {
+// .fui-Button {
+//   &:hover {
+//   }
+// }
+
+.fui-Button {
+  &:hover {
+    &:has(> .fui-Button__icon) {
+      color: var(--colorNeutralForeground2) !important;
+    }
+
+    .fui-Button__icon {
+      color: var(--colorNeutralForeground2) !important;
+    }
+  }
+}
+
+.fui-Button.fui-MenuButton:not(.no-fds),
+.fui-Button.fds {
   border-color: var(--fds-control-border-default);
   background-color: var(--fds-control-fill-default);
-  color: var(--fds-text-primary);
+  color: var(--colorNeutralForeground2);
 
   &:hover {
     background-color: var(--fds-control-fill-secondary);
     border-color: var(--fds-control-border-default);
+    color: var(--colorNeutralForeground2) !important;
+
+    .fui-Button__icon {
+      color: var(--colorNeutralForeground2) !important;
+    }
   }
 
   &:active {
@@ -125,4 +148,30 @@ body {
     background-color: var(--fds-control-fill-tertiary);
     color: var(--fds-text-secondary);
   }
+
+  &:disabled {
+    border-color: var(--fds-control-stroke-default);
+    background-color: var(--fds-control-fill-disabled);
+    color: var(--fds-text-disabled);
+  }
+}
+
+.fui-Input,
+.fui-Dropdown {
+  background-color: var(--fds-control-fill-default) !important;
+  border: 1px solid var(--fds-control-stroke-default) !important;
+
+  &:hover {
+    background-color: var(--fds-control-fill-secondary) !important;
+  }
+
+  &:has(> input:focus-within),
+  &:has(> button[aria-expanded="true"]) {
+    background-color: var(--fds-control-fill-input-active) !important;
+  }
+}
+
+.fui-Dropdown {
+  min-width: 0 !important;
+  width: 184px;
 }
