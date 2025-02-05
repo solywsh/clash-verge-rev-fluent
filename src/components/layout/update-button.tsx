@@ -11,6 +11,7 @@ interface Props {
 }
 
 export const UpdateButton = (props: Props) => {
+  return null;
   const { className } = props;
   const { verge } = useVerge();
   const { auto_check_update } = verge || {};
@@ -24,7 +25,7 @@ export const UpdateButton = (props: Props) => {
       errorRetryCount: 2,
       revalidateIfStale: false,
       focusThrottleInterval: 36e5, // 1 hour
-    }
+    },
   );
 
   if (!updateInfo?.available) return null;

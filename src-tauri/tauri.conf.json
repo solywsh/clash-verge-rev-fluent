@@ -15,8 +15,7 @@
     "externalBin": ["sidecar/verge-mihomo", "sidecar/verge-mihomo-alpha"],
     "copyright": "GNU General Public License v3.0",
     "category": "DeveloperTool",
-    "shortDescription": "Clash Verge Rev",
-    "createUpdaterArtifacts": "v1Compatible"
+    "shortDescription": "Clash Verge Rev"
   },
   "build": {
     "beforeBuildCommand": "pnpm run web:build",

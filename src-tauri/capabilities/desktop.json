@@ -5,7 +5,6 @@
   "windows": ["main"],
   "permissions": [
     "global-shortcut:default",
-    "updater:default",
     "deep-link:default",
     "window-state:default",
     "window-state:default",
