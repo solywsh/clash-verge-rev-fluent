@@ -136,7 +136,6 @@ const Layout = () => {
     <SWRConfig value={{ errorRetryCount: 3 }}>
       <ThemeProvider theme={theme}>
         <FluentProviderWithTheme>
-          <Toaster />
           <Paper
             square
             elevation={0}

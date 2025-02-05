@@ -4,6 +4,8 @@ import {
   createLightTheme,
   FluentProvider,
   themeToTokensObject,
+  Toaster,
+  useFluent,
   webDarkTheme,
   webLightTheme,
 } from "@fluentui/react-components";
@@ -74,9 +76,30 @@ export function FluentProviderWithTheme({
   return (
     <FluentProvider theme={theme} style={{ background: "transparent" }}>
       {children}
+      <Toaster toasterId="toaster" position="top-end" />
+      <GetFLuent />
     </FluentProvider>
   );
 }
+
+function GetFLuent() {
+  const { targetDocument } = useFluent();
+  useEffect(() => {
+    context.targetDocument = targetDocument;
+
+    return () => {
+      context.targetDocument = document;
+    };
+  }, []);
+
+  return null;
+}
+
+const context = {
+  targetDocument: document as Document | undefined,
+};
+
+export const getTargetDocument = () => context.targetDocument;
 
 export function useFluentTheme() {
   const theme = useThemeMode();

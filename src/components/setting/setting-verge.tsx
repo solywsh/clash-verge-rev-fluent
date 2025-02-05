@@ -95,7 +95,8 @@ const SettingVerge = ({ onError }: Props) => {
 
   const onCheckUpdate = async () => {
     try {
-      const info = await checkUpdate();
+      // const info = await checkUpdate();
+      const info = null as any;
       if (!info?.available) {
         Notice.success(t("Currently on the Latest Version"));
       } else {
@@ -153,7 +154,7 @@ const SettingVerge = ({ onError }: Props) => {
             <MenuPopover>
               <MenuList>
                 {languageOptions.map(({ code, label }) => (
-                  <MenuItemRadio name="language" value={code}>
+                  <MenuItemRadio name="language" value={code} key={code}>
                     {label}
                   </MenuItemRadio>
                 ))}
@@ -297,7 +298,11 @@ const SettingVerge = ({ onError }: Props) => {
               <MenuList>
                 {routers.map((page: { label: string; path: string }) => {
                   return (
-                    <MenuItemRadio name="start_page" value={page.path}>
+                    <MenuItemRadio
+                      name="start_page"
+                      value={page.path}
+                      key={page.path}
+                    >
                       {t(page.label)}
                     </MenuItemRadio>
                   );
