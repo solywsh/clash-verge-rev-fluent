@@ -12,8 +12,14 @@ import {
 } from "@mui/material";
 import { useClash } from "@/hooks/use-clash";
 import { BaseDialog, DialogRef, Notice, Switch } from "@/components/base";
-import { StackModeSwitch } from "./stack-mode-switch";
+import { FluentModeSwitch, StackModeSwitch } from "./stack-mode-switch";
+import { Expander } from "../../fluent/expander";
 import { enhanceProfiles } from "@/services/cmds";
+import {
+  Switch as FluentSwitch,
+  Button as FluentButton,
+  Input,
+} from "@fluentui/react-components";
 
 export const TunViewer = forwardRef<DialogRef>((props, ref) => {
   const { t } = useTranslation();
@@ -77,6 +83,137 @@ export const TunViewer = forwardRef<DialogRef>((props, ref) => {
       Notice.error(err.message || err.toString());
     }
   });
+
+  return (
+    <>
+      <Expander
+        left={t("Stack")}
+        right={
+          // <StackModeSwitch
+          //   value={values.stack}
+          //   onChange={(value) => {
+          //     setValues((v) => ({
+          //       ...v,
+          //       stack: value,
+          //     }));
+          //   }}
+          // />
+          <FluentModeSwitch
+            value={values.stack}
+            onChange={(value) => {
+              setValues((v) => ({
+                ...v,
+                stack: value,
+              }));
+            }}
+          />
+        }
+      ></Expander>
+
+      <Expander
+        left={t("Device")}
+        right={
+          <Input
+            autoComplete="new-password"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
+            value={values.device}
+            placeholder="Mihomo"
+            onChange={(e) =>
+              setValues((v) => ({ ...v, device: e.target.value }))
+            }
+          />
+        }
+      ></Expander>
+
+      <Expander
+        left={t("Auto Route")}
+        right={
+          <FluentSwitch
+            checked={values.autoRoute}
+            onChange={(_, c) =>
+              setValues((v) => ({ ...v, autoRoute: c.checked }))
+            }
+          />
+        }
+      ></Expander>
+
+      <Expander
+        left={t("Strict Route")}
+        right={
+          <FluentSwitch
+            checked={values.strictRoute}
+            onChange={(_, c) =>
+              setValues((v) => ({ ...v, strictRoute: c.checked }))
+            }
+          />
+        }
+      ></Expander>
+
+      <Expander
+        left={t("Auto Detect Interface")}
+        right={
+          <FluentSwitch
+            checked={values.autoDetectInterface}
+            onChange={(_, c) =>
+              setValues((v) => ({ ...v, autoDetectInterface: c.checked }))
+            }
+          />
+        }
+      ></Expander>
+
+      <Expander
+        left={t("DNS Hijack")}
+        right={
+          <Input
+            autoComplete="new-password"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
+            value={values.dnsHijack.join(",")}
+            placeholder="Please use , to separate multiple DNS servers"
+            onChange={(e) =>
+              setValues((v) => ({ ...v, dnsHijack: e.target.value.split(",") }))
+            }
+          />
+        }
+      ></Expander>
+
+      <Expander
+        left={t("MTU")}
+        right={
+          <Input
+            autoComplete="new-password"
+            type="number"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
+            value={values.mtu + ""}
+            placeholder="1500"
+            onChange={(e) =>
+              setValues((v) => ({
+                ...v,
+                mtu: parseInt(e.target.value),
+              }))
+            }
+          />
+        }
+      ></Expander>
+
+      <Expander
+        right={
+          <FluentButton
+            appearance="primary"
+            onClick={onSave}
+            style={{ marginBlock: 4 }}
+          >
+            {t("Save")}
+          </FluentButton>
+        }
+      ></Expander>
+    </>
+  );
 
   return (
     <BaseDialog

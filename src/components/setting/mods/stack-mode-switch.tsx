@@ -1,3 +1,4 @@
+import { Dropdown, Option, useId } from "@fluentui/react-components";
 import { Button, ButtonGroup } from "@mui/material";
 
 interface Props {
@@ -34,3 +35,30 @@ export const StackModeSwitch = (props: Props) => {
     </ButtonGroup>
   );
 };
+
+export function FluentModeSwitch(props: Props) {
+  const { value, onChange } = props;
+  const options = [
+    { key: "system", text: "System" },
+    { key: "gvisor", text: "gVisor" },
+    { key: "mixed", text: "Mixed" },
+  ];
+
+  const selectText = options.find((option) => option.key === value)?.text;
+  const id = useId("mode-switch");
+
+  return (
+    <Dropdown
+      id={id}
+      selectedOptions={[value!]}
+      onOptionSelect={(ev, data) => onChange?.(data.selectedOptions[0])}
+      value={selectText}
+    >
+      {options.map((option) => (
+        <Option value={option.key} text={option.text}>
+          {option.text}
+        </Option>
+      ))}
+    </Dropdown>
+  );
+}

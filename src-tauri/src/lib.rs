@@ -36,7 +36,7 @@ pub fn run() {
             None,
         ))
         .plugin(tauri_plugin_window_state::Builder::new().build())
-        .plugin(tauri_plugin_updater::Builder::new().build())
+        // .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
@@ -120,6 +120,8 @@ pub fn run() {
             cmds::list_webdav_backup,
             cmds::delete_webdav_backup,
             cmds::restore_webdav_backup,
+            // color
+            cmds::system_accent_color,
         ]);
 
     #[cfg(debug_assertions)]

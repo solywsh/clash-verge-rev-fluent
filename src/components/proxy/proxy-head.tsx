@@ -1,3 +1,23 @@
+import { Button, Input } from "@fluentui/react-components";
+import {
+  ArrowSortDownLinesFilled,
+  ArrowSortDownLinesRegular,
+  ClockRegular,
+  EyeFilled,
+  EyeOffFilled,
+  EyeOffRegular,
+  EyeRegular,
+  FilterAddRegular,
+  FilterDismissRegular,
+  FilterRegular,
+  LiveOffRegular,
+  LiveRegular,
+  MyLocationFilled,
+  MyLocationRegular,
+  NetworkCheckFilled,
+  TextSortAscendingFilled,
+  TextSortAscendingRegular,
+} from "@fluentui/react-icons";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, IconButton, TextField, SxProps } from "@mui/material";
@@ -48,7 +68,7 @@ export const ProxyHead = (props: Props) => {
   useEffect(() => {
     delayManager.setUrl(
       groupName,
-      testUrl || url || verge?.default_latency_test!
+      testUrl || url || verge?.default_latency_test!,
     );
   }, [groupName, testUrl, verge?.default_latency_test]);
 
@@ -160,6 +180,147 @@ export const ProxyHead = (props: Props) => {
           placeholder={t("Delay check URL")}
           onChange={(e) => onHeadState({ testUrl: e.target.value })}
           sx={{ ml: 0.5, flex: "1 1 auto", input: { py: 0.65, px: 1 } }}
+        />
+      )}
+    </Box>
+  );
+};
+
+export const FluentProxyHead = (props: Props) => {
+  const { sx = {}, groupName, headState, onHeadState } = props;
+
+  const { showType, sortType, filterText, textState, testUrl } = headState;
+
+  const { t } = useTranslation();
+  const [autoFocus, setAutoFocus] = useState(false);
+
+  useEffect(() => {
+    // fix the focus conflict
+    const timer = setTimeout(() => setAutoFocus(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const { verge } = useVerge();
+
+  useEffect(() => {
+    delayManager.setUrl(groupName, testUrl || verge?.default_latency_test!);
+  }, [groupName, testUrl, verge?.default_latency_test]);
+
+  return (
+    <Box
+      sx={{ display: "flex", alignItems: "center", gap: 0.5, ...sx }}
+      aria-label="proxy-content"
+      className={(props as any).className}
+    >
+      <Button
+        className="fds-subtle"
+        size="small"
+        color="inherit"
+        title={t("Location")}
+        onClick={props.onLocation}
+        icon={<MyLocationRegular />}
+        appearance="subtle"
+      />
+
+      <Button
+        className="fds-subtle"
+        size="small"
+        color="inherit"
+        title={t("Delay check")}
+        onClick={() => {
+          // Remind the user that it is custom test url
+          if (testUrl?.trim() && textState !== "filter") {
+            onHeadState({ textState: "url" });
+          }
+          props.onCheckDelay();
+        }}
+        icon={<NetworkCheckFilled />}
+        appearance="subtle"
+      />
+
+      <Button
+        className="fds-subtle"
+        size="small"
+        color="inherit"
+        title={
+          [t("Sort by default"), t("Sort by delay"), t("Sort by name")][
+            sortType
+          ]
+        }
+        onClick={() =>
+          onHeadState({ sortType: ((sortType + 1) % 3) as ProxySortType })
+        }
+        appearance="subtle"
+        icon={
+          <>
+            {sortType !== 1 && sortType !== 2 && <ArrowSortDownLinesRegular />}
+            {sortType === 1 && <ClockRegular />}
+            {sortType === 2 && <TextSortAscendingRegular />}
+          </>
+        }
+      />
+
+      <Button
+        className="fds-subtle"
+        color="inherit"
+        title={t("Delay check URL")}
+        onClick={() =>
+          onHeadState({ textState: textState === "url" ? null : "url" })
+        }
+        icon={textState === "url" ? <LiveRegular /> : <LiveOffRegular />}
+        appearance="subtle"
+      />
+
+      <Button
+        className="fds-subtle"
+        color="inherit"
+        title={showType ? t("Proxy basic") : t("Proxy detail")}
+        onClick={() => onHeadState({ showType: !showType })}
+        icon={showType ? <EyeFilled /> : <EyeOffFilled />}
+        appearance="subtle"
+      />
+
+      <Button
+        className="fds-subtle"
+        color="inherit"
+        title={t("Filter")}
+        onClick={() =>
+          onHeadState({ textState: textState === "filter" ? null : "filter" })
+        }
+        icon={
+          textState === "filter" ? (
+            <FilterDismissRegular />
+          ) : (
+            <FilterAddRegular />
+          )
+        }
+        appearance="subtle"
+      />
+
+      {textState === "filter" && (
+        <Input
+          autoComplete="new-password"
+          autoFocus={autoFocus}
+          value={filterText}
+          // size="small"
+          placeholder={t("Filter conditions")}
+          onChange={(e) => onHeadState({ filterText: e.target.value })}
+          // sx={{ ml: 0.5, flex: "1 1 auto", input: { py: 0.65, px: 1 } }}
+          appearance="outline"
+          style={{ flex: "1 1 auto", marginLeft: "0.5rem" }}
+        />
+      )}
+
+      {textState === "url" && (
+        <Input
+          autoComplete="new-password"
+          autoFocus={autoFocus}
+          autoSave="off"
+          value={testUrl}
+          appearance="outline"
+          placeholder={t("Delay check URL")}
+          onChange={(e) => onHeadState({ testUrl: e.target.value })}
+          style={{ flex: "1 1 auto", marginLeft: "0.5rem" }}
         />
       )}
     </Box>

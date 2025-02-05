@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useVerge } from "@/hooks/use-verge";
 import { Box, Button } from "@mui/material";
 import Grid2 from "@mui/material/Grid2";
+import { Button as FluentButton } from "@fluentui/react-components";
 import {
   DndContext,
   closestCenter,
@@ -142,20 +143,32 @@ const TestPage = () => {
       title={t("Test")}
       header={
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Button
+          {/* <Button
             variant="contained"
             size="small"
             onClick={() => emit("verge://test-all")}
           >
             {t("Test All")}
-          </Button>
-          <Button
+          </Button> */}
+          <FluentButton
+            onClick={() => emit("verge://test-all")}
+            className="fds"
+          >
+            {t("Test All")}
+          </FluentButton>
+          {/* <Button
             variant="contained"
             size="small"
             onClick={() => viewerRef.current?.create()}
           >
             {t("New")}
-          </Button>
+          </Button> */}
+          <FluentButton
+            onClick={() => viewerRef.current?.create()}
+            className="fds"
+          >
+            {t("New")}
+          </FluentButton>
         </Box>
       }
     >
@@ -165,7 +178,7 @@ const TestPage = () => {
         sx={{
           pt: 1.25,
           mb: 0.5,
-          px: "10px",
+          px: "20px",
           height: "calc(100vh - 100px)",
           overflow: "auto",
           position: "relative",

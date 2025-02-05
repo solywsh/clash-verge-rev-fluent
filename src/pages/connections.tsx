@@ -1,6 +1,12 @@
 import { useMemo, useRef, useState } from "react";
 import { useLockFn } from "ahooks";
 import { Box, Button, IconButton, MenuItem } from "@mui/material";
+import { Button as FluentButton } from "@fluentui/react-components";
+import {
+  GridKanbanRegular,
+  TextBulletListRegular,
+} from "@fluentui/react-icons";
+import { tokens } from "./_fluent_theme";
 import { Virtuoso } from "react-virtuoso";
 import { useTranslation } from "react-i18next";
 import { TableChartRounded, TableRowsRounded } from "@mui/icons-material";
@@ -15,7 +21,7 @@ import {
   ConnectionDetailRef,
 } from "@/components/connection/connection-detail";
 import parseTraffic from "@/utils/parse-traffic";
-import { BaseSearchBox } from "@/components/base/base-search-box";
+import { FluentBaseSearchBox as BaseSearchBox } from "@/components/base/base-search-box";
 import { BaseStyledSelect } from "@/components/base/base-styled-select";
 import useSWRSubscription from "swr/subscription";
 import { createSockette } from "@/utils/websocket";
@@ -148,7 +154,7 @@ const ConnectionsPage = () => {
           <Box sx={{ mx: 1 }}>
             {t("Uploaded")}: {parseTraffic(upload)}
           </Box>
-          <IconButton
+          {/* <IconButton
             color="inherit"
             size="small"
             onClick={() =>
@@ -168,11 +174,24 @@ const ConnectionsPage = () => {
                 <TableChartRounded fontSize="inherit" />
               </span>
             )}
-          </IconButton>
-
-          <Button size="small" variant="contained" onClick={onCloseAll}>
+          </IconButton> */}
+          <FluentButton
+            icon={
+              isTableLayout ? <TextBulletListRegular /> : <GridKanbanRegular />
+            }
+            size="small"
+            appearance="subtle"
+            onClick={() =>
+              setSetting((o) =>
+                o?.layout !== "table"
+                  ? { ...o, layout: "table" }
+                  : { ...o, layout: "list" },
+              )
+            }
+          />
+          <FluentButton onClick={onCloseAll} className="fds">
             <span style={{ whiteSpace: "nowrap" }}>{t("Close All")}</span>
-          </Button>
+          </FluentButton>
         </Box>
       }
     >
@@ -180,7 +199,7 @@ const ConnectionsPage = () => {
         sx={{
           pt: 1,
           mb: 0.5,
-          mx: "10px",
+          mx: "20px",
           height: "36px",
           display: "flex",
           alignItems: "center",
@@ -207,8 +226,10 @@ const ConnectionsPage = () => {
         sx={{
           userSelect: "text",
           margin: "10px",
+          mx: "20px",
           borderRadius: "8px",
-          bgcolor: isDark ? "#282a36" : "#ffffff",
+          // bgcolor: isDark ? "#282a36" : "#ffffff",
+          bgcolor: tokens.surface1,
         }}
       >
         {filterConn.length === 0 ? (

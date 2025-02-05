@@ -30,8 +30,10 @@ import { EditorViewer } from "@/components/profile/editor-viewer";
 import { ProfileBox } from "./profile-box";
 import parseTraffic from "@/utils/parse-traffic";
 import { ConfirmViewer } from "@/components/profile/confirm-viewer";
+import { tokens } from "../../pages/_fluent_theme";
 import { open } from "@tauri-apps/plugin-shell";
 import { ProxiesEditorViewer } from "./proxies-editor-viewer";
+import { Subtitle1, Subtitle2 } from "@fluentui/react-components";
 const round = keyframes`
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -81,7 +83,7 @@ export const ProfileItem = (props: Props) => {
   const expire = parseExpire(extra?.expire);
   const progress = Math.min(
     Math.round(((download + upload) * 100) / (total + 0.01)) + 1,
-    100
+    100,
   );
 
   const loading = loadingCache[itemData.uid] ?? false;
@@ -206,7 +208,7 @@ export const ProfileItem = (props: Props) => {
     } catch (err: any) {
       const errmsg = err?.message || err.toString();
       Notice.error(
-        errmsg.replace(/error sending request for url (\S+?): /, "")
+        errmsg.replace(/error sending request for url (\S+?): /, ""),
       );
     } finally {
       setLoadingCache((cache) => ({ ...cache, [itemData.uid]: false }));
@@ -337,7 +339,7 @@ export const ProfileItem = (props: Props) => {
               backdropFilter: "blur(2px)",
             }}
           >
-            <CircularProgress color="inherit" size={20} />
+            <CircularProgress color={"inherit"} size={20} />
           </Box>
         )}
         <Box position="relative">
@@ -358,16 +360,17 @@ export const ProfileItem = (props: Props) => {
               />
             </Box>
 
-            <Typography
-              width="calc(100% - 36px)"
-              sx={{ fontSize: "18px", fontWeight: "600", lineHeight: "26px" }}
-              variant="h6"
-              component="h2"
-              noWrap
+            <Subtitle1
+              // width="calc(100% - 36px)"
+              // sx={{ fontSize: "18px", fontWeight: "600", lineHeight: "26px" }}
+              // variant="h6"
+              // component="h2"
+              // noWrap
+              style={{ width: "calc(100% - 36px)" }}
               title={name}
             >
               {name}
-            </Typography>
+            </Subtitle1>
           </Box>
 
           {/* only if has url can it be updated */}

@@ -8,6 +8,14 @@ import {
 } from "@mui/icons-material";
 import { useVerge } from "@/hooks/use-verge";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+import {
+  Link,
+  Toast,
+  ToastBody,
+  ToastFooter,
+  ToastTitle,
+} from "@fluentui/react-components";
+import { getTargetDocument } from "@/pages/_fluent_theme";
 const appWindow = getCurrentWebviewWindow();
 interface InnerProps {
   type: string;
@@ -43,7 +51,7 @@ const NoticeInner = (props: InnerProps) => {
 
     appWindow.theme().then((m) => m && setIsDark(m === "dark"));
     const unlisten = appWindow.onThemeChanged((e) =>
-      setIsDark(e.payload === "dark")
+      setIsDark(e.payload === "dark"),
     );
 
     return () => {
@@ -67,6 +75,12 @@ const NoticeInner = (props: InnerProps) => {
         </Typography>
       </Box>
     );
+
+  return (
+    <Toast style={{ position: "fixed", top: 16, right: 20 }}>
+      <ToastTitle media={<></>}>{message}</ToastTitle>
+    </Toast>
+  );
 
   return (
     <Snackbar
@@ -105,21 +119,29 @@ let parent: HTMLDivElement = null!;
 
 // @ts-ignore
 export const Notice: NoticeInstance = (props) => {
-  if (!parent) {
-    parent = document.createElement("div");
-    document.body.appendChild(parent);
-  }
-
-  const container = document.createElement("div");
-  parent.appendChild(container);
-  const root = createRoot(container);
-
-  const onUnmount = () => {
-    root.unmount();
-    if (parent) setTimeout(() => parent.removeChild(container), 500);
-  };
-
-  root.render(<NoticeInner {...props} onClose={onUnmount} />);
+  console.log(props);
+  dispatchToast(
+    <Toast>
+      <ToastTitle>{props.message}</ToastTitle>
+    </Toast>,
+    { toasterId: "toaster", intent: props.type },
+    document,
+  );
+  // if (!parent) {
+  //   parent = document.createElement("div");
+  //   document.body.appendChild(parent);
+  // }
+  //
+  // const container = document.createElement("div");
+  // parent.appendChild(container);
+  // const root = createRoot(container);
+  //
+  // const onUnmount = () => {
+  //   root.unmount();
+  //   if (parent) setTimeout(() => parent.removeChild(container), 500);
+  // };
+  //
+  // root.render(<NoticeInner {...props} onClose={onUnmount} />);
 };
 
 (["info", "error", "success"] as const).forEach((type) => {
@@ -127,3 +149,35 @@ export const Notice: NoticeInstance = (props) => {
     setTimeout(() => Notice({ type, message, duration }), 0);
   };
 });
+
+let counter = 0;
+
+type ShowToastEventDetail = any;
+type ToastOptions = any;
+
+export const EVENTS = {
+  show: "fui-toast-show",
+  dismiss: "fui-toast-dismiss",
+  dismissAll: "fui-toast-dismiss-all",
+  update: "fui-toast-update",
+  pause: "fui-toast-pause",
+  play: "fui-toast-play",
+} as const;
+
+function dispatchToast(
+  content: unknown,
+  options: Partial<ToastOptions> = {},
+  targetDocument: Document,
+) {
+  const detail: ShowToastEventDetail = {
+    ...options,
+    content,
+    toastId: options.toastId ?? (counter++).toString(),
+  };
+  const event = new CustomEvent<ShowToastEventDetail>(EVENTS.show, {
+    bubbles: false,
+    cancelable: false,
+    detail,
+  });
+  targetDocument.dispatchEvent(event);
+}

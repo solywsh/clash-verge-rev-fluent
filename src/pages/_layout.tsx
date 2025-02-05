@@ -27,11 +27,37 @@ import { getPortableFlag } from "@/services/cmds";
 import React from "react";
 import { TransitionGroup, CSSTransition } from "react-transition-group";
 import { useListen } from "@/hooks/use-listen";
+import {
+  TabList,
+  Tab,
+  FluentProvider,
+  Button,
+  webLightTheme,
+  webDarkTheme,
+  Theme,
+  Subtitle2Stronger,
+  Caption1Stronger,
+  makeStyles,
+  Toaster,
+  mergeClasses,
+} from "@fluentui/react-components";
+import { FluentProviderWithTheme, tokens } from "./_fluent_theme";
+import { FluentLayoutItem } from "../components/fluent/layout-item";
+import { NavigationRegular } from "@fluentui/react-icons";
 
 const appWindow = getCurrentWebviewWindow();
 export let portableFlag = false;
 
 dayjs.extend(relativeTime);
+
+const useStyle = makeStyles({
+  sidebar: {
+    transition: `width ${tokens.durationNormal} ${tokens.curveDecelerateMid}`,
+  },
+  traffic: {
+    transition: `opacity ${tokens.durationNormal} ${tokens.curveDecelerateMid}`,
+  },
+});
 
 const OS = getSystem();
 
@@ -103,67 +129,74 @@ const Layout = () => {
     }
   }, [language, start_page]);
 
+  const [sideBarExpand, setSideBarExpand] = React.useState(true);
+  const { sidebar, traffic } = useStyle();
+
   return (
     <SWRConfig value={{ errorRetryCount: 3 }}>
       <ThemeProvider theme={theme}>
-        <Paper
-          square
-          elevation={0}
-          className={`${OS} layout`}
-          onContextMenu={(e) => {
-            // only prevent it on Windows
-            const validList = ["input", "textarea"];
-            const target = e.currentTarget;
-            if (
-              OS === "windows" &&
-              !(
-                validList.includes(target.tagName.toLowerCase()) ||
-                target.isContentEditable
-              )
-            ) {
-              e.preventDefault();
-            }
-          }}
-          sx={[
-            ({ palette }) => ({
-              bgcolor: palette.background.paper,
-            }),
-            OS === "linux"
-              ? {
-                  borderRadius: "8px",
-                  border: "2px solid var(--divider-color)",
-                  width: "calc(100vw - 4px)",
-                  height: "calc(100vh - 4px)",
-                }
-              : {},
-          ]}
-        >
-          <div className="layout__left">
-            <div className="the-logo" data-tauri-drag-region="true">
-              <div
-                style={{
-                  height: "27px",
-                  display: "flex",
-                  justifyContent: "space-between",
-                }}
-              >
-                <SvgIcon
-                  component={isDark ? iconDark : iconLight}
+        <FluentProviderWithTheme>
+          <Paper
+            square
+            elevation={0}
+            className={`${OS} layout`}
+            onContextMenu={(e) => {
+              // only prevent it on Windows
+              const validList = ["input", "textarea"];
+              const target = e.currentTarget;
+              if (
+                OS === "windows" &&
+                !(
+                  validList.includes(target.tagName.toLowerCase()) ||
+                  target.isContentEditable
+                )
+              ) {
+                e.preventDefault();
+              }
+            }}
+            sx={[
+              ({ palette }) => ({
+                bgcolor: palette.background.paper,
+              }),
+              OS === "linux"
+                ? {
+                    borderRadius: "8px",
+                    border: "2px solid var(--divider-color)",
+                    width: "calc(100vw - 4px)",
+                    height: "calc(100vh - 4px)",
+                  }
+                : {},
+            ]}
+          >
+            <div
+              className={mergeClasses("layout__left", sidebar)}
+              style={{ width: sideBarExpand ? "200px" : "48px" }}
+            >
+              {/* <div className="the-logo" data-tauri-drag-region="true">
+                <div
                   style={{
-                    height: "36px",
-                    width: "36px",
-                    marginTop: "-3px",
-                    marginRight: "5px",
-                    marginLeft: "-3px",
+                    height: "27px",
+                    display: "flex",
+                    justifyContent: "space-between",
                   }}
-                  inheritViewBox
-                />
-                <LogoSvg fill={isDark ? "white" : "black"} />
-              </div>
-              {<UpdateButton className="the-newbtn" />}
-            </div>
+                >
+                  <SvgIcon
+                    component={isDark ? iconDark : iconLight}
+                    style={{
+                      height: "36px",
+                      width: "36px",
+                      marginTop: "-3px",
+                      marginRight: "5px",
+                      marginLeft: "-3px",
+                    }}
+                    inheritViewBox
+                  />
+                  <LogoSvg fill={isDark ? "white" : "black"} />
+                </div>
+                {<UpdateButton className="the-newbtn" />}
+              </div> */}
 
-            <List className="the-menu">
+              {/* <List className="the-menu">
               {routers.map((router) => (
                 <LayoutItem
                   key={router.label}
@@ -173,39 +206,74 @@ const Layout = () => {
                   {t(router.label)}
                 </LayoutItem>
               ))}
-            </List>
+            </List> */}
+              <Button
+                style={{ marginTop: 12 }}
+                icon={<NavigationRegular fontSize={20} />}
+                appearance="subtle"
+                size="large"
+                onClick={() => setSideBarExpand(!sideBarExpand)}
+              />
+              {renderFluentSideBar()}
 
-            <div className="the-traffic">
-              <LayoutTraffic />
-            </div>
-          </div>
-
-          <div className="layout__right">
-            {
-              <div className="the-bar">
-                <div
-                  className="the-dragbar"
-                  data-tauri-drag-region="true"
-                  style={{ width: "100%" }}
-                ></div>
-                {OS !== "macos" && <LayoutControl />}
-              </div>
-            }
-
-            <TransitionGroup className="the-content">
-              <CSSTransition
-                key={location.pathname}
-                timeout={300}
-                classNames="page"
+              <div
+                className={mergeClasses("the-traffic", traffic)}
+                style={{ opacity: sideBarExpand ? 1 : 0 }}
               >
-                {React.cloneElement(routersEles, { key: location.pathname })}
-              </CSSTransition>
-            </TransitionGroup>
-          </div>
-        </Paper>
+                <LayoutTraffic />
+              </div>
+            </div>
+
+            <div className="layout__right">
+              {OS !== "windows" && (
+                <div className="the-bar">
+                  <div
+                    className="the-dragbar"
+                    data-tauri-drag-region="true"
+                    style={{ width: "100%" }}
+                  ></div>
+                  {OS !== "macos" && <LayoutControl />}
+                </div>
+              )}
+
+              <TransitionGroup className="the-content">
+                <CSSTransition
+                  key={location.pathname}
+                  timeout={300}
+                  classNames="page"
+                >
+                  {React.cloneElement(routersEles, { key: location.pathname })}
+                </CSSTransition>
+              </TransitionGroup>
+            </div>
+          </Paper>
+        </FluentProviderWithTheme>
       </ThemeProvider>
     </SWRConfig>
   );
+
+  function renderFluentSideBar() {
+    return (
+      <TabList
+        className="the-menu"
+        size="medium"
+        vertical
+        selectedValue={location.pathname}
+        onTabSelect={(e, value) => navigate(value.value as string)}
+        // appearance="subtle"
+      >
+        {routers.map((router) => (
+          <FluentLayoutItem
+            key={router.label}
+            to={router.path}
+            icon={router.icon}
+          >
+            {t(router.label)}
+          </FluentLayoutItem>
+        ))}
+      </TabList>
+    );
+  }
 };
 
 export default Layout;

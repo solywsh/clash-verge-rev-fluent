@@ -23,47 +23,62 @@ import SubjectRoundedIcon from "@mui/icons-material/SubjectRounded";
 import WifiTetheringRoundedIcon from "@mui/icons-material/WifiTetheringRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 
+import {
+  BroadActivityFeedRegular,
+  GroupListRegular,
+  NetworkCheckRegular,
+  PlugConnectedRegular,
+  Settings16Regular,
+  SettingsRegular,
+  TextAlignLeftRegular,
+  TopSpeedRegular,
+} from "@fluentui/react-icons";
+
 export const routers = [
   {
     label: "Label-Proxies",
     path: "/",
-    icon: [<WifiRoundedIcon />, <ProxiesSvg />],
+    icon: [<WifiRoundedIcon />, <ProxiesSvg />, <NetworkCheckRegular />],
     element: <ProxiesPage />,
   },
   {
     label: "Label-Profiles",
     path: "/profile",
-    icon: [<DnsRoundedIcon />, <ProfilesSvg />],
+    icon: [<DnsRoundedIcon />, <ProfilesSvg />, <BroadActivityFeedRegular />],
     element: <ProfilesPage />,
   },
   {
     label: "Label-Connections",
     path: "/connections",
-    icon: [<LanguageRoundedIcon />, <ConnectionsSvg />],
+    icon: [
+      <LanguageRoundedIcon />,
+      <ConnectionsSvg />,
+      <PlugConnectedRegular />,
+    ],
     element: <ConnectionsPage />,
   },
   {
     label: "Label-Rules",
     path: "/rules",
-    icon: [<ForkRightRoundedIcon />, <RulesSvg />],
+    icon: [<ForkRightRoundedIcon />, <RulesSvg />, <GroupListRegular />],
     element: <RulesPage />,
   },
   {
     label: "Label-Logs",
     path: "/logs",
-    icon: [<SubjectRoundedIcon />, <LogsSvg />],
+    icon: [<SubjectRoundedIcon />, <LogsSvg />, <TextAlignLeftRegular />],
     element: <LogsPage />,
   },
   {
     label: "Label-Test",
     path: "/test",
-    icon: [<WifiTetheringRoundedIcon />, <TestSvg />],
+    icon: [<WifiTetheringRoundedIcon />, <TestSvg />, <TopSpeedRegular />],
     element: <TestPage />,
   },
   {
     label: "Label-Settings",
     path: "/settings",
-    icon: [<SettingsRoundedIcon />, <SettingsSvg />],
+    icon: [<SettingsRoundedIcon />, <SettingsSvg />, <SettingsRegular />],
     element: <SettingsPage />,
   },
 ].map((router) => ({

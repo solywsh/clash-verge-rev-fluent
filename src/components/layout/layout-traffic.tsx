@@ -5,6 +5,7 @@ import {
   ArrowUpwardRounded,
   MemoryRounded,
 } from "@mui/icons-material";
+import { tokens } from "../../pages/_fluent_theme";
 import { useClashInfo } from "@/hooks/use-clash";
 import { useVerge } from "@/hooks/use-verge";
 import { TrafficGraph, type TrafficRef } from "./traffic-graph";
@@ -135,7 +136,7 @@ export const LayoutTraffic = () => {
   };
 
   return (
-    <Box position="relative">
+    <Box position="absolute" sx={{ bottom: 24, width: "180px" }}>
       {trafficGraph && pageVisible && (
         <div
           style={{ width: "100%", height: 60, marginBottom: 6 }}

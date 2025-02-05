@@ -3,12 +3,22 @@ import { useEffect } from "react";
 import { useLockFn } from "ahooks";
 import { useTranslation } from "react-i18next";
 import { Box, Button, ButtonGroup } from "@mui/material";
+import {
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuItemRadio,
+  MenuList,
+  MenuPopover,
+  MenuTrigger,
+} from "@fluentui/react-components";
 import { closeAllConnections, getClashConfig } from "@/services/api";
 import { patchClashConfig } from "@/services/cmds";
 import { useVerge } from "@/hooks/use-verge";
 import { BasePage } from "@/components/base";
 import { ProxyGroups } from "@/components/proxy/proxy-groups";
 import { ProviderButton } from "@/components/proxy/provider-button";
+import { resetCurrentGroupName } from "../components/proxy/proxy-render";
 
 const ProxyPage = () => {
   const { t } = useTranslation();
@@ -39,16 +49,23 @@ const ProxyPage = () => {
     }
   }, [curMode]);
 
+  useEffect(() => () => resetCurrentGroupName(), []);
+
   return (
     <BasePage
       full
-      contentStyle={{ height: "100%" }}
+      // contentStyle={{ height: "100%" }}
+      contentStyle={{
+        height: "100%",
+        // paddingInline: "12px",
+        boxSizing: "border-box",
+      }}
       title={t("Proxy Groups")}
       header={
         <Box display="flex" alignItems="center" gap={1}>
           <ProviderButton />
 
-          <ButtonGroup size="small">
+          {/* <ButtonGroup size="small">
             {modeList.map((mode) => (
               <Button
                 key={mode}
@@ -59,7 +76,28 @@ const ProxyPage = () => {
                 {t(mode)}
               </Button>
             ))}
-          </ButtonGroup>
+          </ButtonGroup> */}
+          <Menu>
+            <MenuTrigger disableButtonEnhancement>
+              <MenuButton appearance="secondary">
+                {t(curMode ?? "global")}
+              </MenuButton>
+            </MenuTrigger>
+            <MenuPopover>
+              <MenuList checkedValues={{ mode: [curMode ?? "global"] }}>
+                {modeList.map((mode) => (
+                  <MenuItemRadio
+                    key={mode}
+                    onClick={() => onChangeMode(mode)}
+                    value={mode}
+                    name="mode"
+                  >
+                    {t(mode)}
+                  </MenuItemRadio>
+                ))}
+              </MenuList>
+            </MenuPopover>
+          </Menu>
         </Box>
       }
     >
