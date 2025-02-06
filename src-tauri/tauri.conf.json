@@ -24,7 +24,7 @@
     "devUrl": "http://localhost:3000/"
   },
   "productName": "Clash Verge",
-  "version": "2.0.3",
+  "version": "2.0.3-v2",
   "identifier": "io.github.clash-verge-rev.clash-verge-rev",
   "plugins": {
     "deep-link": {

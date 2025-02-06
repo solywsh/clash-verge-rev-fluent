@@ -28,12 +28,13 @@
     },
     "windows": [
       {
-        "additionalBrowserArgs": "--disable-features=OverscrollHistoryNavigation --enable-features=msWebView2EnableDraggableRegions,OverlayScrollbar,msOverlayScrollbarWinStyle,msOverlayScrollbarWinStyleAnimation",
+        "additionalBrowserArgs": "--disable-features=OverscrollHistoryNavigation,msSmartScreenProtection --enable-features=msWebView2EnableDraggableRegions,OverlayScrollbar,msOverlayScrollbarWinStyle,msOverlayScrollbarWinStyleAnimation,msEdgeFluentOverlayScrollbar",
         "transparent": true,
         "title": "Clash Verge",
         "windowEffects": {
           "effects": ["mica"]
-        }
+        },
+        "visible": false
       }
     ]
   }
