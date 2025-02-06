@@ -116,7 +116,7 @@ const Layout = () => {
       await appWindow.unminimize();
       await appWindow.show();
       await appWindow.setFocus();
-    }, 120);
+    }, 50);
   }, []);
 
   useEffect(() => {
