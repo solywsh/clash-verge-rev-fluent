@@ -148,7 +148,7 @@ pub fn create_window() {
     .min_inner_size(620.0, 550.0)
     .decorations(true)
     .maximizable(true)
-    .additional_browser_args("--enable-features=msWebView2EnableDraggableRegions,OverlayScrollbar,msOverlayScrollbarWinStyle,msOverlayScrollbarWinStyleAnimation --disable-features=OverscrollHistoryNavigation")
+    .additional_browser_args("--disable-features=OverscrollHistoryNavigation,msSmartScreenProtection --enable-features=msWebView2EnableDraggableRegions,OverlayScrollbar,msOverlayScrollbarWinStyle,msOverlayScrollbarWinStyleAnimation,msEdgeFluentOverlayScrollbar")
     .transparent(true)
     .effects(WindowEffectsConfig {
         effects: vec![Effect::Mica],
