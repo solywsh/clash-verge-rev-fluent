@@ -97,6 +97,10 @@ body {
   }
 
   .layout__right {
+    > .the-content {
+      padding-top: 12px;
+    }
+
     .base-container {
       background-color: transparent !important;
       border-top-left-radius: 4px;
@@ -263,5 +267,51 @@ body {
     & > .fui-MenuItem__content {
       opacity: 0.8;
     }
+  }
+}
+
+.title-bar {
+  .title-bar__content {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+
+    img {
+      margin-right: 16px;
+    }
+  }
+}
+
+.decorum-tb-btn {
+  &:hover {
+    background-color: rgba($color: #000, $alpha: 0.05) !important;
+  }
+
+  &:active {
+    background-color: rgba($color: #000, $alpha: 0.12) !important;
+  }
+
+  &#decorum-tb-close {
+    &:hover {
+      color: #fff !important;
+      background-color: #c42b1c !important;
+    }
+    &:active {
+      color: #fff !important;
+      background-color: rgba($color: #c42b1c, $alpha: 0.9) !important;
+    }
+  }
+}
+
+.dark .decorum-tb-btn {
+  color: #ffffff !important;
+
+  &:hover {
+    background-color: rgba($color: #fff, $alpha: 0.06) !important;
+  }
+
+  &:active {
+    background-color: rgba($color: #fff, $alpha: 0.12) !important;
   }
 }

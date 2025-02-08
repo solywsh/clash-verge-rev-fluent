@@ -13,6 +13,7 @@ import { useVerge } from "@/hooks/use-verge";
 import LogoSvg from "@/assets/image/logo.svg?react";
 import iconLight from "@/assets/image/icon_light.svg?react";
 import iconDark from "@/assets/image/icon_dark.svg?react";
+import Logo from "@/assets/image/logo.png";
 import { useThemeMode } from "@/services/states";
 import { Notice } from "@/components/base";
 import { LayoutItem } from "@/components/layout/layout-item";
@@ -29,21 +30,15 @@ import { TransitionGroup, CSSTransition } from "react-transition-group";
 import { useListen } from "@/hooks/use-listen";
 import {
   TabList,
-  Tab,
-  FluentProvider,
   Button,
-  webLightTheme,
-  webDarkTheme,
-  Theme,
-  Subtitle2Stronger,
-  Caption1Stronger,
   makeStyles,
-  Toaster,
   mergeClasses,
+  Caption1,
 } from "@fluentui/react-components";
 import { FluentProviderWithTheme, tokens } from "./_fluent_theme";
 import { FluentLayoutItem } from "../components/fluent/layout-item";
 import { NavigationRegular } from "@fluentui/react-icons";
+import { invoke } from "@tauri-apps/api/core";
 
 const appWindow = getCurrentWebviewWindow();
 export let portableFlag = false;
@@ -132,10 +127,77 @@ const Layout = () => {
   const [sideBarExpand, setSideBarExpand] = React.useState(true);
   const { sidebar, traffic } = useStyle();
 
+  useEffect(() => {
+    const bar = document.querySelector(
+      "div[data-tauri-decorum-tb]",
+    ) as HTMLDivElement;
+    const abort = new AbortController();
+    bar?.addEventListener(
+      "contextmenu",
+      (e) => {
+        e.preventDefault();
+      },
+      { signal: abort.signal },
+    );
+
+    return () => {
+      abort.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    const target = document.querySelector(
+      "#decorum-tb-maximize",
+    ) as HTMLDivElement;
+    const newDom = document.createElement("div");
+    newDom.innerHTML = `\uE922`;
+    newDom.className = "decorum-tb-btn";
+    newDom.id = "decorum-tb-maximize";
+    target.replaceWith(newDom);
+    const btn = newDom;
+    // @ts-expect-error
+    const tauri = window.__TAURI__;
+    let timer: any;
+    const win = tauri.window.getCurrentWindow();
+    win.onResized(() => {
+      win.isMaximized().then((maximized: boolean) => {
+        if (maximized) {
+          btn.innerHTML = "\uE923";
+        } else {
+          btn.innerHTML = "\uE922";
+        }
+      });
+    });
+    const show_snap_overlay = () => {
+      win.setFocus().then(() => invoke("plugin:decorum|show_snap_overlay"));
+    };
+    btn.addEventListener("click", () => {
+      clearTimeout(timer);
+      win.toggleMaximize();
+    });
+    btn.addEventListener("mousedown", () => {
+      clearTimeout(timer);
+    });
+    btn.addEventListener("mouseleave", () => clearTimeout(timer));
+    btn.addEventListener("mouseenter", () => {
+      timer = setTimeout(show_snap_overlay, 620);
+    });
+  }, []);
+
   return (
     <SWRConfig value={{ errorRetryCount: 3 }}>
       <ThemeProvider theme={theme}>
         <FluentProviderWithTheme>
+          <header
+            className="title-bar"
+            style={{ height: 32 }}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            <div className="title-bar__content">
+              <img src={Logo} width={28} height={28} />
+              <Caption1>Clash verge</Caption1>
+            </div>
+          </header>
           <Paper
             square
             elevation={0}
@@ -208,7 +270,7 @@ const Layout = () => {
               ))}
             </List> */}
               <Button
-                style={{ marginTop: 12 }}
+                style={{ marginTop: 24 }}
                 icon={<NavigationRegular fontSize={20} />}
                 appearance="subtle"
                 size="large"

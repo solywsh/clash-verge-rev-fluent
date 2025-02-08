@@ -48,6 +48,10 @@ export const useListItemStyle = makeStyles({
   iconOverride: {
     color: tokens.colorNeutralForeground1 + " !important",
   },
+  content: {
+    fontWeight: 400,
+    color: tokens.colorNeutralForeground1Hover,
+  },
 });
 
 export function FluentLayoutItem(props: Props) {
@@ -66,7 +70,7 @@ export function FluentLayoutItem(props: Props) {
         children: icon[2] ?? (icon[0] as any),
         className: classes.iconOverride,
       }}
-      content={{ style: { fontWeight: "500" } }}
+      content={{ className: classes.content }}
     >
       {children?.replace(/\s/g, "")}
     </Tab>

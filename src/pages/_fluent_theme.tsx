@@ -132,5 +132,15 @@ export function useFluentTheme() {
     return getDarkTheme(variants);
   }, [variants]);
 
+  useMemo(() => {
+    if (theme !== "dark") {
+      document.documentElement.classList.remove("dark");
+      return;
+    }
+
+    !document.documentElement.classList.contains("dark") &&
+      document.documentElement.classList.add("dark");
+  }, [theme]);
+
   return theme === "light" ? lightTheme : darkTheme;
 }
