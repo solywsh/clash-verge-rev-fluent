@@ -6,6 +6,7 @@ use anyhow::{bail, Result};
 use once_cell::sync::OnceCell;
 use percent_encoding::percent_decode_str;
 use serde_yaml::Mapping;
+use tauri_plugin_decorum::WebviewWindowExt;
 use std::net::TcpListener;
 use tauri::utils::config::WindowEffectsConfig;
 use tauri::window::Effect;
@@ -137,7 +138,7 @@ pub fn create_window() {
     }
 
     #[cfg(target_os = "windows")]
-    let _ = tauri::WebviewWindowBuilder::new(
+    let main_window = tauri::WebviewWindowBuilder::new(
         &app_handle,
         "main".to_string(),
         tauri::WebviewUrl::App("index.html".into()),
@@ -157,7 +158,10 @@ pub fn create_window() {
         color: None,
     })
     .shadow(true)
-    .build();
+    .build()
+    .expect("failed to create main window");
+
+    main_window.create_overlay_titlebar().unwrap();
 
     #[cfg(target_os = "macos")]
     let _ = tauri::WebviewWindowBuilder::new(

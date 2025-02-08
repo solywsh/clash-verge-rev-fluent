@@ -97,6 +97,10 @@ body {
   }
 
   .layout__right {
+    > .the-content {
+      padding-top: 12px;
+    }
+
     .base-container {
       background-color: transparent !important;
       border-top-left-radius: 4px;
@@ -262,6 +266,19 @@ body {
   &:active {
     & > .fui-MenuItem__content {
       opacity: 0.8;
+    }
+  }
+}
+
+.title-bar {
+  .title-bar__content {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+
+    img {
+      margin-right: 16px;
     }
   }
 }

@@ -13,6 +13,7 @@ import { useVerge } from "@/hooks/use-verge";
 import LogoSvg from "@/assets/image/logo.svg?react";
 import iconLight from "@/assets/image/icon_light.svg?react";
 import iconDark from "@/assets/image/icon_dark.svg?react";
+import Logo from "@/assets/image/logo.png";
 import { useThemeMode } from "@/services/states";
 import { Notice } from "@/components/base";
 import { LayoutItem } from "@/components/layout/layout-item";
@@ -29,17 +30,10 @@ import { TransitionGroup, CSSTransition } from "react-transition-group";
 import { useListen } from "@/hooks/use-listen";
 import {
   TabList,
-  Tab,
-  FluentProvider,
   Button,
-  webLightTheme,
-  webDarkTheme,
-  Theme,
-  Subtitle2Stronger,
-  Caption1Stronger,
   makeStyles,
-  Toaster,
   mergeClasses,
+  Caption1,
 } from "@fluentui/react-components";
 import { FluentProviderWithTheme, tokens } from "./_fluent_theme";
 import { FluentLayoutItem } from "../components/fluent/layout-item";
@@ -136,6 +130,16 @@ const Layout = () => {
     <SWRConfig value={{ errorRetryCount: 3 }}>
       <ThemeProvider theme={theme}>
         <FluentProviderWithTheme>
+          <header
+            className="title-bar"
+            style={{ height: 32 }}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            <div className="title-bar__content">
+              <img src={Logo} width={28} height={28} />
+              <Caption1>Clash verge</Caption1>
+            </div>
+          </header>
           <Paper
             square
             elevation={0}
@@ -208,7 +212,7 @@ const Layout = () => {
               ))}
             </List> */}
               <Button
-                style={{ marginTop: 12 }}
+                style={{ marginTop: 24 }}
                 icon={<NavigationRegular fontSize={20} />}
                 appearance="subtle"
                 size="large"
