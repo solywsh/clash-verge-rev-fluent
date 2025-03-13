@@ -16,10 +16,14 @@ A Clash Meta GUI based on <a href="https://github.com/tauri-apps/tauri">Tauri</a
 | ![预览](./docs/preview_dark.png)  | ![预览](./docs/preview_light.png)  |
 | ![预览](./docs/settings_dark.png) | ![预览](./docs/settings_light.png) |
 
+> [!IMPORTANT]
+> 本仓库是 clash-verge-rev 的 fork，仅做了 UI 上的修改，会定期合并上游代码。
+> 目前仍有部分界面未 fluent 化，欢迎贡献。
+
 ## Install
 
-请到发布页面下载对应的安装包：[Release page](https://github.com/clash-verge-rev/clash-verge-rev/releases)<br>
-Go to the [release page](https://github.com/clash-verge-rev/clash-verge-rev/releases) to download the corresponding installation package<br>
+请到发布页面下载对应的安装包：[Release page](https://github.com/daydreamer-riri/clash-verge-rev-fluent/releases)<br>
+Go to the [release page](https://github.com/daydreamer-riri/clash-verge-rev-fluent/releases) to download the corresponding installation package<br>
 Supports Windows (x64/x86).
 
 ### 安装说明和常见问题，请到[文档页](https://clash-verge-rev.github.io/)查看：[Doc](https://clash-verge-rev.github.io/)
