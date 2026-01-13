@@ -29,6 +29,10 @@ export async function viewProfile(index: string) {
   return invoke<void>("view_profile", { index });
 }
 
+export async function openProfileDir(index: string) {
+  return invoke<void>("open_profile_dir", { index });
+}
+
 export async function readProfileFile(index: string) {
   return invoke<string>("read_profile_file", { index });
 }

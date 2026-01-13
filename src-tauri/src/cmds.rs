@@ -113,6 +113,26 @@ pub fn view_profile(app_handle: tauri::AppHandle, index: String) -> CmdResult {
 }
 
 #[tauri::command]
+pub fn open_profile_dir(index: String) -> CmdResult {
+    let file = {
+        wrap_err!(Config::profiles().latest().get_item(&index))?
+            .file
+            .clone()
+            .ok_or("the file field is null")
+    }?;
+
+    let path = wrap_err!(dirs::app_profiles_dir())?.join(file);
+    if !path.exists() {
+        ret_err!("the file not found");
+    }
+
+    if let Some(parent) = path.parent() {
+        wrap_err!(open::that_detached(parent))?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
 pub fn read_profile_file(index: String) -> CmdResult<String> {
     let profiles = Config::profiles();
     let profiles = profiles.latest();

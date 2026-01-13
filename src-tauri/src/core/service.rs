@@ -159,7 +159,7 @@ pub async fn reinstall_service() -> Result<()> {
     Ok(())
 }
 
-/// check the windows service status
+/// check the windows service status via HTTP
 pub async fn check_service() -> Result<JsonResponse> {
     let url = format!("{SERVICE_URL}/get_clash");
     let response = reqwest::ClientBuilder::new()
@@ -175,6 +175,63 @@ pub async fn check_service() -> Result<JsonResponse> {
         .context("failed to parse the Clash Verge Service response")?;
 
     Ok(response)
+}
+
+/// Check if the service is installed (Windows only)
+#[cfg(target_os = "windows")]
+pub fn is_service_installed() -> bool {
+    use std::os::windows::process::CommandExt;
+
+    let output = StdCommand::new("sc")
+        .args(["query", "clash-verge-service"])
+        .creation_flags(0x08000000) // CREATE_NO_WINDOW
+        .output();
+
+    match output {
+        Ok(output) => {
+            // Service exists if sc query returns success (exit code 0)
+            output.status.success()
+        }
+        Err(_) => false,
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn is_service_installed() -> bool {
+    // For non-Windows, assume service check via HTTP is sufficient
+    false
+}
+
+/// Try to start the service (Windows only)
+#[cfg(target_os = "windows")]
+pub fn start_service() -> Result<()> {
+    use std::os::windows::process::CommandExt;
+
+    log::info!(target: "app", "trying to start clash-verge-service via sc start");
+
+    let output = StdCommand::new("sc")
+        .args(["start", "clash-verge-service"])
+        .creation_flags(0x08000000) // CREATE_NO_WINDOW
+        .output()?;
+
+    if output.status.success() {
+        log::info!(target: "app", "service started successfully");
+        Ok(())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        // Error 1056 means service is already running, which is fine
+        if stderr.contains("1056") || String::from_utf8_lossy(&output.stdout).contains("RUNNING") {
+            log::info!(target: "app", "service is already running");
+            Ok(())
+        } else {
+            bail!("failed to start service: {}", stderr)
+        }
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+pub fn start_service() -> Result<()> {
+    Ok(())
 }
 
 /// start the clash by service

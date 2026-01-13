@@ -22,6 +22,7 @@ import {
   readProfileFile,
   updateProfile,
   saveProfileFile,
+  openProfileDir,
 } from "@/services/cmds";
 import { Notice } from "@/components/base";
 import { GroupsEditorViewer } from "@/components/profile/groups-editor-viewer";
@@ -178,6 +179,15 @@ export const ProfileItem = (props: Props) => {
     }
   });
 
+  const onOpenDir = useLockFn(async () => {
+    setAnchorEl(null);
+    try {
+      await openProfileDir(itemData.uid);
+    } catch (err: any) {
+      Notice.error(err?.message || err.toString());
+    }
+  });
+
   /// 0 不使用任何代理
   /// 1 使用订阅好的代理
   /// 2 至少使用一个代理，根据订阅，如果没订阅，默认使用系统代理
@@ -247,6 +257,7 @@ export const ProfileItem = (props: Props) => {
       disabled: !option?.script,
     },
     { label: "Open File", handler: onOpenFile, disabled: false },
+    { label: "Open Dir", handler: onOpenDir, disabled: false },
     { label: "Update", handler: () => onUpdate(0), disabled: false },
     { label: "Update(Proxy)", handler: () => onUpdate(2), disabled: false },
     {
@@ -288,6 +299,7 @@ export const ProfileItem = (props: Props) => {
       disabled: !option?.script,
     },
     { label: "Open File", handler: onOpenFile, disabled: false },
+    { label: "Open Dir", handler: onOpenDir, disabled: false },
     {
       label: "Delete",
       handler: () => {

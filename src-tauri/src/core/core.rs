@@ -1,4 +1,3 @@
-use super::tray::Tray;
 use crate::config::*;
 use crate::core::{clash_api, handle, service};
 use crate::log_err;
@@ -7,6 +6,7 @@ use anyhow::{bail, Result};
 use once_cell::sync::OnceCell;
 use serde_yaml::Mapping;
 use std::{sync::Arc, time::Duration};
+use tauri_plugin_shell::process::CommandChild;
 use tauri_plugin_shell::ShellExt;
 use tokio::sync::Mutex;
 use tokio::time::sleep;
@@ -14,6 +14,7 @@ use tokio::time::sleep;
 #[derive(Debug)]
 pub struct CoreManager {
     running: Arc<Mutex<bool>>,
+    sidecar_child: Arc<Mutex<Option<CommandChild>>>,
 }
 
 impl CoreManager {
@@ -21,6 +22,7 @@ impl CoreManager {
         static CORE_MANAGER: OnceCell<CoreManager> = OnceCell::new();
         CORE_MANAGER.get_or_init(|| CoreManager {
             running: Arc::new(Mutex::new(false)),
+            sidecar_child: Arc::new(Mutex::new(None)),
         })
     }
 
@@ -75,6 +77,13 @@ impl CoreManager {
         if service::check_service().await.is_ok() {
             log::info!(target: "app", "stop the core by service");
             service::stop_core_by_service().await?;
+        } else {
+            // 非服务模式，停止sidecar进程
+            log::info!(target: "app", "stop the core directly");
+            let mut sidecar_child = self.sidecar_child.lock().await;
+            if let Some(child) = sidecar_child.take() {
+                let _ = child.kill();
+            }
         }
         *running = false;
         Ok(())
@@ -94,12 +103,42 @@ impl CoreManager {
         if service::check_service().await.is_ok() {
             log::info!(target: "app", "try to run core in service mode");
             service::run_core_by_service(&config_path).await?;
+        } else {
+            // 非服务模式，直接启动sidecar
+            log::info!(target: "app", "service not available, starting core directly");
+            self.start_core_directly(&config_path).await?;
         }
         // 流量订阅
         #[cfg(target_os = "macos")]
         log_err!(Tray::global().subscribe_traffic().await);
 
         *running = true;
+
+        Ok(())
+    }
+
+    /// 直接启动核心（非服务模式）
+    async fn start_core_directly(&self, config_path: &std::path::PathBuf) -> Result<()> {
+        let clash_core = { Config::verge().latest().clash_core.clone() };
+        let clash_core = clash_core.unwrap_or("verge-mihomo".into());
+
+        let config_dir = dirs::app_home_dir()?;
+        let config_dir = dirs::path_to_str(&config_dir)?;
+        let config_file = dirs::path_to_str(config_path)?;
+
+        let app_handle = handle::Handle::global().app_handle().unwrap();
+
+        let (_, child) = app_handle
+            .shell()
+            .sidecar(clash_core)?
+            .args(["-d", config_dir, "-f", config_file])
+            .spawn()?;
+
+        let mut sidecar_child = self.sidecar_child.lock().await;
+        *sidecar_child = Some(child);
+
+        // 等待核心启动
+        sleep(Duration::from_millis(500)).await;
 
         Ok(())
     }

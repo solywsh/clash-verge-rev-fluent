@@ -110,6 +110,7 @@ pub fn run() {
             cmds::enhance_profiles,
             cmds::patch_profiles_config,
             cmds::view_profile,
+            cmds::open_profile_dir,
             cmds::patch_profile,
             cmds::create_profile,
             cmds::import_profile,

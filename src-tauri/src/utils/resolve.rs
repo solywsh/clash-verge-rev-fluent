@@ -57,32 +57,66 @@ pub async fn resolve_setup(app: &mut App) {
     log_err!(Config::init_config().await);
 
     if service::check_service().await.is_err() {
-        match service::reinstall_service().await {
-            Ok(_) => {
-                log::info!(target:"app", "install service susccess.");
-                #[cfg(not(target_os = "macos"))]
-                std::thread::sleep(std::time::Duration::from_millis(1000));
-                #[cfg(target_os = "macos")]
-                {
-                    let mut service_runing = false;
-                    for _ in 0..40 {
-                        if service::check_service().await.is_ok() {
-                            service_runing = true;
-                            break;
-                        } else {
-                            log::warn!(target: "app", "service not runing, sleep 500ms and check again.");
-                            std::thread::sleep(std::time::Duration::from_millis(500));
-                        }
+        // Service HTTP check failed, let's investigate why
+        #[cfg(target_os = "windows")]
+        {
+            if service::is_service_installed() {
+                // Service is installed but not responding, try to start it
+                log::info!(target: "app", "service installed but not responding, trying to start it");
+                if let Err(e) = service::start_service() {
+                    log::warn!(target: "app", "failed to start service: {e}");
+                }
+                // Wait and retry check
+                for i in 0..10 {
+                    std::thread::sleep(std::time::Duration::from_millis(500));
+                    if service::check_service().await.is_ok() {
+                        log::info!(target: "app", "service started successfully after {} attempts", i + 1);
+                        break;
                     }
-                    if !service_runing {
-                        log::error!(target: "app", "service not runing. exit");
-                        app.app_handle().exit(-2);
+                }
+            } else {
+                // Service not installed, install it (this will trigger UAC)
+                log::info!(target: "app", "service not installed, installing...");
+                match service::reinstall_service().await {
+                    Ok(_) => {
+                        log::info!(target: "app", "install service success.");
+                        std::thread::sleep(std::time::Duration::from_millis(1000));
+                    }
+                    Err(e) => {
+                        log::error!(target: "app", "failed to install service: {e:?}");
+                        // Don't exit, fallback to non-service mode
                     }
                 }
             }
-            Err(e) => {
-                log::error!(target: "app", "{e:?}");
-                app.app_handle().exit(-1);
+        }
+
+        #[cfg(not(target_os = "windows"))]
+        {
+            match service::reinstall_service().await {
+                Ok(_) => {
+                    log::info!(target:"app", "install service success.");
+                    #[cfg(target_os = "macos")]
+                    {
+                        let mut service_runing = false;
+                        for _ in 0..40 {
+                            if service::check_service().await.is_ok() {
+                                service_runing = true;
+                                break;
+                            } else {
+                                log::warn!(target: "app", "service not running, sleep 500ms and check again.");
+                                std::thread::sleep(std::time::Duration::from_millis(500));
+                            }
+                        }
+                        if !service_runing {
+                            log::error!(target: "app", "service not running. exit");
+                            app.app_handle().exit(-2);
+                        }
+                    }
+                }
+                Err(e) => {
+                    log::error!(target: "app", "{e:?}");
+                    app.app_handle().exit(-1);
+                }
             }
         }
     }
