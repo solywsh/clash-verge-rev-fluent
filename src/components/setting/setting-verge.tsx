@@ -167,16 +167,42 @@ const SettingVerge = ({ onError }: Props) => {
         </GuardState>
       </FluentSettingItem>
 
-      {/* <FluentSettingItem label={t("Theme Mode")}>
+      <FluentSettingItem label={t("Theme Mode")}>
         <GuardState
-          value={theme_mode}
+          value={{ theme: theme_mode ?? "system" }}
           onCatch={onError}
+          {...fluentGuardStateProps}
           onChange={(e) => onChangeData({ theme_mode: e })}
           onGuard={(e) => patchVerge({ theme_mode: e })}
         >
-          <ThemeModeSwitch />
+          <Menu>
+            <MenuTrigger>
+              <MenuButton>
+                {
+                  {
+                    light: t("theme.light"),
+                    dark: t("theme.dark"),
+                    system: t("theme.system"),
+                  }[theme_mode ?? "system"]
+                }
+              </MenuButton>
+            </MenuTrigger>
+            <MenuPopover>
+              <MenuList>
+                <MenuItemRadio name="theme" value="light">
+                  {t("theme.light")}
+                </MenuItemRadio>
+                <MenuItemRadio name="theme" value="dark">
+                  {t("theme.dark")}
+                </MenuItemRadio>
+                <MenuItemRadio name="theme" value="system">
+                  {t("theme.system")}
+                </MenuItemRadio>
+              </MenuList>
+            </MenuPopover>
+          </Menu>
         </GuardState>
-      </FluentSettingItem> */}
+      </FluentSettingItem>
 
       {OS !== "linux" && (
         <FluentSettingItem label={t("Tray Click Event")}>

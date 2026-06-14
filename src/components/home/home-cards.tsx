@@ -10,7 +10,9 @@ import {
   Switch,
   makeStyles,
   Spinner,
+  ProgressBar,
 } from "@fluentui/react-components";
+import dayjs from "dayjs";
 import {
   ArrowUploadRegular,
   ArrowDownloadRegular,
@@ -23,13 +25,13 @@ import { EnhancedCard } from "./enhanced-card";
 import { tokens } from "../../pages/_fluent_theme";
 import parseTraffic from "@/utils/parse-traffic";
 import { createMihomoWs } from "@/utils/websocket";
-import { getRules, getIpInfo, IpInfo } from "@/services/api";
+import { getRules, getIpInfo, IpInfo, getClashConfig } from "@/services/api";
 import {
   getAppUptime,
   getSystemInfo,
   getRunningMode,
   appIsAdmin,
-  patchClashMode,
+  patchClashConfig,
 } from "@/services/cmds";
 import { closeAllConnections } from "tauri-plugin-mihomo-api";
 import { useClash } from "@/hooks/use-clash";
@@ -229,16 +231,24 @@ const MODES = ["rule", "global", "direct"] as const;
 export const ClashModeCard = () => {
   const { t } = useTranslation();
   const c = useStyles();
-  const { clash, mutateClash } = useClash();
-  const current = (clash?.mode?.toLowerCase() as string) ?? "rule";
+  const { verge } = useVerge();
+  // Read from the live core base config (same SWR key as the Proxies page),
+  // so the selected state stays in sync and updates after switching.
+  const { data: clashConfig, mutate: mutateClashConfig } = useSWR(
+    "getClashConfig",
+    getClashConfig,
+  );
+  const current = clashConfig?.mode?.toLowerCase() ?? "rule";
 
   const onChange = useLockFn(async (mode: string) => {
     if (mode === current) return;
-    await patchClashMode(mode);
-    try {
-      await closeAllConnections();
-    } catch {}
-    mutateClash();
+    if (verge?.auto_close_connection) {
+      try {
+        await closeAllConnections();
+      } catch {}
+    }
+    await patchClashConfig({ mode });
+    mutateClashConfig();
   });
 
   return (
@@ -248,7 +258,7 @@ export const ClashModeCard = () => {
           <Button
             key={m}
             className={c.modeBtn}
-            appearance={current === m ? "primary" : "secondary"}
+            appearance={current === m ? "primary" : "outline"}
             onClick={() => onChange(m)}
           >
             {t(m)}
@@ -269,24 +279,52 @@ export const HomeProfileCard = () => {
   const total = extra?.total ?? 0;
   const [usedStr, usedU] = parseTraffic(used);
   const [totalStr, totalU] = parseTraffic(total);
+  const ratio = total > 0 ? Math.min(used / total, 1) : 0;
+  const percent = total > 0 ? Math.round(ratio * 100) : 0;
 
   return (
     <EnhancedCard title={t("Current Profile")} icon={<ArrowSyncRegular />}>
       {current ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <Row label={t("Name")} value={current.name ?? "-"} />
-          {total > 0 && (
+          {current.updated ? (
             <Row
-              label={t("Used / Total")}
-              value={`${usedStr}${usedU} / ${totalStr}${totalU}`}
+              label={t("Update Time")}
+              value={dayjs(current.updated * 1000).format("YYYY-MM-DD HH:mm")}
             />
-          )}
+          ) : null}
           {extra?.expire ? (
             <Row
               label={t("Expire Time")}
-              value={new Date(extra.expire * 1000).toLocaleDateString()}
+              value={dayjs(extra.expire * 1000).format("YYYY-MM-DD")}
             />
           ) : null}
+          {total > 0 && (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
+                marginTop: 4,
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>
+                  {t("Traffic Usage")}
+                </Caption1>
+                <Caption1 style={{ color: tokens.colorNeutralForeground2 }}>
+                  {`${usedStr}${usedU} / ${totalStr}${totalU} (${percent}%)`}
+                </Caption1>
+              </div>
+              <ProgressBar
+                value={ratio}
+                color={
+                  ratio >= 0.9 ? "error" : ratio >= 0.7 ? "warning" : "brand"
+                }
+                thickness="large"
+              />
+            </div>
+          )}
         </div>
       ) : (
         <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>
