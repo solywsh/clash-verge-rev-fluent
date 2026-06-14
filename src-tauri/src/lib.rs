@@ -55,6 +55,8 @@ mod app_init {
             .plugin(tauri_plugin_shell::init())
             .plugin(tauri_plugin_deep_link::init())
             .plugin(tauri_plugin_http::init())
+            // Fluent fork: overlay titlebar support (used by build_new_window)
+            .plugin(tauri_plugin_decorum::init())
             .plugin(
                 tauri_plugin_mihomo::Builder::new()
                     .protocol(tauri_plugin_mihomo::models::Protocol::LocalSocket)
@@ -120,9 +122,13 @@ mod app_init {
     /// Setup window state management
     pub fn setup_window_state(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         logging!(info, Type::Setup, "初始化窗口状态管理...");
+        // Fluent fork: persist everything EXCEPT visibility, so the window does not
+        // restore as visible before the theme/Mica is ready (avoids startup flash).
         let window_state_plugin = tauri_plugin_window_state::Builder::new()
             .with_filename(files::WINDOW_STATE)
-            .with_state_flags(tauri_plugin_window_state::StateFlags::default())
+            .with_state_flags(
+                tauri_plugin_window_state::StateFlags::all() & !tauri_plugin_window_state::StateFlags::VISIBLE,
+            )
             .build();
         app.handle().plugin(window_state_plugin)?;
         Ok(())
@@ -151,6 +157,7 @@ mod app_init {
             cmd::stop_core,
             cmd::restart_core,
             cmd::get_running_mode,
+            cmd::system_accent_color,
             cmd::get_auto_launch_status,
             cmd::entry_lightweight_mode,
             cmd::exit_lightweight_mode,
@@ -181,6 +188,7 @@ mod app_init {
             cmd::get_verge_config,
             cmd::patch_verge_config,
             cmd::test_delay,
+            cmd::clash_api_get_proxy_delay,
             cmd::get_app_dir,
             cmd::copy_icon_file,
             cmd::download_icon_cache,
@@ -191,6 +199,7 @@ mod app_init {
             cmd::enhance_profiles,
             cmd::patch_profiles_config,
             cmd::view_profile,
+            cmd::open_profile_dir,
             cmd::patch_profile,
             cmd::create_profile,
             cmd::import_profile,

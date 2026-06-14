@@ -161,7 +161,8 @@ export async function cmdGetProxyDelay(
   timeout: number,
   url?: string,
 ) {
-  name = encodeURIComponent(name);
+  // Backend bridges to the mihomo plugin, which URL-encodes the proxy name
+  // itself, so pass the raw name here (encoding it would double-encode).
   return invoke<{ delay: number }>("clash_api_get_proxy_delay", {
     name,
     url,

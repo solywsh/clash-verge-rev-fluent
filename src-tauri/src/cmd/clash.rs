@@ -121,6 +121,25 @@ pub async fn test_delay(url: String) -> CmdResult<u32> {
     Ok(result)
 }
 
+/// 测试指定代理节点的延迟
+///
+/// 经 mihomo 插件 (IPC) 查询,无需开启 HTTP 外部控制器,路径 A/B 通用。
+/// `name` 传入原始节点名(不要 URL-encode,插件内部会自行编码)。
+#[tauri::command]
+pub async fn clash_api_get_proxy_delay(
+    name: String,
+    url: Option<String>,
+    timeout: i32,
+) -> CmdResult<tauri_plugin_mihomo::models::ProxyDelay> {
+    let test_url = url.unwrap_or_else(|| "http://www.gstatic.com/generate_204".into());
+    let timeout = timeout.max(0) as u32;
+    handle::Handle::mihomo()
+        .await
+        .delay_proxy_by_name(name.as_str(), test_url.as_str(), timeout)
+        .await
+        .stringify_err()
+}
+
 /// 保存DNS配置到单独文件
 #[tauri::command]
 pub async fn save_dns_config(dns_config: Mapping) -> CmdResult {

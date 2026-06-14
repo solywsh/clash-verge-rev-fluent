@@ -382,6 +382,29 @@ pub async fn view_profile(index: String) -> CmdResult {
     help::open_file(path).stringify_err()
 }
 
+/// 打开配置文件所在目录
+#[tauri::command]
+pub async fn open_profile_dir(index: String) -> CmdResult {
+    let profiles = Config::profiles().await;
+    let profiles_ref = profiles.latest_arc();
+    let file = profiles_ref
+        .get_item(&index)
+        .stringify_err()?
+        .file
+        .as_ref()
+        .ok_or("the file field is null")?;
+
+    let path = dirs::app_profiles_dir().stringify_err()?.join(file.as_str());
+    if !path.exists() {
+        return CmdResult::Err(format!("file not found \"{}\"", path.display()).into());
+    }
+
+    if let Some(parent) = path.parent() {
+        open::that(parent).stringify_err()?;
+    }
+    Ok(())
+}
+
 /// 读取配置文件内容
 #[tauri::command]
 pub async fn read_profile_file(index: String) -> CmdResult<String> {

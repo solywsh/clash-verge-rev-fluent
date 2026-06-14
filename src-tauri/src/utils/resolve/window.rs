@@ -1,5 +1,9 @@
 use dark_light::{Mode as SystemTheme, detect as detect_system_theme};
 use tauri::utils::config::Color;
+#[cfg(windows)]
+use tauri::utils::config::WindowEffectsConfig;
+#[cfg(windows)]
+use tauri::window::Effect;
 use tauri::webview::PageLoadEvent;
 use tauri::{Theme, WebviewWindow};
 
@@ -48,6 +52,9 @@ pub async fn build_new_window() -> Result<WebviewWindow, String> {
         _ => !matches!(detect_system_theme().ok(), Some(SystemTheme::Light)),
     };
 
+    // On Windows the window is transparent with a Mica effect, so the opaque
+    // background color is not applied there (only used on other platforms).
+    #[cfg_attr(windows, allow(unused_variables))]
     let background_color = if prefers_dark_background {
         DARK_BACKGROUND_COLOR
     } else {
@@ -82,10 +89,39 @@ pub async fn build_new_window() -> Result<WebviewWindow, String> {
         builder = builder.theme(Some(theme));
     }
 
-    builder = builder.background_color(background_color);
+    // Fluent fork (Windows only): translucent Mica window + overlay titlebar, plus
+    // WebView2 flags enabling draggable regions and Fluent-style overlay scrollbars.
+    #[cfg(windows)]
+    {
+        builder = builder
+            .additional_browser_args(
+                "--disable-features=OverscrollHistoryNavigation,msSmartScreenProtection \
+                 --enable-features=msWebView2EnableDraggableRegions,OverlayScrollbar,\
+                 msOverlayScrollbarWinStyle,msOverlayScrollbarWinStyleAnimation,msEdgeFluentOverlayScrollbar",
+            )
+            .transparent(true)
+            .effects(WindowEffectsConfig {
+                effects: vec![Effect::Mica],
+                radius: None,
+                state: None,
+                color: None,
+            })
+            .shadow(true);
+    }
+
+    #[cfg(not(windows))]
+    {
+        builder = builder.background_color(background_color);
+    }
 
     match builder.build() {
         Ok(window) => {
+            #[cfg(windows)]
+            {
+                use tauri_plugin_decorum::WebviewWindowExt as _;
+                logging_error!(Type::Window, window.create_overlay_titlebar());
+            }
+            #[cfg(not(windows))]
             logging_error!(Type::Window, window.set_background_color(Some(background_color)));
             Ok(window)
         }
