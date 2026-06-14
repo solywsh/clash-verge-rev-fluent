@@ -6,7 +6,7 @@
 </h1>
 
 <h3 align="center">
-基于 <a href="https://github.com/clash-verge-rev/clash-verge-rev">Clash Verge Rev</a> 的 Fluent UI 分支 —— 一个使用 <a href="https://github.com/tauri-apps/tauri">Tauri 2</a> 构建的 Clash Meta (mihomo) GUI。
+基于 <a href="https://github.com/clash-verge-rev/clash-verge-rev">Clash Verge Rev</a> 的 Fluent UI 分支
 </h3>
 
 <p align="center">
@@ -35,8 +35,6 @@
 | Dark                             | Light                             |
 | -------------------------------- | --------------------------------- |
 | ![预览](./docs/preview_dark.png) | ![预览](./docs/preview_light.png) |
-
-> ⚠️ 上方截图为上游旧界面占位图，请替换为本分支 Fluent UI 的实际截图（覆盖 `docs/preview_dark.png` / `docs/preview_light.png`）。
 
 ## 安装
 
