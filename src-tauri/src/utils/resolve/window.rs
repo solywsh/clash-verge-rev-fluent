@@ -2,9 +2,9 @@ use dark_light::{Mode as SystemTheme, detect as detect_system_theme};
 use tauri::utils::config::Color;
 #[cfg(windows)]
 use tauri::utils::config::WindowEffectsConfig;
+use tauri::webview::PageLoadEvent;
 #[cfg(windows)]
 use tauri::window::Effect;
-use tauri::webview::PageLoadEvent;
 use tauri::{Theme, WebviewWindow};
 
 use crate::{config::Config, core::handle, utils::resolve::window_script::build_window_initial_script};
