@@ -47,6 +47,7 @@ import {
 import { NetworkInterfaceViewer } from "./mods/network-interface-viewer";
 import { DnsViewer } from "./mods/dns-viewer";
 import { TunnelsViewer } from "./mods/tunnels-viewer";
+import { HeaderConfiguration } from "./mods/external-controller-cors";
 
 const useStyles = makeStyles({
   expander: {
@@ -82,6 +83,7 @@ const SettingClash = ({ onError }: Props) => {
   const networkRef = useRef<DialogRef>(null);
   const dnsRef = useRef<DialogRef>(null);
   const tunnelRef = useRef<DialogRef>(null);
+  const corsRef = useRef<DialogRef>(null);
 
   const onSwitchFormat = (_e: any, data: { checked: boolean }) => data.checked;
   const onChangeData = (patch: Partial<IConfigData>) => {
@@ -294,6 +296,12 @@ const SettingClash = ({ onError }: Props) => {
         label={t("Tunnels")}
         canExpand
         content={<TunnelsViewer ref={tunnelRef} />}
+      />
+
+      <FluentSettingItem
+        label={t("External Controller CORS")}
+        canExpand
+        content={<HeaderConfiguration ref={corsRef} />}
       />
 
       <FluentSettingItem

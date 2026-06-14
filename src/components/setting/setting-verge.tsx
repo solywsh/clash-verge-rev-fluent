@@ -29,6 +29,7 @@ import { GuardState } from "./mods/guard-state";
 import { LayoutViewer } from "./mods/layout-viewer";
 import { UpdateViewer } from "./mods/update-viewer";
 import { BackupViewer } from "./mods/backup-viewer";
+import { LocalBackupViewer } from "./mods/local-backup-viewer";
 import getSystem from "@/utils/get-system";
 import { routers } from "@/pages/_routers";
 import {
@@ -88,6 +89,7 @@ const SettingVerge = ({ onError }: Props) => {
   const layoutRef = useRef<DialogRef>(null);
   const updateRef = useRef<DialogRef>(null);
   const backupRef = useRef<DialogRef>(null);
+  const localBackupRef = useRef<DialogRef>(null);
 
   const onChangeData = (patch: Partial<IVergeConfig>) => {
     mutateVerge({ ...verge, ...patch }, false);
@@ -383,6 +385,12 @@ const SettingVerge = ({ onError }: Props) => {
       <FluentSettingItem
         onClick={() => hotkeyRef.current?.open()}
         label={t("Hotkey Setting")}
+      />
+
+      <FluentSettingItem
+        label={t("Local Backup")}
+        canExpand
+        content={<LocalBackupViewer ref={localBackupRef} />}
       />
 
       <FluentSettingItem

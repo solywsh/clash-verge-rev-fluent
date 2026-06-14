@@ -283,3 +283,30 @@ export async function validateDnsConfig() {
 export async function applyDnsConfig(apply: boolean) {
   return invoke<void>("apply_dns_config", { apply });
 }
+
+// ===== 本地备份 =====
+export async function createLocalBackup() {
+  return invoke<void>("create_local_backup");
+}
+
+export async function listLocalBackup() {
+  return invoke<ILocalBackupFile[]>("list_local_backup");
+}
+
+export async function deleteLocalBackup(filename: string) {
+  return invoke<void>("delete_local_backup", { filename });
+}
+
+export async function restoreLocalBackup(filename: string) {
+  return invoke<void>("restore_local_backup", { filename });
+}
+
+// source: 待导入的备份文件绝对路径，返回导入后的文件名
+export async function importLocalBackup(source: string) {
+  return invoke<string>("import_local_backup", { source });
+}
+
+// destination: 导出目标绝对路径
+export async function exportLocalBackup(filename: string, destination: string) {
+  return invoke<void>("export_local_backup", { filename, destination });
+}

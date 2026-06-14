@@ -38,6 +38,38 @@ updater 机制(连端点拿到"无更新")、profile 本地导入。
   `clash_api_get_proxy_delay`),路径 A/B 通用;前端去掉了 `encodeURIComponent`(插件内部已编码)。
 - 不要移植 fork 的启动/服务补丁;上游已有更好实现。
 
+## 前端功能补齐(方案 B:维持 Fluent 前端,逐个移植上游 v2.5.1 功能)
+
+用户决策(2026-06-14):**维持当前 Fluent 前端架构**,把上游 v2.5.1 多出来的功能逐个移植进来,
+**保持 Fluent 图标/风格统一**。差距:后端暴露 85 命令,上游前端接 68,fork 前端原本只接 47。
+分 4 批(Home 最纠缠,放最后用 fork 自有 SWR 数据层重写,不引入上游 react-query app-data-context)。
+
+**移植套路(已定型,后续照做):**
+
+- 设置类 viewer = `forwardRef<DialogRef>`,渲染为 `<Expander left right />` 行片段(不是 BaseDialog 模态);
+  在 setting-clash / setting-system 里用 `FluentSettingItem canExpand content={<Viewer ref={...}/>}` 内联展开。
+- ⚠️ 内联展开**不会调用 `open()`**,所以 viewer 必须用 `useEffect` 从 hook 数据(clash/verge)初始化,
+  不能只在 `useImperativeHandle.open()` 里初始化(上游 tun-viewer 那样在内联下会显示默认值)。
+- i18n:fork 用**扁平 key**(`t("Allow Lan")`),上游是嵌套 key。移植时一律转扁平 key,并加到
+  `src/locales/en.json` + `zh.json`(缺失会回退到 key 文本,英文可读但中文会显英文)。
+- 用 `Notice`(@/components/base)替代上游 `showNotice`(notice-service);fork 没有 notice-service。
+- fork 的 `base` **没有导出 MonacoEditor**,涉及 Monaco 的高级编辑模式直接砍掉,只留可视化表单。
+- 新 verge/clash 字段加到 `src/services/types.d.ts`(后端已是 v2.5.1,字段都在,只是前端 type 旧)。
+- Fluent select 用 `<Select><option/></Select>`;多行用 `<Textarea resize="vertical">`;开关 `Switch`。
+- 每批一个 commit,`pnpm web:build`(tsc+vite)必须过。
+
+**进度:**
+
+- ✅ **批 1 (commit `fae8aa0b`)**:DNS 覆写 / 轻量模式 / Tunnels 三个 viewer。
+  cmds.ts 加了 DNS×5(check/get/save/validate/applyDnsConfig)、entry/exitLightweightMode、isPortInUse;
+  types 加 IConfigData.dns/tunnels + ITunnelItem + verge 的 enable_auto_light_weight_mode/auto_light_weight_minutes。
+  DNS 砍了 Monaco 高级模式。build 过。**待真机验证**(保存/校验/应用 DNS、隧道增删、轻量进入)。
+- ⬜ 批 2:本地备份(create/list/import/export/restore/delete + auto-backup + history) + external-controller CORS。
+- ⬜ 批 3:诊断导出(exportDiagnosticInfo) + 核心侧日志(getClashLogs) + unlock 媒体解锁页(新路由)。
+- ⬜ 批 4:Home 仪表盘页(用 fork SWR/websocket 数据层重写,**不**用上游 react-query;需补后端
+  `get_system_info` + `get_app_uptime` 两个 Rust 命令;nav 加 '/' 项,Proxies 挪到 '/proxies')。
+  Home 依赖最重(11 张卡 + ~10 个上游自有 hook),见会话内的 port spec。
+
 ## 剩余事项(均不阻塞,按需排期)
 
 1. **订阅 URL 直接导入失败**(非迁移 bug,纯上游 `utils/network.rs`)。订阅商按出口 IP 拦截:经

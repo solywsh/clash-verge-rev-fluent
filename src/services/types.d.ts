@@ -47,6 +47,10 @@ interface IConfigData {
     [key: string]: any;
   };
   tunnels?: ITunnelItem[];
+  "external-controller-cors"?: {
+    "allow-private-network"?: boolean;
+    "allow-origins"?: string[];
+  };
 }
 
 interface ITunnelItem {
@@ -777,6 +781,13 @@ interface IWebDavFile {
   content_length: number;
   content_type: string;
   tag: string;
+}
+
+interface ILocalBackupFile {
+  filename: string;
+  path: string;
+  last_modified: string;
+  content_length: number;
 }
 
 interface IWebDavConfig {
