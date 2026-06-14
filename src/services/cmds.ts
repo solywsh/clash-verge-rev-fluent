@@ -349,3 +349,25 @@ export async function getSystemHostname() {
 export async function patchClashMode(payload: string) {
   return invoke<void>("patch_clash_mode", { payload });
 }
+
+// Privileged service (required for TUN mode on Windows). `is_service_available`
+// resolves to true when the service is reachable and REJECTS when it is not.
+export async function isServiceAvailable() {
+  return invoke<boolean>("is_service_available");
+}
+
+export async function installService() {
+  return invoke<void>("install_service");
+}
+
+export async function uninstallService() {
+  return invoke<void>("uninstall_service");
+}
+
+export async function reinstallService() {
+  return invoke<void>("reinstall_service");
+}
+
+export async function repairService() {
+  return invoke<void>("repair_service");
+}

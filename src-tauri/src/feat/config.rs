@@ -268,7 +268,42 @@ async fn process_terminated_flags(update_flags: UpdateFlags, patch: &IVerge) -> 
     Ok(())
 }
 
+/// When TUN is being enabled on a non-elevated app without the privileged
+/// service installed, install it (prompts a UAC elevation) so TUN can actually
+/// bring up its virtual adapter. Without this, init_config() force-disables TUN
+/// on the next launch. Best-effort: failures are logged, not fatal.
+async fn ensure_service_available_for_tun() {
+    use crate::core::service::{self, SERVICE_MANAGER, ServiceStatus};
+    use tauri_plugin_clash_verge_sysinfo::is_current_app_handle_admin;
+
+    let app_handle = handle::Handle::app_handle();
+    if is_current_app_handle_admin(app_handle) {
+        return;
+    }
+    if service::is_service_available().await.is_ok() {
+        return;
+    }
+    logging!(
+        info,
+        Type::Service,
+        "TUN enabled but service unavailable — installing service"
+    );
+    if let Err(e) = SERVICE_MANAGER
+        .lock()
+        .await
+        .handle_service_status(&ServiceStatus::InstallRequired)
+        .await
+    {
+        logging!(warn, Type::Service, "Auto-install service for TUN failed: {}", e);
+    }
+}
+
 pub async fn patch_verge(patch: &IVerge, not_save_file: bool) -> Result<()> {
+    // Enabling TUN needs the privileged service when the app isn't elevated.
+    if patch.enable_tun_mode == Some(true) {
+        ensure_service_available_for_tun().await;
+    }
+
     Config::verge().await.edit_draft(|d| d.patch_config(patch));
 
     let update_flags = determine_update_flags(patch);

@@ -3,6 +3,12 @@ import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { SettingsRounded } from "@mui/icons-material";
 import { useVerge } from "@/hooks/use-verge";
+import {
+  isServiceAvailable,
+  installService,
+  uninstallService,
+  reinstallService,
+} from "@/services/cmds";
 import { DialogRef, Notice, Switch } from "@/components/base";
 import {
   SettingList,
@@ -52,6 +58,28 @@ const SettingSystem = ({ onError }: Props) => {
 
   const { verge, mutateVerge, patchVerge } = useVerge();
 
+  // Service status: the command resolves to true when reachable and rejects when
+  // not, so treat any error as "not installed".
+  const {
+    data: serviceData,
+    error: serviceError,
+    mutate: mutateServiceStatus,
+  } = useSWR("isServiceAvailable", isServiceAvailable, {
+    revalidateOnFocus: false,
+    shouldRetryOnError: false,
+  });
+  const serviceAvailable = serviceData === true && !serviceError;
+
+  const runServiceAction = async (fn: () => Promise<void>) => {
+    try {
+      await fn();
+      await mutateServiceStatus();
+      Notice.success(t("Service Operation Success"), 1500);
+    } catch (err: any) {
+      Notice.error(err?.message ?? err?.toString() ?? String(err), 4000);
+    }
+  };
+
   const sysproxyRef = useRef<DialogRef>(null);
   const tunRef = useRef<DialogRef>(null);
   const liteModeRef = useRef<DialogRef>(null);
@@ -76,6 +104,49 @@ const SettingSystem = ({ onError }: Props) => {
     <FluentSettingList title={t("System Setting")}>
       <SysproxyViewer ref={sysproxyRef} />
       {/* <TunViewer ref={tunRef} /> */}
+
+      <FluentSettingItem
+        label={t("Service Mode")}
+        extra={<FluentTooltipIcon title={t("Service Mode Info")} />}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Caption1
+            style={{
+              color: serviceAvailable
+                ? tokens.colorPaletteGreenForeground1
+                : tokens.colorNeutralForeground4,
+            }}
+          >
+            {serviceAvailable
+              ? t("Service Installed")
+              : t("Service Not Installed")}
+          </Caption1>
+          {serviceAvailable ? (
+            <>
+              <Button
+                size="small"
+                onClick={() => runServiceAction(reinstallService)}
+              >
+                {t("Reinstall Service")}
+              </Button>
+              <Button
+                size="small"
+                onClick={() => runServiceAction(uninstallService)}
+              >
+                {t("Uninstall Service")}
+              </Button>
+            </>
+          ) : (
+            <Button
+              size="small"
+              appearance="primary"
+              onClick={() => runServiceAction(installService)}
+            >
+              {t("Install Service")}
+            </Button>
+          )}
+        </div>
+      </FluentSettingItem>
 
       <FluentSettingItem
         label={t("Tun Mode")}
