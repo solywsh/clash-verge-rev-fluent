@@ -75,19 +75,20 @@ updater 机制(连端点拿到"无更新")、profile 本地导入。
   诊断导出按钮接 export_diagnostic_info(sysinfo 插件)进 setting-verge。cmds 加
   getUnlockItems/checkMediaUnlock/exportDiagnosticInfo;types 加 IUnlockItem。build 过。
   **核心侧日志(get_clash_logs)有意跳过**:fork 已有 websocket 实时日志,且上游在弃用核心日志记录。
-- ⬜ **批 4:Home 仪表盘页**(最大一批,**需后端改动 + cargo 重建**)。计划:
-  1. 后端补 2 个 `#[tauri::command]`:`get_system_info`(返回 OS/系统信息字符串)、`get_app_uptime`
-     (返回 app 运行毫秒数);写在 `src-tauri/src/cmd/` 合适模块 + 注册进 lib.rs generate_handler!。
-  2. 前端 cmds.ts 加 `getSystemInfo`/`getAppUptime`/`patchClashMode`(patch_clash_mode 后端已有)/
-     `getRunningMode`(get_running_mode 已有)/`getSystemHostname`(已有);api.ts 加 `getIpInfo`(端口上游
-     api.ts 的 IpInfo 接口,用 fork 的 mihomo-api 或 fetch;上游用 react-query→改 useSWR)。
-  3. 用 fork **现有 SWR/websocket 数据层**重写 Home(**不**引入上游 react-query/app-data-context)。
-     卡片:traffic-stats(复用 createMihomoWs traffic/memory + getConnections)、clash-info、clash-mode、
-     home-profile(useProfiles)、proxy-tun(useVerge,复用设置页系统代理/TUN 开关逻辑)、ip-info(getIpInfo)、
-     system-info(getSystemInfo+running mode)、test-card(fork 已有 test 页组件)。
-     **current-proxy-card 和 canvas 流量图(各 ~1000 行)可砍/简化**——侧边栏已有流量曲线。
-  4. nav:\_routers.tsx 加 Home 项 path '/'(放最前),Proxies 从 '/' 改到 '/proxies';home.svg 资源缺,用 Fluent 图标。
-  5. verge type 补 `home_cards`(卡片显隐)等字段。详见会话内 Home port spec(general-purpose agent 产出)。
+- ✅ **批 4 (commit `ea7cd670`)**:Home 仪表盘页。**关键发现:Home 需要的后端命令全已注册**
+  (`get_system_info`/`get_app_uptime`/`app_is_admin` 来自 sysinfo 插件,`get_running_mode`/
+  `patch_clash_mode`/`get_system_hostname` 已有)→ **纯前端,无需 cargo 重建**。
+  用 fork 现有 SWR/websocket 数据层重写(未引入上游 react-query)。新建 components/home/:
+  EnhancedCard 壳 + 7 张卡(TrafficStats=createMihomoWs traffic/memory/connections、ClashInfo、
+  ClashMode=patch_clash_mode+closeAllConnections、HomeProfile=useProfiles、ProxyTun=系统代理/TUN 开关、
+  IpInfo=新增 api.ts getIpInfo 经 plugin-http 两个 geoip 服务、SystemInfo)。
+  **砍掉最重的两张卡**(current-proxy ~1100 行、canvas 流量图 ~900 行)——侧边栏已有流量曲线。
+  路由:Home 落 '/',Proxies 改到 '/proxies',加 Home nav 项(Fluent Home 图标,无 home.svg)。
+  cmds 加 getSystemInfo/getAppUptime/appIsAdmin/getRunningMode/getSystemHostname/patchClashMode;
+  api.ts 加 getIpInfo + IpInfo。build 过。**待真机验证**(各卡数据、模式切换、IP 卡联网拿数据)。
+
+**🎉 4 批全部完成。前端功能基本与上游 v2.5.1 对齐(除刻意砍掉的:核心侧日志、current-proxy 完整卡、
+canvas 流量图、WebDAV 自动备份/历史)。所有批次 build 过,均待 dev:diff 真机验证。**
 
 ## 剩余事项(均不阻塞,按需排期)
 
