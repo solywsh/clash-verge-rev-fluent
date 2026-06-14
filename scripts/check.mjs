@@ -459,8 +459,10 @@ const resolveInstall = () => {
       executable: true,
     });
   }
+  // service.rs (win/macos) opens it as clash-verge-service-install[.exe];
+  // the release asset is named install-service, so download then rename.
   resolveResource({
-    file: "install-service" + ext,
+    file: "clash-verge-service-install" + ext,
     downloadURL: `${SERVICE_URL}/install-service${ext}`,
   });
 };
@@ -475,8 +477,9 @@ const resolveUninstall = () => {
       executable: true,
     });
   }
+  // service.rs (win/macos) opens it as clash-verge-service-uninstall[.exe].
   resolveResource({
-    file: "uninstall-service" + ext,
+    file: "clash-verge-service-uninstall" + ext,
     downloadURL: `${SERVICE_URL}/uninstall-service${ext}`,
   });
 };
