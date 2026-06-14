@@ -379,10 +379,10 @@ const resolvePlugin = async () => {
 const resolveServicePermission = async () => {
   const serviceExecutables = [
     "clash-verge-service*",
-    "install-service*",
-    "uninstall-service*",
+    "clash-verge-service-install*",
+    "clash-verge-service-uninstall*",
   ];
-  const resDir = path.join(cwd, "src-tauri/resources");
+  const resDir = path.join(cwd, SERVICE_DIR);
   for (let f of serviceExecutables) {
     // 使用glob模块来处理通配符
     const files = glob.sync(path.join(resDir, f));
@@ -426,62 +426,133 @@ async function resolveLocales() {
 /**
  * main
  */
-const SERVICE_URL = `https://github.com/clash-verge-rev/clash-verge-service/releases/download/${SIDECAR_HOST}`;
+// The service moved to the clash-verge-service-ipc repo (kode_bridge HTTP-over-IPC
+// `/magic` protocol). It must match the `clash_verge_service_ipc` client crate
+// pinned in src-tauri/Cargo.toml. The OLD clash-verge-service repo ships the
+// legacy protocol and is incompatible — installing it makes the IPC handshake
+// fail with "Failed to parse HTTP response". Releases are versioned archives
+// (zip on Windows, tar.gz elsewhere) containing all three binaries.
+const SERVICE_LATEST_URL =
+  "https://github.com/clash-verge-rev/clash-verge-service-ipc/releases/latest";
+const SERVICE_URL_PREFIX =
+  "https://github.com/clash-verge-rev/clash-verge-service-ipc/releases/download";
 
 // On Linux the service binaries are Tauri sidecars (externalBin in
 // tauri.linux.conf.json): they must live in src-tauri/sidecar/ named
 // `<bin>-<target-triple>` and be executable, so Tauri places them next to the
 // app binary at runtime (where service.rs looks them up via current_exe()).
 // On Windows/macOS they ride in src-tauri/resources/ instead.
-const resolveService = () => {
-  let ext = platform === "win32" ? ".exe" : "";
-  if (platform === "linux") {
-    return resolveResource({
-      file: `clash-verge-service-${SIDECAR_HOST}`,
-      downloadURL: `${SERVICE_URL}/clash-verge-service`,
-      dir: "src-tauri/sidecar",
-      executable: true,
-    });
-  }
-  resolveResource({
-    file: "clash-verge-service" + ext,
-    downloadURL: `${SERVICE_URL}/clash-verge-service${ext}`,
-  });
-};
+const SERVICE_DIR =
+  platform === "linux" ? "src-tauri/sidecar" : "src-tauri/resources";
+const SERVICE_BINARIES = [
+  "clash-verge-service",
+  "clash-verge-service-install",
+  "clash-verge-service-uninstall",
+];
 
-const resolveInstall = () => {
-  let ext = platform === "win32" ? ".exe" : "";
-  if (platform === "linux") {
-    return resolveResource({
-      file: `clash-verge-service-install-${SIDECAR_HOST}`,
-      downloadURL: `${SERVICE_URL}/install-service`,
-      dir: "src-tauri/sidecar",
-      executable: true,
-    });
-  }
-  // service.rs (win/macos) opens it as clash-verge-service-install[.exe];
-  // the release asset is named install-service, so download then rename.
-  resolveResource({
-    file: "clash-verge-service-install" + ext,
-    downloadURL: `${SERVICE_URL}/install-service${ext}`,
-  });
-};
+// Map a base binary name to (source name inside the archive, target name on disk).
+// Windows/macOS keep the plain name; Linux appends the target triple for Tauri.
+function serviceFileInfo(name) {
+  const ext = platform === "win32" ? ".exe" : "";
+  const suffix = platform === "linux" ? "-" + SIDECAR_HOST : "";
+  return { sourceFile: `${name}${ext}`, targetFile: `${name}${suffix}${ext}` };
+}
 
-const resolveUninstall = () => {
-  let ext = platform === "win32" ? ".exe" : "";
-  if (platform === "linux") {
-    return resolveResource({
-      file: `clash-verge-service-uninstall-${SIDECAR_HOST}`,
-      downloadURL: `${SERVICE_URL}/uninstall-service`,
-      dir: "src-tauri/sidecar",
-      executable: true,
-    });
+let SERVICE_VERSION;
+
+// Resolve the latest service release tag by following the /releases/latest redirect.
+async function getLatestServiceVersion() {
+  if (SERVICE_VERSION) return SERVICE_VERSION;
+
+  const options = { method: "GET", redirect: "follow" };
+  const httpProxy =
+    process.env.HTTP_PROXY ||
+    process.env.http_proxy ||
+    process.env.HTTPS_PROXY ||
+    process.env.https_proxy;
+  if (httpProxy) options.agent = proxyAgent(httpProxy);
+
+  const response = await fetch(SERVICE_LATEST_URL, options);
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch ${SERVICE_LATEST_URL}: ${response.status}`,
+    );
   }
-  // service.rs (win/macos) opens it as clash-verge-service-uninstall[.exe].
-  resolveResource({
-    file: "clash-verge-service-uninstall" + ext,
-    downloadURL: `${SERVICE_URL}/uninstall-service${ext}`,
+  const match = response.url.match(/\/releases\/tag\/([^/?#]+)/);
+  if (!match) {
+    throw new Error(
+      `Unable to resolve service release tag from ${response.url}`,
+    );
+  }
+  SERVICE_VERSION = decodeURIComponent(match[1]);
+  log_info(`Latest service version: ${SERVICE_VERSION}`);
+  return SERVICE_VERSION;
+}
+
+async function findExtractedFile(dir, fileName) {
+  const entries = await fsp.readdir(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const entryPath = path.join(dir, entry.name);
+    if (entry.isFile() && entry.name === fileName) return entryPath;
+    if (entry.isDirectory()) {
+      const found = await findExtractedFile(entryPath, fileName);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+// Download + extract the versioned service-ipc archive and place all three
+// binaries into SERVICE_DIR with the names service.rs expects at runtime.
+const resolveService = async () => {
+  const resDir = path.join(cwd, SERVICE_DIR);
+  const files = SERVICE_BINARIES.map((name) => {
+    const info = serviceFileInfo(name);
+    return { ...info, targetPath: path.join(resDir, info.targetFile) };
   });
+
+  if (!FORCE && files.every(({ targetPath }) => fs.existsSync(targetPath))) {
+    log_success(`"clash-verge-service-ipc" already exists, skipping download`);
+    return;
+  }
+
+  const version = await getLatestServiceVersion();
+  const archiveExt = platform === "win32" ? "zip" : "tar.gz";
+  const archiveFile = `clash-verge-service-ipc-${version}-${SIDECAR_HOST}.${archiveExt}`;
+  const downloadURL = `${SERVICE_URL_PREFIX}/${version}/${archiveFile}`;
+  const tempDir = path.join(TEMP_DIR, "clash-verge-service-ipc");
+  const tempArchive = path.join(tempDir, archiveFile);
+
+  await fsp.mkdir(tempDir, { recursive: true });
+  await fsp.mkdir(resDir, { recursive: true });
+
+  try {
+    await downloadFile(downloadURL, tempArchive);
+
+    if (platform === "win32") {
+      const zip = new AdmZip(tempArchive);
+      zip.getEntries().forEach((entry) => {
+        log_debug(`"clash-verge-service-ipc" entry:`, entry.entryName);
+      });
+      zip.extractAllTo(tempDir, true);
+    } else {
+      await extract({ cwd: tempDir, file: tempArchive });
+    }
+
+    for (const { sourceFile, targetFile, targetPath } of files) {
+      const extractedFile = await findExtractedFile(tempDir, sourceFile);
+      if (!extractedFile) {
+        throw new Error(`Expected binary ${sourceFile} not found in archive`);
+      }
+      await fsp.copyFile(extractedFile, targetPath);
+      if (platform !== "win32") execSync(`chmod 755 "${targetPath}"`);
+      log_success(`Extracted service file: ${targetFile}`);
+    }
+
+    log_success(`service bundle finished: ${archiveFile}`);
+  } finally {
+    await fsp.rm(tempDir, { recursive: true, force: true });
+  }
 };
 
 const resolveMmdb = () =>
@@ -527,8 +598,6 @@ const tasks = [
   },
   { name: "plugin", func: resolvePlugin, retry: 5, winOnly: true },
   { name: "service", func: resolveService, retry: 5 },
-  { name: "install", func: resolveInstall, retry: 5 },
-  { name: "uninstall", func: resolveUninstall, retry: 5 },
   { name: "mmdb", func: resolveMmdb, retry: 5 },
   { name: "geosite", func: resolveGeosite, retry: 5 },
   { name: "geoip", func: resolveGeoIP, retry: 5 },
