@@ -66,7 +66,9 @@ const useStyles = makeStyles({
   stat: { display: "flex", flexDirection: "column", gap: "2px" },
   statValue: { fontWeight: 600 },
   modeRow: { display: "flex", gap: "8px" },
-  modeBtn: { flex: 1 },
+  // minWidth:0 lets the 3 buttons shrink below Fluent's default 96px min-width
+  // so they share the card width evenly instead of overflowing on narrow cards.
+  modeBtn: { flex: 1, minWidth: 0 },
 });
 
 const Row = ({ label, value }: { label: ReactNode; value: ReactNode }) => {
@@ -452,13 +454,24 @@ export const SystemInfoCard = () => {
   const { data: runningMode = "" } = useSWR("getRunningMode", getRunningMode);
   const { data: isAdmin = false } = useSWR("appIsAdmin", appIsAdmin);
 
-  // get_system_info returns a multi-line string; show the OS line if present.
-  const osLine = sysInfo.split("\n").find((l) => l.trim().length > 0) ?? "-";
+  // get_system_info returns "Key: Value" lines; parse them into a map and show
+  // the useful fields (full OS version, arch, kernel) rather than the bare
+  // "System Name: Windows" first line.
+  const info: Record<string, string> = {};
+  sysInfo.split("\n").forEach((line) => {
+    const idx = line.indexOf(":");
+    if (idx > 0) info[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
+  });
+  const osVersion = info["System Version"] || info["System Name"] || "-";
+  const arch = info["System Arch"] || "-";
+  const kernel = info["System kernel Version"] || "";
 
   return (
     <EnhancedCard title={t("System Info")} icon={<PlugConnectedRegular />}>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <Row label={t("System")} value={osLine} />
+        <Row label={t("OS")} value={osVersion} />
+        <Row label={t("Architecture")} value={arch} />
+        {kernel ? <Row label={t("Kernel")} value={kernel} /> : null}
         <Row
           label={t("Running Mode")}
           value={isAdmin ? `${runningMode} (admin)` : runningMode || "-"}

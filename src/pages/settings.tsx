@@ -1,13 +1,9 @@
-import { Box, ButtonGroup, Grid, IconButton } from "@mui/material";
+import { Box, ButtonGroup, Grid } from "@mui/material";
 import { Button } from "@fluentui/react-components";
-import {
-  BookQuestionMarkFilled,
-  BookQuestionMarkRegular,
-} from "@fluentui/react-icons";
 import { useLockFn } from "ahooks";
 import { useTranslation } from "react-i18next";
 import { BasePage, Notice } from "@/components/base";
-import { GitHub, HelpOutlineRounded, Telegram } from "@mui/icons-material";
+import { GitHub } from "@mui/icons-material";
 import { openWebUrl } from "@/services/cmds";
 import SettingVerge from "@/components/setting/setting-verge";
 import SettingClash from "@/components/setting/setting-clash";
@@ -22,15 +18,7 @@ const SettingPage = () => {
   };
 
   const toGithubRepo = useLockFn(() => {
-    return openWebUrl("https://github.com/clash-verge-rev/clash-verge-rev");
-  });
-
-  const toGithubDoc = useLockFn(() => {
-    return openWebUrl("https://clash-verge-rev.github.io/index.html");
-  });
-
-  const toTelegramChannel = useLockFn(() => {
-    return openWebUrl("https://t.me/clash_verge_re");
+    return openWebUrl("https://github.com/solywsh/clash-verge-rev-fluent");
   });
 
   const mode = useThemeMode();
@@ -41,43 +29,6 @@ const SettingPage = () => {
       title={t("Settings")}
       header={
         <ButtonGroup variant="contained" aria-label="Basic button group">
-          {/* <IconButton
-            size="medium"
-            color="inherit"
-            title={t("Manual")}
-            onClick={toGithubDoc}
-          >
-            <HelpOutlineRounded fontSize="inherit" />
-          </IconButton> */}
-          <Button
-            icon={<BookQuestionMarkFilled />}
-            title={t("Manual")}
-            appearance="subtle"
-            onClick={toGithubDoc}
-          />
-          {/* <IconButton
-            size="medium"
-            color="inherit"
-            title={t("TG Channel")}
-            onClick={toTelegramChannel}
-          >
-            <Telegram fontSize="inherit" />
-          </IconButton> */}
-          <Button
-            icon={<Telegram fontSize="inherit" />}
-            title={t("TG Channel")}
-            onClick={toTelegramChannel}
-            appearance="subtle"
-          />
-
-          {/* <IconButton
-            size="medium"
-            color="inherit"
-            title={t("Github Repo")}
-            onClick={toGithubRepo}
-          >
-            <GitHub fontSize="inherit" />
-          </IconButton> */}
           <Button
             icon={<GitHub fontSize="inherit" />}
             title={t("Github Repo")}
