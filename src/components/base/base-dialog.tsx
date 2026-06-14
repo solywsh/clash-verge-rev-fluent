@@ -1,14 +1,15 @@
 import { ReactNode } from "react";
+import { Box, type SxProps, type Theme } from "@mui/material";
 import {
   Button,
   Dialog,
   DialogActions,
+  DialogBody,
   DialogContent,
+  DialogSurface,
   DialogTitle,
-  type SxProps,
-  type Theme,
-} from "@mui/material";
-import { LoadingButton } from "@mui/lab";
+  Spinner,
+} from "@fluentui/react-components";
 
 interface Props {
   title: ReactNode;
@@ -18,6 +19,9 @@ interface Props {
   disableOk?: boolean;
   disableCancel?: boolean;
   disableFooter?: boolean;
+  // Kept for source compatibility with the ~22 existing callers: applied to a
+  // wrapper inside the Fluent surface so per-dialog sizing/scroll is preserved.
+  // To be removed as each viewer's inner controls are migrated to Fluent.
   contentSx?: SxProps<Theme>;
   children?: ReactNode;
   loading?: boolean;
@@ -46,29 +50,41 @@ export const BaseDialog: React.FC<Props> = (props) => {
   } = props;
 
   return (
-    <Dialog open={open} onClose={props.onClose}>
-      <DialogTitle>{title}</DialogTitle>
+    <Dialog
+      open={open}
+      onOpenChange={(_, data) => {
+        if (!data.open) props.onClose?.();
+      }}
+    >
+      <DialogSurface>
+        <DialogBody>
+          <DialogTitle>{title}</DialogTitle>
 
-      <DialogContent sx={contentSx}>{children}</DialogContent>
+          <DialogContent>
+            <Box sx={contentSx}>{children}</Box>
+          </DialogContent>
 
-      {!disableFooter && (
-        <DialogActions>
-          {!disableCancel && (
-            <Button variant="outlined" onClick={props.onCancel}>
-              {cancelBtn}
-            </Button>
+          {!disableFooter && (
+            <DialogActions>
+              {!disableCancel && (
+                <Button appearance="secondary" onClick={props.onCancel}>
+                  {cancelBtn}
+                </Button>
+              )}
+              {!disableOk && (
+                <Button
+                  appearance="primary"
+                  disabled={loading}
+                  icon={loading ? <Spinner size="tiny" /> : undefined}
+                  onClick={props.onOk}
+                >
+                  {okBtn}
+                </Button>
+              )}
+            </DialogActions>
           )}
-          {!disableOk && (
-            <LoadingButton
-              loading={loading}
-              variant="contained"
-              onClick={props.onOk}
-            >
-              {okBtn}
-            </LoadingButton>
-          )}
-        </DialogActions>
-      )}
+        </DialogBody>
+      </DialogSurface>
     </Dialog>
   );
 };
