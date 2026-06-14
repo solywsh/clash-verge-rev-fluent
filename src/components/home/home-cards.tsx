@@ -242,13 +242,16 @@ export const ClashModeCard = () => {
 
   const onChange = useLockFn(async (mode: string) => {
     if (mode === current) return;
+    // Optimistic: highlight the picked mode immediately, don't wait for the IPC.
+    mutateClashConfig({ ...(clashConfig as any), mode }, false);
     if (verge?.auto_close_connection) {
-      try {
-        await closeAllConnections();
-      } catch {}
+      closeAllConnections().catch(() => {});
     }
-    await patchClashConfig({ mode });
-    mutateClashConfig();
+    try {
+      await patchClashConfig({ mode });
+    } finally {
+      mutateClashConfig();
+    }
   });
 
   return (

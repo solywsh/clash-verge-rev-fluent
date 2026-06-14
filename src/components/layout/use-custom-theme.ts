@@ -24,9 +24,15 @@ export const useCustomTheme = () => {
 
     if (themeMode !== "system") {
       setMode(themeMode);
+      // Sync the native window theme so the Mica/backdrop matches the app theme.
+      // Without this, on a light-themed OS the window backdrop stays light and
+      // switching the app to dark appears to "do nothing".
+      appWindow.setTheme(themeMode as "light" | "dark").catch(() => {});
       return;
     }
 
+    // Follow the system theme.
+    appWindow.setTheme(null).catch(() => {});
     appWindow.theme().then((m) => m && setMode(m));
     const unlisten = appWindow.onThemeChanged((e) => setMode(e.payload));
 
