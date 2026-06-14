@@ -80,7 +80,7 @@ const LogPage = () => {
           {enableLog === true && (
             <FluentButton
               onClick={() => {
-                clearLogs(logLevel);
+                clearLogs();
               }}
               className="fds"
             >

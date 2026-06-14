@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useEnableLog } from "../services/states";
 import { createMihomoWs } from "../utils/websocket";
-import type { LogLevel as MihomoLogLevel } from "tauri-plugin-mihomo-api";
 import { useClashInfo } from "./use-clash";
 import dayjs from "dayjs";
 import { create } from "zustand";
@@ -18,44 +17,32 @@ interface ILogItem {
   [key: string]: any;
 }
 
-// frontend "all" maps to the core's most verbose level ("debug").
-const toMihomoLevel = (logLevel: LogLevel): MihomoLogLevel =>
-  logLevel === "all" ? "debug" : logLevel;
-
 interface LogStore {
-  logs: Record<LogLevel, ILogItem[]>;
-  clearLogs: (level?: LogLevel) => void;
-  appendLog: (level: LogLevel, log: ILogItem) => void;
+  logs: ILogItem[];
+  clearLogs: () => void;
+  appendLog: (log: ILogItem) => void;
 }
 
+// A single unified log buffer. We subscribe once at the most verbose level
+// ("debug") so every log is captured, and the UI filters by the selected level
+// for display — so switching levels is instant and never loses history.
 const useLogStore = create<LogStore>(
   (set: (fn: (state: LogStore) => Partial<LogStore>) => void) => ({
-    logs: {
-      warning: [],
-      info: [],
-      debug: [],
-      error: [],
-      all: [],
-    },
-    clearLogs: (level?: LogLevel) =>
+    logs: [],
+    clearLogs: () => set(() => ({ logs: [] })),
+    appendLog: (log: ILogItem) =>
       set((state: LogStore) => ({
-        logs: level
-          ? { ...state.logs, [level]: [] }
-          : { warning: [], info: [], debug: [], error: [], all: [] },
+        logs:
+          state.logs.length >= MAX_LOG_NUM
+            ? [...state.logs.slice(1), log]
+            : [...state.logs, log],
       })),
-    appendLog: (level: LogLevel, log: ILogItem) =>
-      set((state: LogStore) => {
-        const currentLogs = state.logs[level];
-        const newLogs =
-          currentLogs.length >= MAX_LOG_NUM
-            ? [...currentLogs.slice(1), log]
-            : [...currentLogs, log];
-        return { logs: { ...state.logs, [level]: newLogs } };
-      }),
   }),
 );
 
-export const useLogData = (logLevel: LogLevel) => {
+// `logLevel` is accepted for backwards compatibility but no longer changes the
+// subscription (we always stream at "debug"); callers filter the result by level.
+export const useLogData = (_logLevel?: LogLevel) => {
   const { clashInfo } = useClashInfo();
   const [enableLog] = useEnableLog();
   const { logs, appendLog } = useLogStore();
@@ -66,13 +53,13 @@ export const useLogData = (logLevel: LogLevel) => {
 
     let isActive = true;
     const socket = createMihomoWs(
-      { stream: "logs", level: toMihomoLevel(logLevel) },
+      { stream: "logs", level: "debug" },
       {
         onmessage(event) {
           if (!isActive) return;
           const data = JSON.parse(event.data) as ILogItem;
           const time = dayjs().format("MM-DD HH:mm:ss");
-          appendLog(logLevel, { ...data, time });
+          appendLog({ ...data, time });
         },
         onerror() {
           if (!isActive) return;
@@ -85,12 +72,12 @@ export const useLogData = (logLevel: LogLevel) => {
       isActive = false;
       socket.close();
     };
-  }, [clashInfo, enableLog, logLevel]);
+  }, [clashInfo, enableLog, pageVisible]);
 
-  return logs[logLevel];
+  return logs;
 };
 
 // 导出清空日志的方法
-export const clearLogs = (level?: LogLevel) => {
-  useLogStore.getState().clearLogs(level);
+export const clearLogs = () => {
+  useLogStore.getState().clearLogs();
 };
