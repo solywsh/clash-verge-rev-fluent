@@ -1,6 +1,6 @@
-import { BaseDialog, DialogRef, Notice, Switch } from "@/components/base";
+import { BaseDialog, DialogRef, Notice } from "@/components/base";
 import { BaseFieldset } from "@/components/base/base-fieldset";
-import { TooltipIcon } from "@/components/base/base-tooltip-icon";
+import { FluentTooltipIcon } from "@/components/base/base-tooltip-icon";
 import { EditorViewer } from "@/components/profile/editor-viewer";
 import { useVerge } from "@/hooks/use-verge";
 import { getAutotemProxy, getSystemProxy } from "@/services/cmds";
@@ -8,14 +8,13 @@ import getSystem from "@/utils/get-system";
 import { EditRounded } from "@mui/icons-material";
 import {
   Button,
-  InputAdornment,
-  List,
-  ListItem,
-  ListItemText,
-  styled,
-  TextField,
-  Typography,
-} from "@mui/material";
+  Input,
+  Label,
+  Switch as FluentSwitch,
+  Text,
+  Textarea,
+} from "@fluentui/react-components";
+import { tokens } from "@/pages/_fluent_theme";
 import { useLockFn } from "ahooks";
 import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -54,6 +53,14 @@ const getValidReg = (isWindows: boolean) => {
   const rValid = String.raw`^(${rValidPart})(?:${separator}\s?(${rValidPart}))*${separator}?$`;
 
   return new RegExp(rValid);
+};
+
+const rowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 12,
+  padding: "5px 2px",
 };
 
 export const SysproxyViewer = forwardRef<DialogRef>((props, ref) => {
@@ -157,6 +164,8 @@ export const SysproxyViewer = forwardRef<DialogRef>((props, ref) => {
     }
   });
 
+  const bypassInvalid = value.bypass ? !validReg.test(value.bypass) : false;
+
   return (
     <BaseDialog
       open={open}
@@ -168,11 +177,11 @@ export const SysproxyViewer = forwardRef<DialogRef>((props, ref) => {
       onCancel={() => setOpen(false)}
       onOk={onSave}
     >
-      <List>
+      <div style={{ display: "flex", flexDirection: "column" }}>
         <BaseFieldset label={t("Current System Proxy")} padding="15px 10px">
-          <FlexBox>
-            <Typography className="label">{t("Enable status")}</Typography>
-            <Typography className="value">
+          <div style={{ display: "flex", marginTop: 4, gap: 8 }}>
+            <Text style={{ flex: "none" }}>{t("Enable status")}</Text>
+            <Text>
               {value.pac
                 ? autoproxy?.enable
                   ? t("Enabled")
@@ -180,160 +189,148 @@ export const SysproxyViewer = forwardRef<DialogRef>((props, ref) => {
                 : sysproxy?.enable
                   ? t("Enabled")
                   : t("Disabled")}
-            </Typography>
-          </FlexBox>
+            </Text>
+          </div>
           {!value.pac && (
-            <>
-              <FlexBox>
-                <Typography className="label">{t("Server Addr")}</Typography>
-                <Typography className="value">
-                  {sysproxy?.server ? sysproxy.server : t("Not available")}
-                </Typography>
-              </FlexBox>
-            </>
+            <div style={{ display: "flex", marginTop: 4, gap: 8 }}>
+              <Text style={{ flex: "none" }}>{t("Server Addr")}</Text>
+              <Text>
+                {sysproxy?.server ? sysproxy.server : t("Not available")}
+              </Text>
+            </div>
           )}
           {value.pac && (
-            <FlexBox>
-              <Typography className="label">{t("PAC URL")}</Typography>
-              <Typography className="value">{autoproxy?.url || "-"}</Typography>
-            </FlexBox>
+            <div style={{ display: "flex", marginTop: 4, gap: 8 }}>
+              <Text style={{ flex: "none" }}>{t("PAC URL")}</Text>
+              <Text>{autoproxy?.url || "-"}</Text>
+            </div>
           )}
         </BaseFieldset>
-        <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText primary={t("Use PAC Mode")} />
-          <Switch
-            edge="end"
-            disabled={!enabled}
-            checked={value.pac}
-            onChange={(_, e) => setValue((v) => ({ ...v, pac: e }))}
-          />
-        </ListItem>
 
-        <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText
-            primary={t("Proxy Guard")}
-            sx={{ maxWidth: "fit-content" }}
-          />
-          <TooltipIcon title={t("Proxy Guard Info")} sx={{ opacity: "0.7" }} />
-          <Switch
-            edge="end"
+        <div style={rowStyle}>
+          <Label>{t("Use PAC Mode")}</Label>
+          <FluentSwitch
             disabled={!enabled}
-            checked={value.guard}
-            onChange={(_, e) => setValue((v) => ({ ...v, guard: e }))}
-            sx={{ marginLeft: "auto" }}
+            checked={!!value.pac}
+            onChange={(_, data) =>
+              setValue((v) => ({ ...v, pac: data.checked }))
+            }
           />
-        </ListItem>
+        </div>
 
-        <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText primary={t("Guard Duration")} />
-          <TextField
+        <div style={rowStyle}>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <Label>{t("Proxy Guard")}</Label>
+            <FluentTooltipIcon title={t("Proxy Guard Info")} />
+          </div>
+          <FluentSwitch
             disabled={!enabled}
-            size="small"
-            value={value.duration}
-            sx={{ width: 100 }}
-            InputProps={{
-              endAdornment: <InputAdornment position="end">s</InputAdornment>,
-            }}
-            onChange={(e) => {
+            checked={!!value.guard}
+            onChange={(_, data) =>
+              setValue((v) => ({ ...v, guard: data.checked }))
+            }
+          />
+        </div>
+
+        <div style={rowStyle}>
+          <Label>{t("Guard Duration")}</Label>
+          <Input
+            disabled={!enabled}
+            style={{ width: 100 }}
+            value={String(value.duration)}
+            contentAfter={<span>s</span>}
+            onChange={(_, data) => {
               setValue((v) => ({
                 ...v,
-                duration: +e.target.value.replace(/\D/, ""),
+                duration: +data.value.replace(/\D/, ""),
               }));
             }}
           />
-        </ListItem>
+        </div>
+
         {!value.pac && (
-          <ListItem sx={{ padding: "5px 2px" }}>
-            <ListItemText primary={t("Always use Default Bypass")} />
-            <Switch
-              edge="end"
+          <div style={rowStyle}>
+            <Label>{t("Always use Default Bypass")}</Label>
+            <FluentSwitch
               disabled={!enabled}
-              checked={value.use_default}
-              onChange={(_, e) => setValue((v) => ({ ...v, use_default: e }))}
+              checked={!!value.use_default}
+              onChange={(_, data) =>
+                setValue((v) => ({ ...v, use_default: data.checked }))
+              }
             />
-          </ListItem>
+          </div>
         )}
 
         {!value.pac && !value.use_default && (
-          <>
-            <ListItemText primary={t("Proxy Bypass")} />
-            <TextField
-              error={value.bypass ? !validReg.test(value.bypass) : false}
+          <div style={{ padding: "5px 2px" }}>
+            <Label style={{ display: "block", marginBottom: 4 }}>
+              {t("Proxy Bypass")}
+            </Label>
+            <Textarea
               disabled={!enabled}
-              size="small"
-              multiline
               rows={4}
-              sx={{ width: "100%" }}
-              value={value.bypass}
-              onChange={(e) => {
-                setValue((v) => ({ ...v, bypass: e.target.value }));
+              style={{
+                width: "100%",
+                ...(bypassInvalid
+                  ? {
+                      outline: `1px solid ${tokens.colorPaletteRedBorderActive}`,
+                    }
+                  : {}),
+              }}
+              value={value.bypass ?? ""}
+              onChange={(_, data) => {
+                setValue((v) => ({ ...v, bypass: data.value }));
               }}
             />
-          </>
+          </div>
         )}
 
         {!value.pac && value.use_default && (
-          <>
-            <ListItemText primary={t("Bypass")} />
-            <FlexBox>
-              <TextField
-                disabled={true}
-                size="small"
-                multiline
-                rows={4}
-                sx={{ width: "100%" }}
-                value={defaultBypass()}
-              />
-            </FlexBox>
-          </>
+          <div style={{ padding: "5px 2px" }}>
+            <Label style={{ display: "block", marginBottom: 4 }}>
+              {t("Bypass")}
+            </Label>
+            <Textarea
+              disabled={true}
+              rows={4}
+              style={{ width: "100%" }}
+              value={defaultBypass()}
+            />
+          </div>
         )}
 
         {value.pac && (
-          <>
-            <ListItem sx={{ padding: "5px 2px", alignItems: "start" }}>
-              <ListItemText
-                primary={t("PAC Script Content")}
-                sx={{ padding: "3px 0" }}
-              />
-              <Button
-                startIcon={<EditRounded />}
-                variant="outlined"
-                onClick={() => {
-                  setEditorOpen(true);
+          <div style={{ ...rowStyle, alignItems: "start" }}>
+            <Label style={{ padding: "3px 0" }}>
+              {t("PAC Script Content")}
+            </Label>
+            <Button
+              icon={<EditRounded fontSize="inherit" />}
+              onClick={() => {
+                setEditorOpen(true);
+              }}
+            >
+              {t("Edit")} PAC
+            </Button>
+            {editorOpen && (
+              <EditorViewer
+                open={true}
+                title={`${t("Edit")} PAC`}
+                initialData={Promise.resolve(value.pac_content ?? "")}
+                language="javascript"
+                onSave={(_prev, curr) => {
+                  let pac = DEFAULT_PAC;
+                  if (curr && curr.trim().length > 0) {
+                    pac = curr;
+                  }
+                  setValue((v) => ({ ...v, pac_content: pac }));
                 }}
-              >
-                {t("Edit")} PAC
-              </Button>
-              {editorOpen && (
-                <EditorViewer
-                  open={true}
-                  title={`${t("Edit")} PAC`}
-                  initialData={Promise.resolve(value.pac_content ?? "")}
-                  language="javascript"
-                  onSave={(_prev, curr) => {
-                    let pac = DEFAULT_PAC;
-                    if (curr && curr.trim().length > 0) {
-                      pac = curr;
-                    }
-                    setValue((v) => ({ ...v, pac_content: pac }));
-                  }}
-                  onClose={() => setEditorOpen(false)}
-                />
-              )}
-            </ListItem>
-          </>
+                onClose={() => setEditorOpen(false)}
+              />
+            )}
+          </div>
         )}
-      </List>
+      </div>
     </BaseDialog>
   );
 });
-
-const FlexBox = styled("div")`
-  display: flex;
-  margin-top: 4px;
-
-  .label {
-    flex: none;
-    //width: 85px;
-  }
-`;
