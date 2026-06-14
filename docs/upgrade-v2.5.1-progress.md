@@ -64,11 +64,30 @@ updater 机制(连端点拿到"无更新")、profile 本地导入。
   cmds.ts 加了 DNS×5(check/get/save/validate/applyDnsConfig)、entry/exitLightweightMode、isPortInUse;
   types 加 IConfigData.dns/tunnels + ITunnelItem + verge 的 enable_auto_light_weight_mode/auto_light_weight_minutes。
   DNS 砍了 Monaco 高级模式。build 过。**待真机验证**(保存/校验/应用 DNS、隧道增删、轻量进入)。
-- ⬜ 批 2:本地备份(create/list/import/export/restore/delete + auto-backup + history) + external-controller CORS。
-- ⬜ 批 3:诊断导出(exportDiagnosticInfo) + 核心侧日志(getClashLogs) + unlock 媒体解锁页(新路由)。
-- ⬜ 批 4:Home 仪表盘页(用 fork SWR/websocket 数据层重写,**不**用上游 react-query;需补后端
-  `get_system_info` + `get_app_uptime` 两个 Rust 命令;nav 加 '/' 项,Proxies 挪到 '/proxies')。
-  Home 依赖最重(11 张卡 + ~10 个上游自有 hook),见会话内的 port spec。
+- ✅ **批 2 (commit `9fb3afeb`)**:本地备份 + external-controller CORS。
+  cmds 加 create/list/delete/restore/import/exportLocalBackup;types 加 ILocalBackupFile +
+  IConfigData["external-controller-cors"]。本地备份用 plugin-dialog 的 open/save 做导入导出,
+  接进 setting-verge;CORS 写 clash `external-controller-cors` 后 restartCore,接进 setting-clash。
+  build 过。**待真机验证**。(注:auto-backup-settings / backup-history 暂未做,WebDAV 自动备份属增强项,按需再补。)
+- ✅ **批 3 (commit `63ed8fd3`)**:Unlock 媒体解锁页 + 诊断导出。
+  unlock 页(pages/unlock.tsx)用 get_unlock_items/check_media_unlock,localStorage 缓存结果;
+  保留 MUI 但把上游 v7 的 `<Grid size>` 换成 CSS grid(fork 是 MUI6);新增 '/unlock' 路由 + nav 项。
+  诊断导出按钮接 export_diagnostic_info(sysinfo 插件)进 setting-verge。cmds 加
+  getUnlockItems/checkMediaUnlock/exportDiagnosticInfo;types 加 IUnlockItem。build 过。
+  **核心侧日志(get_clash_logs)有意跳过**:fork 已有 websocket 实时日志,且上游在弃用核心日志记录。
+- ⬜ **批 4:Home 仪表盘页**(最大一批,**需后端改动 + cargo 重建**)。计划:
+  1. 后端补 2 个 `#[tauri::command]`:`get_system_info`(返回 OS/系统信息字符串)、`get_app_uptime`
+     (返回 app 运行毫秒数);写在 `src-tauri/src/cmd/` 合适模块 + 注册进 lib.rs generate_handler!。
+  2. 前端 cmds.ts 加 `getSystemInfo`/`getAppUptime`/`patchClashMode`(patch_clash_mode 后端已有)/
+     `getRunningMode`(get_running_mode 已有)/`getSystemHostname`(已有);api.ts 加 `getIpInfo`(端口上游
+     api.ts 的 IpInfo 接口,用 fork 的 mihomo-api 或 fetch;上游用 react-query→改 useSWR)。
+  3. 用 fork **现有 SWR/websocket 数据层**重写 Home(**不**引入上游 react-query/app-data-context)。
+     卡片:traffic-stats(复用 createMihomoWs traffic/memory + getConnections)、clash-info、clash-mode、
+     home-profile(useProfiles)、proxy-tun(useVerge,复用设置页系统代理/TUN 开关逻辑)、ip-info(getIpInfo)、
+     system-info(getSystemInfo+running mode)、test-card(fork 已有 test 页组件)。
+     **current-proxy-card 和 canvas 流量图(各 ~1000 行)可砍/简化**——侧边栏已有流量曲线。
+  4. nav:\_routers.tsx 加 Home 项 path '/'(放最前),Proxies 从 '/' 改到 '/proxies';home.svg 资源缺,用 Fluent 图标。
+  5. verge type 补 `home_cards`(卡片显隐)等字段。详见会话内 Home port spec(general-purpose agent 产出)。
 
 ## 剩余事项(均不阻塞,按需排期)
 
