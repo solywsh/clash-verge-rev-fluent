@@ -1,17 +1,10 @@
 import { forwardRef, useImperativeHandle, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLockFn } from "ahooks";
-import { List, ListItem, ListItemText, TextField } from "@mui/material";
 import { Expander } from "../../fluent/expander";
-import {
-  Switch as FluentSwitch,
-  Input,
-  Toast,
-  ToastTitle,
-  useToastController,
-} from "@fluentui/react-components";
+import { Switch as FluentSwitch, Input } from "@fluentui/react-components";
 import { useClashInfo } from "@/hooks/use-clash";
-import { BaseDialog, DialogRef, Notice, Switch } from "@/components/base";
+import { DialogRef, Notice } from "@/components/base";
 import { useVerge } from "@/hooks/use-verge";
 import getSystem from "@/utils/get-system";
 const OS = getSystem();
@@ -159,36 +152,34 @@ export const ClashPortViewer = forwardRef<DialogRef>((props, ref) => {
     }
   });
 
+  const portInput = (
+    value: number,
+    setter: (v: number) => void,
+    disabled?: boolean,
+  ) => (
+    <Input
+      autoComplete="new-password"
+      style={{ width: 135 }}
+      value={value.toString()}
+      disabled={disabled}
+      onChange={(_, data) =>
+        setter(+data.value?.replace(/\D+/, "").slice(0, 5))
+      }
+      onBlur={onSave}
+    />
+  );
+
   return (
     <>
       <Expander
         left={t("Mixed Port")}
-        right={
-          <Input
-            style={{ width: 135 }}
-            autoComplete="new-password"
-            value={mixedPort.toString()}
-            onChange={(e) =>
-              setMixedPort(+e.target.value?.replace(/\D+/, "").slice(0, 5))
-            }
-            onBlur={onSave}
-          />
-        }
+        right={portInput(mixedPort, setMixedPort)}
       ></Expander>
       <Expander
         left={t("Socks Port")}
         right={
           <>
-            <Input
-              autoComplete="new-password"
-              style={{ width: 135 }}
-              value={socksPort.toString()}
-              onChange={(e) =>
-                setSocksPort(+e.target.value?.replace(/\D+/, "").slice(0, 5))
-              }
-              disabled={!socksEnabled}
-              onBlur={onSave}
-            />
+            {portInput(socksPort, setSocksPort, !socksEnabled)}
             <FluentSwitch
               checked={socksEnabled}
               onChange={(_, c) => {
@@ -203,16 +194,7 @@ export const ClashPortViewer = forwardRef<DialogRef>((props, ref) => {
         left={t("Http Port")}
         right={
           <>
-            <Input
-              autoComplete="new-password"
-              style={{ width: 135 }}
-              value={port.toString()}
-              onChange={(e) =>
-                setPort(+e.target.value?.replace(/\D+/, "").slice(0, 5))
-              }
-              disabled={!httpEnabled}
-              onBlur={onSave}
-            />
+            {portInput(port, setPort, !httpEnabled)}
             <FluentSwitch
               checked={httpEnabled}
               onChange={(_, c) => {
@@ -224,179 +206,39 @@ export const ClashPortViewer = forwardRef<DialogRef>((props, ref) => {
         }
       ></Expander>
       {OS !== "windows" && (
-        <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText primary={t("Redir Port")} />
-          <TextField
-            autoComplete="new-password"
-            size="small"
-            sx={{ width: 135 }}
-            value={redirPort}
-            onChange={(e) =>
-              setRedirPort(+e.target.value?.replace(/\D+/, "").slice(0, 5))
-            }
-            InputProps={{
-              sx: { pr: 1 },
-              endAdornment: (
-                <Switch
-                  checked={redirEnabled}
-                  onChange={(_, c) => {
-                    setRedirEnabled(c);
-                  }}
-                />
-              ),
-            }}
-          />
-        </ListItem>
+        <Expander
+          left={t("Redir Port")}
+          right={
+            <>
+              {portInput(redirPort, setRedirPort, !redirEnabled)}
+              <FluentSwitch
+                checked={redirEnabled}
+                onChange={(_, c) => {
+                  onSave();
+                  setRedirEnabled(c.checked);
+                }}
+              />
+            </>
+          }
+        ></Expander>
       )}
       {OS === "linux" && (
-        <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText primary={t("Tproxy Port")} />
-          <TextField
-            autoComplete="new-password"
-            size="small"
-            sx={{ width: 135 }}
-            value={tproxyPort}
-            onChange={(e) =>
-              setTproxyPort(+e.target.value?.replace(/\D+/, "").slice(0, 5))
-            }
-            InputProps={{
-              sx: { pr: 1 },
-              endAdornment: (
-                <Switch
-                  checked={tproxyEnabled}
-                  onChange={(_, c) => {
-                    setTproxyEnabled(c);
-                  }}
-                />
-              ),
-            }}
-          />
-        </ListItem>
+        <Expander
+          left={t("Tproxy Port")}
+          right={
+            <>
+              {portInput(tproxyPort, setTproxyPort, !tproxyEnabled)}
+              <FluentSwitch
+                checked={tproxyEnabled}
+                onChange={(_, c) => {
+                  onSave();
+                  setTproxyEnabled(c.checked);
+                }}
+              />
+            </>
+          }
+        ></Expander>
       )}
     </>
-  );
-
-  return (
-    <BaseDialog
-      open={open}
-      title={t("Port Config")}
-      contentSx={{ width: 300 }}
-      okBtn={t("Save")}
-      cancelBtn={t("Cancel")}
-      onClose={() => setOpen(false)}
-      onCancel={() => setOpen(false)}
-      onOk={onSave}
-    >
-      <List>
-        <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText primary={t("Mixed Port")} />
-          <TextField
-            autoComplete="new-password"
-            size="small"
-            sx={{ width: 135 }}
-            value={mixedPort}
-            onChange={(e) =>
-              setMixedPort(+e.target.value?.replace(/\D+/, "").slice(0, 5))
-            }
-          />
-        </ListItem>
-        <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText primary={t("Socks Port")} />
-          <TextField
-            autoComplete="new-password"
-            size="small"
-            sx={{ width: 135 }}
-            value={socksPort}
-            onChange={(e) =>
-              setSocksPort(+e.target.value?.replace(/\D+/, "").slice(0, 5))
-            }
-            InputProps={{
-              sx: { pr: 1 },
-              endAdornment: (
-                <Switch
-                  checked={socksEnabled}
-                  onChange={(_, c) => {
-                    setSocksEnabled(c);
-                  }}
-                />
-              ),
-            }}
-          />
-        </ListItem>
-        <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText primary={t("Http Port")} />
-          <TextField
-            autoComplete="new-password"
-            size="small"
-            sx={{ width: 135 }}
-            value={port}
-            onChange={(e) =>
-              setPort(+e.target.value?.replace(/\D+/, "").slice(0, 5))
-            }
-            InputProps={{
-              sx: { pr: 1 },
-              endAdornment: (
-                <Switch
-                  checked={httpEnabled}
-                  onChange={(_, c) => {
-                    setHttpEnabled(c);
-                  }}
-                />
-              ),
-            }}
-          />
-        </ListItem>
-        {OS !== "windows" && (
-          <ListItem sx={{ padding: "5px 2px" }}>
-            <ListItemText primary={t("Redir Port")} />
-            <TextField
-              autoComplete="new-password"
-              size="small"
-              sx={{ width: 135 }}
-              value={redirPort}
-              onChange={(e) =>
-                setRedirPort(+e.target.value?.replace(/\D+/, "").slice(0, 5))
-              }
-              InputProps={{
-                sx: { pr: 1 },
-                endAdornment: (
-                  <Switch
-                    checked={redirEnabled}
-                    onChange={(_, c) => {
-                      setRedirEnabled(c);
-                    }}
-                  />
-                ),
-              }}
-            />
-          </ListItem>
-        )}
-        {OS === "linux" && (
-          <ListItem sx={{ padding: "5px 2px" }}>
-            <ListItemText primary={t("Tproxy Port")} />
-            <TextField
-              autoComplete="new-password"
-              size="small"
-              sx={{ width: 135 }}
-              value={tproxyPort}
-              onChange={(e) =>
-                setTproxyPort(+e.target.value?.replace(/\D+/, "").slice(0, 5))
-              }
-              InputProps={{
-                sx: { pr: 1 },
-                endAdornment: (
-                  <Switch
-                    checked={tproxyEnabled}
-                    onChange={(_, c) => {
-                      setTproxyEnabled(c);
-                    }}
-                  />
-                ),
-              }}
-            />
-          </ListItem>
-        )}
-      </List>
-    </BaseDialog>
   );
 });
