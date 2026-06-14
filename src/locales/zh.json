@@ -374,6 +374,8 @@
   "Open UWP tool Info": "Windows 8 开始限制 UWP 应用（如微软商店）直接访问本地主机的网络服务，使用此工具可绕过该限制",
   "Update GeoData": "更新 GeoData",
   "Verge Setting": "Verge 设置",
+  "Appearance & Behavior": "外观与行为",
+  "Maintenance": "维护",
   "Language": "语言设置",
   "Theme Mode": "主题模式",
   "theme.light": "浅色",
