@@ -24,7 +24,7 @@ import parseTraffic from "@/utils/parse-traffic";
 import { FluentBaseSearchBox as BaseSearchBox } from "@/components/base/base-search-box";
 import { BaseStyledSelect } from "@/components/base/base-styled-select";
 import useSWRSubscription from "swr/subscription";
-import { createSockette } from "@/utils/websocket";
+import { createMihomoWs } from "@/utils/websocket";
 import { useTheme } from "@mui/material/styles";
 import { useVisibility } from "@/hooks/use-visibility";
 
@@ -68,9 +68,8 @@ const ConnectionsPage = () => {
   >(
     clashInfo && pageVisible ? "getClashConnections" : null,
     (_key, { next }) => {
-      const { server = "", secret = "" } = clashInfo!;
-      const s = createSockette(
-        `ws://${server}/connections?token=${encodeURIComponent(secret)}`,
+      const s = createMihomoWs(
+        { stream: "connections" },
         {
           onmessage(event) {
             // meta v1.15.0 出现 data.connections 为 null 的情况
@@ -111,7 +110,6 @@ const ConnectionsPage = () => {
             next(event);
           },
         },
-        3,
       );
 
       return () => {

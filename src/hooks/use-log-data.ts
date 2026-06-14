@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useEnableLog } from "../services/states";
-import { createSockette } from "../utils/websocket";
+import { createMihomoWs } from "../utils/websocket";
+import type { LogLevel as MihomoLogLevel } from "tauri-plugin-mihomo-api";
 import { useClashInfo } from "./use-clash";
 import dayjs from "dayjs";
 import { create } from "zustand";
@@ -17,21 +18,9 @@ interface ILogItem {
   [key: string]: any;
 }
 
-const buildWSUrl = (server: string, secret: string, logLevel: LogLevel) => {
-  const baseUrl = `ws://${server}/logs`;
-  const params = new URLSearchParams();
-
-  if (secret) {
-    params.append("token", secret);
-  }
-  if (logLevel === "all") {
-    params.append("level", "debug");
-  } else {
-    params.append("level", logLevel);
-  }
-  const queryString = params.toString();
-  return queryString ? `${baseUrl}?${queryString}` : baseUrl;
-};
+// frontend "all" maps to the core's most verbose level ("debug").
+const toMihomoLevel = (logLevel: LogLevel): MihomoLogLevel =>
+  logLevel === "all" ? "debug" : logLevel;
 
 interface LogStore {
   logs: Record<LogLevel, ILogItem[]>;
@@ -75,22 +64,22 @@ export const useLogData = (logLevel: LogLevel) => {
   useEffect(() => {
     if (!enableLog || !clashInfo || !pageVisible) return;
 
-    const { server = "", secret = "" } = clashInfo;
-    const wsUrl = buildWSUrl(server, secret, logLevel);
-
     let isActive = true;
-    const socket = createSockette(wsUrl, {
-      onmessage(event) {
-        if (!isActive) return;
-        const data = JSON.parse(event.data) as ILogItem;
-        const time = dayjs().format("MM-DD HH:mm:ss");
-        appendLog(logLevel, { ...data, time });
+    const socket = createMihomoWs(
+      { stream: "logs", level: toMihomoLevel(logLevel) },
+      {
+        onmessage(event) {
+          if (!isActive) return;
+          const data = JSON.parse(event.data) as ILogItem;
+          const time = dayjs().format("MM-DD HH:mm:ss");
+          appendLog(logLevel, { ...data, time });
+        },
+        onerror() {
+          if (!isActive) return;
+          socket.close();
+        },
       },
-      onerror() {
-        if (!isActive) return;
-        socket.close();
-      },
-    });
+    );
 
     return () => {
       isActive = false;

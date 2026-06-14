@@ -12,7 +12,7 @@ import { TrafficGraph, type TrafficRef } from "./traffic-graph";
 import { useVisibility } from "@/hooks/use-visibility";
 import parseTraffic from "@/utils/parse-traffic";
 import useSWRSubscription from "swr/subscription";
-import { createSockette } from "@/utils/websocket";
+import { createMihomoWs } from "@/utils/websocket";
 import { useTranslation } from "react-i18next";
 import { isDebugEnabled, gc } from "@/services/api";
 
@@ -46,19 +46,17 @@ export const LayoutTraffic = () => {
   >(
     clashInfo && pageVisible ? "getRealtimeTraffic" : null,
     (_key, { next }) => {
-      const { server = "", secret = "" } = clashInfo!;
-
-      const s = createSockette(
-        `ws://${server}${secret ? `/traffic?token=${encodeURIComponent(secret)}` : "/traffic"}`,
+      const s = createMihomoWs(
+        { stream: "traffic" },
         {
           onmessage(event) {
             const data = JSON.parse(event.data) as ITrafficItem;
             trafficRef.current?.appendData(data);
             next(null, data);
           },
-          onerror(event) {
-            this.close();
-            next(event, { up: 0, down: 0 });
+          onerror(err) {
+            s.close();
+            next(err, { up: 0, down: 0 });
           },
         },
       );
@@ -84,18 +82,16 @@ export const LayoutTraffic = () => {
   >(
     clashInfo && pageVisible && displayMemory ? "getRealtimeMemory" : null,
     (_key, { next }) => {
-      const { server = "", secret = "" } = clashInfo!;
-
-      const s = createSockette(
-        `ws://${server}${secret ? `/memory?token=${encodeURIComponent(secret)}` : "/memory"}`,
+      const s = createMihomoWs(
+        { stream: "memory" },
         {
           onmessage(event) {
             const data = JSON.parse(event.data) as MemoryUsage;
             next(null, data);
           },
-          onerror(event) {
-            this.close();
-            next(event, { inuse: 0 });
+          onerror(err) {
+            s.close();
+            next(err, { inuse: 0 });
           },
         },
       );
