@@ -4,19 +4,20 @@ import { BaseDialog, DialogRef, Notice } from "@/components/base";
 import { useTranslation } from "react-i18next";
 import { useVerge } from "@/hooks/use-verge";
 import { useLockFn } from "ahooks";
-import { LoadingButton } from "@mui/lab";
 import {
   SwitchAccessShortcutRounded,
   RestartAltRounded,
 } from "@mui/icons-material";
 import {
-  Box,
+  Badge,
   Button,
-  Chip,
-  List,
-  ListItemButton,
-  ListItemText,
-} from "@mui/material";
+  Caption1,
+  Spinner,
+  Text,
+  makeStyles,
+  mergeClasses,
+} from "@fluentui/react-components";
+import { tokens } from "@/pages/_fluent_theme";
 import { changeClashCore, restartCore } from "@/services/cmds";
 import { closeAllConnections, upgradeCore } from "@/services/api";
 
@@ -25,8 +26,24 @@ const VALID_CORE = [
   { name: "Mihomo Alpha", core: "verge-mihomo-alpha", chip: "Alpha Version" },
 ];
 
+const useStyles = makeStyles({
+  row: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "8px 12px",
+    borderRadius: tokens.borderRadiusMedium,
+    cursor: "pointer",
+    ":hover": { backgroundColor: tokens.colorNeutralBackground1Hover },
+  },
+  rowSelected: {
+    backgroundColor: tokens.colorNeutralBackground1Selected,
+  },
+});
+
 export const ClashCoreViewer = forwardRef<DialogRef>((props, ref) => {
   const { t } = useTranslation();
+  const classes = useStyles();
 
   const { verge, mutateVerge } = useVerge();
 
@@ -82,30 +99,40 @@ export const ClashCoreViewer = forwardRef<DialogRef>((props, ref) => {
     <BaseDialog
       open={open}
       title={
-        <Box display="flex" justifyContent="space-between">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           {t("Clash Core")}
-          <Box>
-            <LoadingButton
-              variant="contained"
+          <div style={{ display: "flex", gap: 8 }}>
+            <Button
+              appearance="primary"
               size="small"
-              startIcon={<SwitchAccessShortcutRounded />}
-              loadingPosition="start"
-              loading={upgrading}
-              sx={{ marginRight: "8px" }}
+              disabled={upgrading}
+              icon={
+                upgrading ? (
+                  <Spinner size="tiny" />
+                ) : (
+                  <SwitchAccessShortcutRounded fontSize="inherit" />
+                )
+              }
               onClick={onUpgrade}
             >
               {t("Upgrade")}
-            </LoadingButton>
+            </Button>
             <Button
-              variant="contained"
+              appearance="primary"
               size="small"
+              icon={<RestartAltRounded fontSize="inherit" />}
               onClick={onRestart}
-              startIcon={<RestartAltRounded />}
             >
               {t("Restart")}
             </Button>
-          </Box>
-        </Box>
+          </div>
+        </div>
       }
       contentSx={{
         pb: 0,
@@ -120,18 +147,31 @@ export const ClashCoreViewer = forwardRef<DialogRef>((props, ref) => {
       onClose={() => setOpen(false)}
       onCancel={() => setOpen(false)}
     >
-      <List component="nav">
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         {VALID_CORE.map((each) => (
-          <ListItemButton
+          <div
             key={each.core}
-            selected={each.core === clash_core}
+            className={mergeClasses(
+              classes.row,
+              each.core === clash_core && classes.rowSelected,
+            )}
             onClick={() => onCoreChange(each.core)}
           >
-            <ListItemText primary={each.name} secondary={`/${each.core}`} />
-            <Chip label={t(`${each.chip}`)} size="small" />
-          </ListItemButton>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <Text>{each.name}</Text>
+              <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>
+                /{each.core}
+              </Caption1>
+            </div>
+            <Badge
+              appearance="tint"
+              color={each.chip === "Alpha Version" ? "warning" : "brand"}
+            >
+              {t(`${each.chip}`)}
+            </Badge>
+          </div>
         ))}
-      </List>
+      </div>
     </BaseDialog>
   );
 });

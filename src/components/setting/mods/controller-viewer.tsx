@@ -1,7 +1,7 @@
 import { forwardRef, useImperativeHandle, useState } from "react";
 import { useLockFn } from "ahooks";
 import { useTranslation } from "react-i18next";
-import { List, ListItem, ListItemText, TextField } from "@mui/material";
+import { Input, Label } from "@fluentui/react-components";
 import { useClashInfo } from "@/hooks/use-clash";
 import { BaseDialog, DialogRef, Notice } from "@/components/base";
 
@@ -44,33 +44,45 @@ export const ControllerViewer = forwardRef<DialogRef>((props, ref) => {
       onCancel={() => setOpen(false)}
       onOk={onSave}
     >
-      <List>
-        <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText primary={t("External Controller")} />
-          <TextField
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          <Label>{t("External Controller")}</Label>
+          <Input
             autoComplete="new-password"
-            size="small"
-            sx={{ width: 175 }}
+            style={{ width: 175 }}
             value={controller}
             placeholder="Required"
-            onChange={(e) => setController(e.target.value)}
+            onChange={(_, data) => setController(data.value)}
           />
-        </ListItem>
+        </div>
 
-        <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText primary={t("Core Secret")} />
-          <TextField
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          <Label>{t("Core Secret")}</Label>
+          <Input
             autoComplete="new-password"
-            size="small"
-            sx={{ width: 175 }}
+            style={{ width: 175 }}
             value={secret}
             placeholder={t("Recommended")}
-            onChange={(e) =>
-              setSecret(e.target.value?.replace(/[^\x00-\x7F]/g, ""))
+            onChange={(_, data) =>
+              setSecret(data.value?.replace(/[^\x00-\x7F]/g, ""))
             }
           />
-        </ListItem>
-      </List>
+        </div>
+      </div>
     </BaseDialog>
   );
 });
