@@ -106,6 +106,16 @@ async function getLatestAlphaVersion() {
 const META_VERSION_URL =
   "https://github.com/MetaCubeX/mihomo/releases/latest/download/version.txt";
 const META_URL_PREFIX = `https://github.com/MetaCubeX/mihomo/releases/download`;
+// Pinned mihomo (stable) version.
+//
+// mihomo 1.19.26 introduced a built-in `PassRule` proxy type. The bundled
+// tauri-plugin-mihomo (revert branch, used by the v2.5.1 backend) does not know
+// that ProxyType variant, so with a newer core `plugin:mihomo|get_proxies` fails
+// to deserialize the whole /proxies response ("error decoding response body")
+// and the proxy page renders empty. 1.19.25 is the last release before PassRule
+// and the core version upstream clash-verge-rev v2.5.1 shipped with.
+// Revisit once tauri-plugin-mihomo learns the newer ProxyType variants.
+const META_VERSION_PINNED = "v1.19.25";
 let META_VERSION;
 
 const META_MAP = {
@@ -122,31 +132,13 @@ const META_MAP = {
   "linux-loong64": "mihomo-linux-loong64",
 };
 
-// Fetch the latest release version from the version.txt file
+// Resolve the stable mihomo version to download.
+//
+// Pinned to META_VERSION_PINNED (see note above) for plugin compatibility.
+// To go back to tracking latest, fetch META_VERSION_URL instead.
 async function getLatestReleaseVersion() {
-  const options = {};
-
-  const httpProxy =
-    process.env.HTTP_PROXY ||
-    process.env.http_proxy ||
-    process.env.HTTPS_PROXY ||
-    process.env.https_proxy;
-
-  if (httpProxy) {
-    options.agent = proxyAgent(httpProxy);
-  }
-  try {
-    const response = await fetch(META_VERSION_URL, {
-      ...options,
-      method: "GET",
-    });
-    let v = await response.text();
-    META_VERSION = v.trim(); // Trim to remove extra whitespaces
-    log_info(`Latest release version: ${META_VERSION}`);
-  } catch (error) {
-    log_error("Error fetching latest release version:", error.message);
-    process.exit(1);
-  }
+  META_VERSION = META_VERSION_PINNED;
+  log_info(`Using pinned mihomo version: ${META_VERSION}`);
 }
 
 /*
