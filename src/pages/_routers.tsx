@@ -6,6 +6,7 @@ import SettingsPage from "./settings";
 import ConnectionsPage from "./connections";
 import RulesPage from "./rules";
 import UnlockPage from "./unlock";
+import HomePage from "./home";
 import { BaseErrorBoundary } from "@/components/base";
 
 import ProxiesSvg from "@/assets/image/itemicon/proxies.svg?react";
@@ -24,6 +25,7 @@ import SubjectRoundedIcon from "@mui/icons-material/SubjectRounded";
 import WifiTetheringRoundedIcon from "@mui/icons-material/WifiTetheringRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import LockOpenRoundedIcon from "@mui/icons-material/LockOpenRounded";
+import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 
 import {
   BroadActivityFeedRegular,
@@ -35,12 +37,19 @@ import {
   TextAlignLeftRegular,
   TopSpeedRegular,
   LockOpenRegular,
+  HomeRegular,
 } from "@fluentui/react-icons";
 
 export const routers = [
   {
-    label: "Label-Proxies",
+    label: "Label-Home",
     path: "/",
+    icon: [<HomeRoundedIcon />, <HomeRegular />, <HomeRegular />],
+    element: <HomePage />,
+  },
+  {
+    label: "Label-Proxies",
+    path: "/proxies",
     icon: [<WifiRoundedIcon />, <ProxiesSvg />, <NetworkCheckRegular />],
     element: <ProxiesPage />,
   },

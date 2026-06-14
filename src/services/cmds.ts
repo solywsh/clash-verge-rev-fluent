@@ -324,3 +324,28 @@ export async function getUnlockItems() {
 export async function checkMediaUnlock() {
   return invoke<IUnlockItem[]>("check_media_unlock");
 }
+
+// ===== Home 仪表盘相关 =====
+export async function getSystemInfo() {
+  return invoke<string>("get_system_info");
+}
+
+export async function getAppUptime() {
+  return invoke<number>("get_app_uptime");
+}
+
+export async function appIsAdmin() {
+  return invoke<boolean>("app_is_admin");
+}
+
+export async function getRunningMode() {
+  return invoke<string>("get_running_mode");
+}
+
+export async function getSystemHostname() {
+  return invoke<string>("get_system_hostname");
+}
+
+export async function patchClashMode(payload: string) {
+  return invoke<void>("patch_clash_mode", { payload });
+}

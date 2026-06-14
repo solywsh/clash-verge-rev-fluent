@@ -25,6 +25,7 @@ import {
   closeAllConnections as mihomoCloseAllConnections,
   delayGroup,
 } from "tauri-plugin-mihomo-api";
+import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 
 const DEFAULT_TEST_URL = "http://cp.cloudflare.com/generate_204";
 
@@ -256,3 +257,75 @@ export const isDebugEnabled = async () => {
 
 // GC — no-op (see isDebugEnabled).
 export const gc = async () => {};
+
+// Public IP / geolocation info (for the Home page IP card).
+export interface IpInfo {
+  ip: string;
+  country_code: string;
+  country: string;
+  region: string;
+  city: string;
+  organization: string;
+  asn: number;
+  asn_organization: string;
+  longitude: number;
+  latitude: number;
+  timezone: string;
+}
+
+// Try a couple of public geoip services in order; first success wins.
+const IP_CHECK_SERVICES: {
+  url: string;
+  mapping: (data: any) => IpInfo;
+}[] = [
+  {
+    url: "https://api.ip.sb/geoip",
+    mapping: (data) => ({
+      ip: data.ip || "",
+      country_code: data.country_code || "",
+      country: data.country || "",
+      region: data.region || "",
+      city: data.city || "",
+      organization: data.organization || data.isp || "",
+      asn: data.asn || 0,
+      asn_organization: data.asn_organization || "",
+      longitude: data.longitude || 0,
+      latitude: data.latitude || 0,
+      timezone: data.timezone || "",
+    }),
+  },
+  {
+    url: "https://ipapi.co/json",
+    mapping: (data) => ({
+      ip: data.ip || "",
+      country_code: data.country_code || "",
+      country: data.country_name || "",
+      region: data.region || "",
+      city: data.city || "",
+      organization: data.org || "",
+      asn: data.asn ? parseInt(String(data.asn).replace("AS", "")) : 0,
+      asn_organization: data.org || "",
+      longitude: data.longitude || 0,
+      latitude: data.latitude || 0,
+      timezone: data.timezone || "",
+    }),
+  },
+];
+
+export const getIpInfo = async (): Promise<IpInfo> => {
+  let lastErr: unknown;
+  for (const service of IP_CHECK_SERVICES) {
+    try {
+      const resp = await tauriFetch(service.url, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      return service.mapping(data);
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr ?? new Error("Failed to fetch IP info");
+};
