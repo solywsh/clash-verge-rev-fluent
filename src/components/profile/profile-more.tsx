@@ -16,6 +16,7 @@ import { Notice } from "@/components/base";
 import { EditorViewer } from "@/components/profile/editor-viewer";
 import { ProfileBox } from "./profile-box";
 import { LogViewer } from "./log-viewer";
+import { Subtitle1, Tag, Title1, Title3 } from "@fluentui/react-components";
 
 interface Props {
   logInfo?: [string, string][];
@@ -84,23 +85,26 @@ export const ProfileMore = (props: Props) => {
           alignItems="center"
           mb={0.5}
         >
-          <Typography
-            width="calc(100% - 52px)"
-            variant="h6"
-            component="h2"
-            noWrap
+          <Subtitle1
+            // width="calc(100% - 52px)"
+            // variant="h6"
+            // component="h2"
+            // noWrap
             title={t(`Global ${id}`)}
           >
             {t(`Global ${id}`)}
-          </Typography>
+          </Subtitle1>
 
-          <Chip
-            label={id}
+          <Tag
+            // label={id}
             color="primary"
             size="small"
-            variant="outlined"
-            sx={{ height: 20, textTransform: "capitalize" }}
-          />
+            appearance="outline"
+            // variant="outlined"
+            // sx={{ height: 20, textTransform: "capitalize" }}
+          >
+            {id}
+          </Tag>
         </Box>
 
         <Box sx={boxStyle}>
@@ -167,25 +171,27 @@ export const ProfileMore = (props: Props) => {
             </MenuItem>
           ))}
       </Menu>
-
-      <EditorViewer
-        open={fileOpen}
-        title={`${t("Global " + id)}`}
-        initialData={readProfileFile(id)}
-        language={id === "Merge" ? "yaml" : "javascript"}
-        schema={id === "Merge" ? "clash" : undefined}
-        onSave={async (prev, curr) => {
-          await saveProfileFile(id, curr ?? "");
-          onSave && onSave(prev, curr);
-        }}
-        onClose={() => setFileOpen(false)}
-      />
-
-      <LogViewer
-        open={logOpen}
-        logInfo={logInfo}
-        onClose={() => setLogOpen(false)}
-      />
+      {fileOpen && (
+        <EditorViewer
+          open={true}
+          title={`${t("Global " + id)}`}
+          initialData={readProfileFile(id)}
+          language={id === "Merge" ? "yaml" : "javascript"}
+          schema={id === "Merge" ? "clash" : undefined}
+          onSave={async (prev, curr) => {
+            await saveProfileFile(id, curr ?? "");
+            onSave && onSave(prev, curr);
+          }}
+          onClose={() => setFileOpen(false)}
+        />
+      )}
+      {logOpen && (
+        <LogViewer
+          open={logOpen}
+          logInfo={logInfo}
+          onClose={() => setLogOpen(false)}
+        />
+      )}
     </>
   );
 };

@@ -1,26 +1,37 @@
-use super::use_lowercase;
-use serde_yaml::{self, Mapping, Value};
+use clash_verge_logging::{Type, logging};
 
-fn deep_merge(a: &mut Value, b: &Value) {
+use super::use_lowercase;
+use serde_yaml_ng::{self, Mapping, Value};
+
+fn deep_merge(a: &mut Value, b: Value) {
     match (a, b) {
-        (&mut Value::Mapping(ref mut a), Value::Mapping(b)) => {
-            for (k, v) in b {
-                deep_merge(a.entry(k.clone()).or_insert(Value::Null), v);
+        (Value::Mapping(a_map), Value::Mapping(b_map)) => {
+            for (key, value) in b_map {
+                if let Some(existing) = a_map.get_mut(&key) {
+                    deep_merge(existing, value);
+                } else {
+                    a_map.insert(key, value);
+                }
             }
         }
-        (a, b) => *a = b.clone(),
+        (a, b) => *a = b,
     }
 }
 
-pub fn use_merge(merge: Mapping, config: Mapping) -> Mapping {
+pub fn use_merge(merge: &Mapping, config: Mapping) -> Mapping {
     let mut config = Value::from(config);
-    let merge = use_lowercase(merge.clone());
+    let merge = use_lowercase(merge);
 
-    deep_merge(&mut config, &Value::from(merge));
+    deep_merge(&mut config, Value::from(merge));
 
-    let config = config.as_mapping().unwrap().clone();
-
-    config
+    config.as_mapping().cloned().unwrap_or_else(|| {
+        logging!(
+            error,
+            Type::Core,
+            "Failed to convert merged config to mapping, using empty mapping"
+        );
+        Mapping::new()
+    })
 }
 
 #[test]
@@ -51,12 +62,10 @@ fn test_merge() -> anyhow::Result<()> {
     script1: test
   ";
 
-    let merge = serde_yaml::from_str::<Mapping>(merge)?;
-    let config = serde_yaml::from_str::<Mapping>(config)?;
+    let merge = serde_yaml_ng::from_str::<Mapping>(merge)?;
+    let config = serde_yaml_ng::from_str::<Mapping>(config)?;
 
-    let result = serde_yaml::to_string(&use_merge(merge, config))?;
-
-    println!("{result}");
+    let _ = serde_yaml_ng::to_string(&use_merge(&merge, config))?;
 
     Ok(())
 }

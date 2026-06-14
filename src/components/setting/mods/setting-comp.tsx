@@ -9,6 +9,10 @@ import {
 } from "@mui/material";
 import { ChevronRightRounded } from "@mui/icons-material";
 import CircularProgress from "@mui/material/CircularProgress";
+import { Body2, makeStyles, mergeClasses } from "@fluentui/react-components";
+import { Expander, ExpanderProps } from "../../fluent/expander";
+import { tokens } from "../../../pages/_fluent_theme";
+import { ChevronRightRegular } from "@fluentui/react-icons";
 import isAsyncFunction from "@/utils/is-async-function";
 
 interface ItemProps {
@@ -83,3 +87,94 @@ export const SettingList: React.FC<{
     {props.children}
   </List>
 );
+
+const useStyle = makeStyles({
+  listContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
+    marginTop: "8px",
+  },
+  titleWrap: {
+    marginBottom: "8px",
+  },
+});
+
+export function FluentSettingList({
+  children,
+  title,
+}: {
+  children: ReactNode;
+  title: string;
+}) {
+  const { listContainer, titleWrap } = useStyle();
+  return (
+    <div>
+      <Body2 className={titleWrap}>{title}</Body2>
+      <div className={listContainer}>{children}</div>
+    </div>
+  );
+}
+
+const useItemStyle = makeStyles({
+  header: {
+    paddingBlock: "16px",
+  },
+  canClick: {
+    cursor: "pointer",
+    transition: `background-color ${tokens.durationFast} ${tokens.curveEasyEase}`,
+    ":hover": {
+      background: tokens.overlay1Hover,
+    },
+    ":active": {
+      background: tokens.overlay1Pressed,
+    },
+  },
+});
+
+export function FluentSettingItem({
+  label,
+  extra,
+  children,
+  secondary,
+  onClick,
+  canExpand,
+  content,
+}: ItemProps & ExpanderProps) {
+  const classes = useItemStyle();
+  const canClick = !!onClick;
+
+  const right = canClick ? (
+    <div style={{ display: "flex", alignItems: "center" }}>
+      <div onClick={(e) => e.stopPropagation()}>{children}</div>
+      <ChevronRightRegular
+        style={{ fontSize: 20, marginRight: 5, marginLeft: 12 }}
+      />
+    </div>
+  ) : (
+    <div
+      style={{ display: "flex", alignItems: "center" }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {children}
+    </div>
+  );
+
+  return (
+    <Expander
+      content={content}
+      left={
+        <>
+          {label}
+          {extra}
+        </>
+      }
+      right={right}
+      className={{
+        header: mergeClasses(classes.header, canClick && classes.canClick),
+      }}
+      canExpand={canExpand}
+      onClick={onClick}
+    />
+  );
+}

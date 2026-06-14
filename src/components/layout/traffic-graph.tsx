@@ -1,5 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import { useFluentTheme } from "../../pages/_fluent_theme";
 import { useTheme } from "@mui/material";
+import { useThemeMode } from "../../services/states";
 
 const maxPoint = 30;
 
@@ -33,6 +35,7 @@ export const TrafficGraph = forwardRef<TrafficRef>((props, ref) => {
   const cacheRef = useRef<TrafficData | null>(null);
 
   const { palette } = useTheme();
+  const themeValue = useFluentTheme();
 
   useImperativeHandle(ref, () => ({
     appendData: (data: TrafficData) => {
@@ -78,8 +81,8 @@ export const TrafficGraph = forwardRef<TrafficRef>((props, ref) => {
 
     const { primary, secondary, divider } = palette;
     const refLineColor = divider || "rgba(0, 0, 0, 0.12)";
-    const upLineColor = secondary.main || "#9c27b0";
-    const downLineColor = primary.main || "#5b5c9d";
+    const upLineColor = themeValue.colorPaletteGoldBorderActive || "#9c27b0";
+    const downLineColor = themeValue.colorBrandStroke1 || "#5b5c9d";
 
     const width = canvas.width;
     const height = canvas.height;

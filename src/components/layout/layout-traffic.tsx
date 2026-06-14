@@ -1,18 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { Box, Typography } from "@mui/material";
 import {
-  ArrowDownward,
-  ArrowUpward,
-  MemoryOutlined,
+  ArrowDownwardRounded,
+  ArrowUpwardRounded,
+  MemoryRounded,
 } from "@mui/icons-material";
+import { tokens } from "../../pages/_fluent_theme";
 import { useClashInfo } from "@/hooks/use-clash";
 import { useVerge } from "@/hooks/use-verge";
 import { TrafficGraph, type TrafficRef } from "./traffic-graph";
-import { useLogData } from "@/hooks/use-log-data";
 import { useVisibility } from "@/hooks/use-visibility";
 import parseTraffic from "@/utils/parse-traffic";
 import useSWRSubscription from "swr/subscription";
-import { createSockette } from "@/utils/websocket";
+import { createMihomoWs } from "@/utils/websocket";
 import { useTranslation } from "react-i18next";
 import { isDebugEnabled, gc } from "@/services/api";
 
@@ -39,11 +39,6 @@ export const LayoutTraffic = () => {
     return () => {};
   }, [isDebug]);
 
-  // https://swr.vercel.app/docs/subscription#deduplication
-  // useSWRSubscription auto deduplicates to one subscription per key per entire app
-  // So we can simply invoke it here acting as preconnect
-  useLogData();
-
   const { data: traffic = { up: 0, down: 0 } } = useSWRSubscription<
     ITrafficItem,
     any,
@@ -51,21 +46,19 @@ export const LayoutTraffic = () => {
   >(
     clashInfo && pageVisible ? "getRealtimeTraffic" : null,
     (_key, { next }) => {
-      const { server = "", secret = "" } = clashInfo!;
-
-      const s = createSockette(
-        `ws://${server}/traffic?token=${encodeURIComponent(secret)}`,
+      const s = createMihomoWs(
+        { stream: "traffic" },
         {
           onmessage(event) {
             const data = JSON.parse(event.data) as ITrafficItem;
             trafficRef.current?.appendData(data);
             next(null, data);
           },
-          onerror(event) {
-            this.close();
-            next(event, { up: 0, down: 0 });
+          onerror(err) {
+            s.close();
+            next(err, { up: 0, down: 0 });
           },
-        }
+        },
       );
 
       return () => {
@@ -75,7 +68,7 @@ export const LayoutTraffic = () => {
     {
       fallbackData: { up: 0, down: 0 },
       keepPreviousData: true,
-    }
+    },
   );
 
   /* --------- meta memory information --------- */
@@ -89,20 +82,18 @@ export const LayoutTraffic = () => {
   >(
     clashInfo && pageVisible && displayMemory ? "getRealtimeMemory" : null,
     (_key, { next }) => {
-      const { server = "", secret = "" } = clashInfo!;
-
-      const s = createSockette(
-        `ws://${server}/memory?token=${encodeURIComponent(secret)}`,
+      const s = createMihomoWs(
+        { stream: "memory" },
         {
           onmessage(event) {
             const data = JSON.parse(event.data) as MemoryUsage;
             next(null, data);
           },
-          onerror(event) {
-            this.close();
-            next(event, { inuse: 0 });
+          onerror(err) {
+            s.close();
+            next(err, { inuse: 0 });
           },
-        }
+        },
       );
 
       return () => {
@@ -112,7 +103,7 @@ export const LayoutTraffic = () => {
     {
       fallbackData: { inuse: 0 },
       keepPreviousData: true,
-    }
+    },
   );
 
   const [up, upUnit] = parseTraffic(traffic.up);
@@ -141,7 +132,7 @@ export const LayoutTraffic = () => {
   };
 
   return (
-    <Box position="relative">
+    <Box position="absolute" sx={{ bottom: 24, width: "180px" }}>
       {trafficGraph && pageVisible && (
         <div
           style={{ width: "100%", height: 60, marginBottom: 6 }}
@@ -153,7 +144,7 @@ export const LayoutTraffic = () => {
 
       <Box display="flex" flexDirection="column" gap={0.75}>
         <Box title={t("Upload Speed")} {...boxStyle}>
-          <ArrowUpward
+          <ArrowUpwardRounded
             {...iconStyle}
             color={+up > 0 ? "secondary" : "disabled"}
           />
@@ -164,7 +155,7 @@ export const LayoutTraffic = () => {
         </Box>
 
         <Box title={t("Download Speed")} {...boxStyle}>
-          <ArrowDownward
+          <ArrowDownwardRounded
             {...iconStyle}
             color={+down > 0 ? "primary" : "disabled"}
           />
@@ -184,7 +175,7 @@ export const LayoutTraffic = () => {
               isDebug && (await gc());
             }}
           >
-            <MemoryOutlined {...iconStyle} />
+            <MemoryRounded {...iconStyle} />
             <Typography {...valStyle}>{inuse}</Typography>
             <Typography {...unitStyle}>{inuseUnit}</Typography>
           </Box>

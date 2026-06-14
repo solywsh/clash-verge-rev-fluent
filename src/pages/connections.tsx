@@ -1,6 +1,12 @@
 import { useMemo, useRef, useState } from "react";
 import { useLockFn } from "ahooks";
 import { Box, Button, IconButton, MenuItem } from "@mui/material";
+import { Button as FluentButton } from "@fluentui/react-components";
+import {
+  GridKanbanRegular,
+  TextBulletListRegular,
+} from "@fluentui/react-icons";
+import { tokens } from "./_fluent_theme";
 import { Virtuoso } from "react-virtuoso";
 import { useTranslation } from "react-i18next";
 import { TableChartRounded, TableRowsRounded } from "@mui/icons-material";
@@ -15,11 +21,12 @@ import {
   ConnectionDetailRef,
 } from "@/components/connection/connection-detail";
 import parseTraffic from "@/utils/parse-traffic";
-import { useCustomTheme } from "@/components/layout/use-custom-theme";
-import { BaseSearchBox } from "@/components/base/base-search-box";
+import { FluentBaseSearchBox as BaseSearchBox } from "@/components/base/base-search-box";
 import { BaseStyledSelect } from "@/components/base/base-styled-select";
 import useSWRSubscription from "swr/subscription";
-import { createSockette } from "@/utils/websocket";
+import { createMihomoWs } from "@/utils/websocket";
+import { useTheme } from "@mui/material/styles";
+import { useVisibility } from "@/hooks/use-visibility";
 
 const initConn: IConnections = {
   uploadTotal: 0,
@@ -32,7 +39,8 @@ type OrderFunc = (list: IConnectionsItem[]) => IConnectionsItem[];
 const ConnectionsPage = () => {
   const { t } = useTranslation();
   const { clashInfo } = useClashInfo();
-  const { theme } = useCustomTheme();
+  const pageVisible = useVisibility();
+  const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const [match, setMatch] = useState(() => (_: string) => true);
   const [curOrderOpt, setOrderOpt] = useState("Default");
@@ -46,7 +54,7 @@ const ConnectionsPage = () => {
       list.sort(
         (a, b) =>
           new Date(b.start || "0").getTime()! -
-          new Date(a.start || "0").getTime()!
+          new Date(a.start || "0").getTime()!,
       ),
     "Upload Speed": (list) => list.sort((a, b) => b.curUpload! - a.curUpload!),
     "Download Speed": (list) =>
@@ -57,63 +65,63 @@ const ConnectionsPage = () => {
     IConnections,
     any,
     "getClashConnections" | null
-  >(clashInfo ? "getClashConnections" : null, (_key, { next }) => {
-    const { server = "", secret = "" } = clashInfo!;
+  >(
+    clashInfo && pageVisible ? "getClashConnections" : null,
+    (_key, { next }) => {
+      const s = createMihomoWs(
+        { stream: "connections" },
+        {
+          onmessage(event) {
+            // meta v1.15.0 出现 data.connections 为 null 的情况
+            const data = JSON.parse(event.data) as IConnections;
+            // 尽量与前一次 connections 的展示顺序保持一致
+            next(null, (old = initConn) => {
+              const oldConn = old.connections;
+              const maxLen = data.connections?.length;
 
-    const s = createSockette(
-      `ws://${server}/connections?token=${encodeURIComponent(secret)}`,
-      {
-        onmessage(event) {
-          // meta v1.15.0 出现 data.connections 为 null 的情况
-          const data = JSON.parse(event.data) as IConnections;
-          // 尽量与前一次 connections 的展示顺序保持一致
-          next(null, (old = initConn) => {
-            const oldConn = old.connections;
-            const maxLen = data.connections?.length;
+              const connections: IConnectionsItem[] = [];
 
-            const connections: IConnectionsItem[] = [];
+              const rest = (data.connections || []).filter((each) => {
+                const index = oldConn.findIndex((o) => o.id === each.id);
 
-            const rest = (data.connections || []).filter((each) => {
-              const index = oldConn.findIndex((o) => o.id === each.id);
+                if (index >= 0 && index < maxLen) {
+                  const old = oldConn[index];
+                  each.curUpload = each.upload - old.upload;
+                  each.curDownload = each.download - old.download;
 
-              if (index >= 0 && index < maxLen) {
-                const old = oldConn[index];
-                each.curUpload = each.upload - old.upload;
-                each.curDownload = each.download - old.download;
+                  connections[index] = each;
+                  return false;
+                }
+                return true;
+              });
 
-                connections[index] = each;
-                return false;
+              for (let i = 0; i < maxLen; ++i) {
+                if (!connections[i] && rest.length > 0) {
+                  connections[i] = rest.shift()!;
+                  connections[i].curUpload = 0;
+                  connections[i].curDownload = 0;
+                }
               }
-              return true;
+
+              return { ...data, connections };
             });
-
-            for (let i = 0; i < maxLen; ++i) {
-              if (!connections[i] && rest.length > 0) {
-                connections[i] = rest.shift()!;
-                connections[i].curUpload = 0;
-                connections[i].curDownload = 0;
-              }
-            }
-
-            return { ...data, connections };
-          });
+          },
+          onerror(event) {
+            next(event);
+          },
         },
-        onerror(event) {
-          next(event);
-        },
-      },
-      3
-    );
+      );
 
-    return () => {
-      s.close();
-    };
-  });
+      return () => {
+        s.close();
+      };
+    },
+  );
 
   const [filterConn, download, upload] = useMemo(() => {
     const orderFunc = orderOpts[curOrderOpt];
     let connections = connData.connections.filter((conn) =>
-      match(conn.metadata.host || conn.metadata.destinationIP || "")
+      match(conn.metadata.host || conn.metadata.destinationIP || ""),
     );
 
     if (orderFunc) connections = orderFunc(connections);
@@ -144,14 +152,14 @@ const ConnectionsPage = () => {
           <Box sx={{ mx: 1 }}>
             {t("Uploaded")}: {parseTraffic(upload)}
           </Box>
-          <IconButton
+          {/* <IconButton
             color="inherit"
             size="small"
             onClick={() =>
               setSetting((o) =>
                 o?.layout !== "table"
                   ? { ...o, layout: "table" }
-                  : { ...o, layout: "list" }
+                  : { ...o, layout: "list" },
               )
             }
           >
@@ -164,11 +172,24 @@ const ConnectionsPage = () => {
                 <TableChartRounded fontSize="inherit" />
               </span>
             )}
-          </IconButton>
-
-          <Button size="small" variant="contained" onClick={onCloseAll}>
+          </IconButton> */}
+          <FluentButton
+            icon={
+              isTableLayout ? <TextBulletListRegular /> : <GridKanbanRegular />
+            }
+            size="small"
+            appearance="subtle"
+            onClick={() =>
+              setSetting((o) =>
+                o?.layout !== "table"
+                  ? { ...o, layout: "table" }
+                  : { ...o, layout: "list" },
+              )
+            }
+          />
+          <FluentButton onClick={onCloseAll} className="fds">
             <span style={{ whiteSpace: "nowrap" }}>{t("Close All")}</span>
-          </Button>
+          </FluentButton>
         </Box>
       }
     >
@@ -176,7 +197,7 @@ const ConnectionsPage = () => {
         sx={{
           pt: 1,
           mb: 0.5,
-          mx: "10px",
+          mx: "20px",
           height: "36px",
           display: "flex",
           alignItems: "center",
@@ -203,8 +224,10 @@ const ConnectionsPage = () => {
         sx={{
           userSelect: "text",
           margin: "10px",
+          mx: "20px",
           borderRadius: "8px",
-          bgcolor: isDark ? "#282a36" : "#ffffff",
+          // bgcolor: isDark ? "#282a36" : "#ffffff",
+          bgcolor: tokens.surface1,
         }}
       >
         {filterConn.length === 0 ? (

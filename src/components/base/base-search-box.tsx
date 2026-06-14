@@ -1,3 +1,18 @@
+import RegularExpressionIcon from "@/assets/image/component/use_regular_expression.svg?react";
+import {
+  Button,
+  Input,
+  Tooltip as FluentTooltip,
+} from "@fluentui/react-components";
+import {
+  TextCaseTitleFilled,
+  TextCaseTitleRegular,
+  TextWholeWordFilled,
+  TextWholeWordRegular,
+  TextPeriodAsteriskRegular,
+  TextPeriodAsteriskFilled,
+} from "@fluentui/react-icons";
+import { tokens } from "../../pages/_fluent_theme";
 import { Box, SvgIcon, TextField, styled } from "@mui/material";
 import Tooltip from "@mui/material/Tooltip";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
@@ -7,31 +22,30 @@ import matchCaseIcon from "@/assets/image/component/match_case.svg?react";
 import matchWholeWordIcon from "@/assets/image/component/match_whole_word.svg?react";
 import useRegularExpressionIcon from "@/assets/image/component/use_regular_expression.svg?react";
 
+export type SearchState = {
+  text: string;
+  matchCase: boolean;
+  matchWholeWord: boolean;
+  useRegularExpression: boolean;
+};
+
 type SearchProps = {
   placeholder?: string;
   matchCase?: boolean;
   matchWholeWord?: boolean;
   useRegularExpression?: boolean;
-  onSearch: (
-    match: (content: string) => boolean,
-    state: {
-      text: string;
-      matchCase: boolean;
-      matchWholeWord: boolean;
-      useRegularExpression: boolean;
-    }
-  ) => void;
+  onSearch: (match: (content: string) => boolean, state: SearchState) => void;
 };
 
 export const BaseSearchBox = styled((props: SearchProps) => {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [matchCase, setMatchCase] = useState(props.matchCase ?? true);
+  const [matchCase, setMatchCase] = useState(props.matchCase ?? false);
   const [matchWholeWord, setMatchWholeWord] = useState(
-    props.matchWholeWord ?? false
+    props.matchWholeWord ?? false,
   );
   const [useRegularExpression, setUseRegularExpression] = useState(
-    props.useRegularExpression ?? false
+    props.useRegularExpression ?? false,
   );
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -60,7 +74,7 @@ export const BaseSearchBox = styled((props: SearchProps) => {
         matchCase,
         matchWholeWord,
         useRegularExpression,
-      }
+      },
     );
   };
 
@@ -96,7 +110,7 @@ export const BaseSearchBox = styled((props: SearchProps) => {
   return (
     <Tooltip title={errorMessage} placement="bottom-start">
       <TextField
-        autoComplete="off"
+        autoComplete="new-password"
         inputRef={inputRef}
         hiddenLabel
         fullWidth
@@ -165,3 +179,156 @@ export const BaseSearchBox = styled((props: SearchProps) => {
     fill: "#A7A7A7",
   },
 }));
+
+export function FluentBaseSearchBox(props: SearchProps) {
+  const { t } = useTranslation();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [matchCase, setMatchCase] = useState(props.matchCase ?? false);
+  const [matchWholeWord, setMatchWholeWord] = useState(
+    props.matchWholeWord ?? false,
+  );
+  const [useRegularExpression, setUseRegularExpression] = useState(
+    props.useRegularExpression ?? false,
+  );
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const iconStyle = {
+    style: {
+      height: "24px",
+      width: "24px",
+      cursor: "pointer",
+    } as React.CSSProperties,
+    inheritViewBox: true,
+  };
+
+  useEffect(() => {
+    if (!inputRef.current) return;
+
+    onChange({
+      target: inputRef.current,
+    } as ChangeEvent<HTMLInputElement>);
+  }, [matchCase, matchWholeWord, useRegularExpression]);
+
+  const onChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    props.onSearch(
+      (content) => doSearch([content], e.target?.value ?? "").length > 0,
+      {
+        text: e.target?.value ?? "",
+        matchCase,
+        matchWholeWord,
+        useRegularExpression,
+      },
+    );
+  };
+
+  const doSearch = (searchList: string[], searchItem: string) => {
+    setErrorMessage("");
+    return searchList.filter((item) => {
+      try {
+        let searchItemCopy = searchItem;
+        if (!matchCase) {
+          item = item.toLowerCase();
+          searchItemCopy = searchItemCopy.toLowerCase();
+        }
+        if (matchWholeWord) {
+          const regex = new RegExp(`\\b${searchItemCopy}\\b`);
+          if (useRegularExpression) {
+            const regexWithOptions = new RegExp(searchItemCopy);
+            return regexWithOptions.test(item) && regex.test(item);
+          } else {
+            return regex.test(item);
+          }
+        } else if (useRegularExpression) {
+          const regex = new RegExp(searchItemCopy);
+          return regex.test(item);
+        } else {
+          return item.includes(searchItemCopy);
+        }
+      } catch (err) {
+        setErrorMessage(`${err}`);
+      }
+    });
+  };
+
+  return (
+    <FluentTooltip
+      visible={!!errorMessage}
+      content={errorMessage}
+      relationship="description"
+      positioning="above-start"
+    >
+      <Input
+        autoComplete="new-password"
+        ref={inputRef}
+        spellCheck="false"
+        placeholder={props.placeholder ?? t("Filter conditions")}
+        onChange={onChange}
+        style={{ flex: 1 }}
+        contentAfter={
+          <>
+            <FluentTooltip content={t("Match Case")} relationship="label">
+              <Button
+                className="fds-subtle"
+                appearance="subtle"
+                size="small"
+                aria-label={matchCase ? "active" : "inactive"}
+                onClick={() => {
+                  setMatchCase(!matchCase);
+                }}
+                icon={
+                  matchCase ? (
+                    <TextCaseTitleFilled color={tokens.colorBrandForeground1} />
+                  ) : (
+                    <TextCaseTitleRegular />
+                  )
+                }
+              />
+            </FluentTooltip>
+            <FluentTooltip content={t("Match Whole Word")} relationship="label">
+              <Button
+                className="fds-subtle"
+                appearance="subtle"
+                size="small"
+                aria-label={matchCase ? "active" : "inactive"}
+                onClick={() => {
+                  setMatchWholeWord(!matchWholeWord);
+                }}
+                icon={
+                  matchWholeWord ? (
+                    <TextWholeWordFilled color={tokens.colorBrandForeground1} />
+                  ) : (
+                    <TextWholeWordRegular />
+                  )
+                }
+              />
+            </FluentTooltip>
+            <FluentTooltip
+              content={t("Use Regular Expression")}
+              relationship="label"
+            >
+              <Button
+                className="fds-subtle"
+                appearance="subtle"
+                size="small"
+                aria-label={matchCase ? "active" : "inactive"}
+                onClick={() => {
+                  setUseRegularExpression(!useRegularExpression);
+                }}
+                icon={
+                  useRegularExpression ? (
+                    <TextPeriodAsteriskFilled
+                      color={tokens.colorBrandForeground1}
+                    />
+                  ) : (
+                    <TextPeriodAsteriskRegular />
+                  )
+                }
+              />
+            </FluentTooltip>
+          </>
+        }
+        {...props}
+      />
+    </FluentTooltip>
+  );
+}

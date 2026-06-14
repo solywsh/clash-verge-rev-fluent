@@ -8,15 +8,16 @@ import {
   styled,
   ListItem,
   ListItemText,
+  Box,
 } from "@mui/material";
 import { useVerge } from "@/hooks/use-verge";
 import { BaseDialog, DialogRef, Notice, Switch } from "@/components/base";
 import { GuardState } from "./guard-state";
-import { open as openDialog } from "@tauri-apps/api/dialog";
-import { convertFileSrc } from "@tauri-apps/api/tauri";
+import { open as openDialog } from "@tauri-apps/plugin-dialog";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import { copyIconFile, getAppDir } from "@/services/cmds";
 import { join } from "@tauri-apps/api/path";
-import { exists } from "@tauri-apps/api/fs";
+import { exists } from "@tauri-apps/plugin-fs";
 import getSystem from "@/utils/get-system";
 
 const OS = getSystem();
@@ -163,6 +164,21 @@ export const LayoutViewer = forwardRef<DialogRef>((props, ref) => {
             </GuardState>
           </Item>
         )}
+        {OS === "macos" && (
+          <Item>
+            <ListItemText primary={t("Enable Tray Speed")} />
+            <GuardState
+              value={verge?.enable_tray_speed ?? true}
+              valueProps="checked"
+              onCatch={onError}
+              onFormat={onSwitchFormat}
+              onChange={(e) => onChangeData({ enable_tray_speed: e })}
+              onGuard={(e) => patchVerge({ enable_tray_speed: e })}
+            >
+              <Switch edge="end" />
+            </GuardState>
+          </Item>
+        )}
 
         <Item>
           <ListItemText primary={t("Common Tray Icon")} />
@@ -186,7 +202,7 @@ export const LayoutViewer = forwardRef<DialogRef>((props, ref) => {
                   onChangeData({ common_tray_icon: false });
                   patchVerge({ common_tray_icon: false });
                 } else {
-                  const path = await openDialog({
+                  const selected = await openDialog({
                     directory: false,
                     multiple: false,
                     filters: [
@@ -196,8 +212,8 @@ export const LayoutViewer = forwardRef<DialogRef>((props, ref) => {
                       },
                     ],
                   });
-                  if (path?.length) {
-                    await copyIconFile(`${path}`, "common");
+                  if (selected) {
+                    await copyIconFile(`${selected}`, "common");
                     await initIconPath();
                     onChangeData({ common_tray_icon: true });
                     patchVerge({ common_tray_icon: true });
@@ -232,7 +248,7 @@ export const LayoutViewer = forwardRef<DialogRef>((props, ref) => {
                   onChangeData({ sysproxy_tray_icon: false });
                   patchVerge({ sysproxy_tray_icon: false });
                 } else {
-                  const path = await openDialog({
+                  const selected = await openDialog({
                     directory: false,
                     multiple: false,
                     filters: [
@@ -242,8 +258,8 @@ export const LayoutViewer = forwardRef<DialogRef>((props, ref) => {
                       },
                     ],
                   });
-                  if (path?.length) {
-                    await copyIconFile(`${path}`, "sysproxy");
+                  if (selected) {
+                    await copyIconFile(`${selected}`, "sysproxy");
                     await initIconPath();
                     onChangeData({ sysproxy_tray_icon: true });
                     patchVerge({ sysproxy_tray_icon: true });
@@ -276,18 +292,18 @@ export const LayoutViewer = forwardRef<DialogRef>((props, ref) => {
                   onChangeData({ tun_tray_icon: false });
                   patchVerge({ tun_tray_icon: false });
                 } else {
-                  const path = await openDialog({
+                  const selected = await openDialog({
                     directory: false,
                     multiple: false,
                     filters: [
                       {
-                        name: "Tray Icon Image",
+                        name: "Tun Icon Image",
                         extensions: ["png", "ico"],
                       },
                     ],
                   });
-                  if (path?.length) {
-                    await copyIconFile(`${path}`, "tun");
+                  if (selected) {
+                    await copyIconFile(`${selected}`, "tun");
                     await initIconPath();
                     onChangeData({ tun_tray_icon: true });
                     patchVerge({ tun_tray_icon: true });

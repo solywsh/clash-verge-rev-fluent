@@ -1,0 +1,7 @@
+#!/bin/bash
+set -euo pipefail
+
+# This fork uses `tsc --noEmit` for type checking (see `pnpm web:build`), not the
+# upstream cargo-make / `pnpm typecheck` pipeline (which doesn't exist here).
+# Run a fast type check before pushing.
+pnpm exec tsc --noEmit

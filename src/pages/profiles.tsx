@@ -1,7 +1,20 @@
-import useSWR, { mutate } from "swr";
+import useSWR from "swr";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLockFn } from "ahooks";
-import { Box, Button, Grid, IconButton, Stack, Divider } from "@mui/material";
+import { Box, Button, IconButton, Stack, Divider, Grid2 } from "@mui/material";
+import {
+  Button as FluentButton,
+  Input,
+  Spinner,
+} from "@fluentui/react-components";
+import {
+  ArrowClockwiseRegular,
+  ClipboardPasteRegular,
+  DismissRegular,
+  DocumentBulletListRegular,
+  FireFilled,
+} from "@fluentui/react-icons";
+import { tokens } from "./_fluent_theme";
 import {
   DndContext,
   closestCenter,
@@ -25,9 +38,9 @@ import {
 } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import {
-  getProfiles,
   importProfile,
   enhanceProfiles,
+  restartCore,
   getRuntimeLogs,
   deleteProfile,
   updateProfile,
@@ -45,15 +58,19 @@ import { ProfileMore } from "@/components/profile/profile-more";
 import { ProfileItem } from "@/components/profile/profile-item";
 import { useProfiles } from "@/hooks/use-profiles";
 import { ConfigViewer } from "@/components/setting/mods/config-viewer";
-import { throttle } from "lodash-es";
+import { add, throttle } from "lodash-es";
 import { BaseStyledTextField } from "@/components/base/base-styled-text-field";
+import { readTextFile } from "@tauri-apps/plugin-fs";
+import { readText } from "@tauri-apps/plugin-clipboard-manager";
+import { useLocation } from "react-router-dom";
+import { useListen } from "@/hooks/use-listen";
 import { listen } from "@tauri-apps/api/event";
-import { readTextFile } from "@tauri-apps/api/fs";
-import { readText } from "@tauri-apps/api/clipboard";
+import { TauriEvent } from "@tauri-apps/api/event";
 
 const ProfilePage = () => {
   const { t } = useTranslation();
-
+  const location = useLocation();
+  const { addListener } = useListen();
   const [url, setUrl] = useState("");
   const [disabled, setDisabled] = useState(false);
   const [activatings, setActivatings] = useState<string[]>([]);
@@ -62,34 +79,46 @@ const ProfilePage = () => {
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
+  const { current } = location.state || {};
 
   useEffect(() => {
-    const unlisten = listen("tauri://file-drop", async (event) => {
-      const fileList = event.payload as string[];
-      for (let file of fileList) {
-        if (!file.endsWith(".yaml") && !file.endsWith(".yml")) {
-          Notice.error(t("Only YAML Files Supported"));
-          continue;
-        }
-        const item = {
-          type: "local",
-          name: file.split(/\/|\\/).pop() ?? "New Profile",
-          desc: "",
-          url: "",
-          option: {
-            with_proxy: false,
-            self_proxy: false,
-          },
-        } as IProfileItem;
-        let data = await readTextFile(file);
-        await createProfile(item, data);
-        await mutateProfiles();
-      }
-    });
+    const handleFileDrop = async () => {
+      const unlisten = await addListener(
+        TauriEvent.DRAG_DROP,
+        async (event: any) => {
+          const paths = event.payload.paths;
+
+          for (let file of paths) {
+            if (!file.endsWith(".yaml") && !file.endsWith(".yml")) {
+              Notice.error(t("Only YAML Files Supported"));
+              continue;
+            }
+            const item = {
+              type: "local",
+              name: file.split(/\/|\\/).pop() ?? "New Profile",
+              desc: "",
+              url: "",
+              option: {
+                with_proxy: false,
+                self_proxy: false,
+              },
+            } as IProfileItem;
+            let data = await readTextFile(file);
+            await createProfile(item, data);
+            await mutateProfiles();
+          }
+        },
+      );
+
+      return unlisten;
+    };
+
+    const unsubscribe = handleFileDrop();
+
     return () => {
-      unlisten.then((fn) => fn());
+      unsubscribe.then((cleanup) => cleanup());
     };
   }, []);
 
@@ -102,7 +131,7 @@ const ProfilePage = () => {
 
   const { data: chainLogs = {}, mutate: mutateLogs } = useSWR(
     "getRuntimeLogs",
-    getRuntimeLogs
+    getRuntimeLogs,
   );
 
   const viewerRef = useRef<ProfileViewerRef>(null);
@@ -114,9 +143,7 @@ const ProfilePage = () => {
 
     const type1 = ["local", "remote"];
 
-    const profileItems = items.filter((i) => i && type1.includes(i.type!));
-
-    return profileItems;
+    return items.filter((i) => i && type1.includes(i.type!));
   }, [profiles]);
 
   const currentActivatings = () => {
@@ -132,18 +159,8 @@ const ProfilePage = () => {
       Notice.success(t("Profile Imported Successfully"));
       setUrl("");
       setLoading(false);
-
-      getProfiles().then(async (newProfiles) => {
-        mutate("getProfiles", newProfiles);
-
-        const remoteItem = newProfiles.items?.find((e) => e.type === "remote");
-        if (!newProfiles.current && remoteItem) {
-          const current = remoteItem.uid;
-          await patchProfiles({ current });
-          mutateLogs();
-          setTimeout(() => activateSelected(), 2000);
-        }
-      });
+      mutateProfiles();
+      await onEnhance(false);
     } catch (err: any) {
       Notice.error(err.message || err.toString());
       setLoading(false);
@@ -163,32 +180,49 @@ const ProfilePage = () => {
     }
   };
 
-  const onSelect = useLockFn(async (current: string, force: boolean) => {
-    if (!force && current === profiles.current) return;
+  const activateProfile = async (profile: string, notifySuccess: boolean) => {
     // 避免大多数情况下loading态闪烁
     const reset = setTimeout(() => {
-      setActivatings([...currentActivatings(), current]);
+      setActivatings((prev) => [...prev, profile]);
     }, 100);
+
     try {
-      await patchProfiles({ current });
-      mutateLogs();
+      await patchProfiles({ current: profile });
+      await mutateLogs();
       closeAllConnections();
-      setTimeout(() => activateSelected(), 2000);
-      Notice.success(t("Profile Switched"), 1000);
+      await activateSelected();
+      if (notifySuccess) {
+        Notice.success(t("Profile Switched"), 1000);
+      }
     } catch (err: any) {
       Notice.error(err?.message || err.toString(), 4000);
     } finally {
       clearTimeout(reset);
       setActivatings([]);
     }
+  };
+  const onSelect = useLockFn(async (current: string, force: boolean) => {
+    if (!force && current === profiles.current) return;
+    await activateProfile(current, true);
   });
 
-  const onEnhance = useLockFn(async () => {
+  useEffect(() => {
+    (async () => {
+      if (current) {
+        mutateProfiles();
+        await activateProfile(current, false);
+      }
+    })();
+  }, current);
+
+  const onEnhance = useLockFn(async (notifySuccess: boolean) => {
     setActivatings(currentActivatings());
     try {
       await enhanceProfiles();
       mutateLogs();
-      Notice.success(t("Profile Reactivated"), 1000);
+      if (notifySuccess) {
+        Notice.success(t("Profile Reactivated"), 1000);
+      }
     } catch (err: any) {
       Notice.error(err.message || err.toString(), 3000);
     } finally {
@@ -203,7 +237,7 @@ const ProfilePage = () => {
       await deleteProfile(uid);
       mutateProfiles();
       mutateLogs();
-      current && (await onEnhance());
+      current && (await onEnhance(false));
     } catch (err: any) {
       Notice.error(err?.message || err.toString());
     } finally {
@@ -230,7 +264,7 @@ const ProfilePage = () => {
       setLoadingCache((cache) => {
         // 获取没有正在更新的订阅
         const items = profileItems.filter(
-          (e) => e.type === "remote" && !cache[e.uid]
+          (e) => e.type === "remote" && !cache[e.uid],
         );
         const change = Object.fromEntries(items.map((e) => [e.uid, true]));
 
@@ -258,32 +292,50 @@ const ProfilePage = () => {
       contentStyle={{ height: "100%" }}
       header={
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <IconButton
+          {/* <IconButton
             size="small"
             color="inherit"
             title={t("Update All Profiles")}
             onClick={onUpdateAll}
           >
             <RefreshRounded />
-          </IconButton>
+          </IconButton> */}
+          <FluentButton
+            icon={<ArrowClockwiseRegular />}
+            title={t("Update All Profiles")}
+            onClick={onUpdateAll}
+            appearance="subtle"
+          />
 
-          <IconButton
+          {/* <IconButton
             size="small"
             color="inherit"
             title={t("View Runtime Config")}
             onClick={() => configRef.current?.open()}
           >
             <TextSnippetOutlined />
-          </IconButton>
+          </IconButton> */}
+          <FluentButton
+            icon={<DocumentBulletListRegular />}
+            title={t("View Runtime Config")}
+            onClick={() => configRef.current?.open()}
+            appearance="subtle"
+          />
 
-          <IconButton
+          {/* <IconButton
             size="small"
             color="primary"
             title={t("Reactivate Profiles")}
-            onClick={onEnhance}
+            onClick={() => onEnhance(true)}
           >
             <LocalFireDepartmentRounded />
-          </IconButton>
+          </IconButton> */}
+          <FluentButton
+            icon={<FireFilled />}
+            title={t("Reactivate Profiles")}
+            onClick={() => onEnhance(true)}
+            appearance="subtle"
+          />
         </Box>
       }
     >
@@ -293,41 +345,52 @@ const ProfilePage = () => {
         sx={{
           pt: 1,
           mb: 0.5,
-          mx: "10px",
+          mx: "20px",
           height: "36px",
           display: "flex",
           alignItems: "center",
         }}
       >
-        <BaseStyledTextField
+        {/* <BaseStyledTextField */}
+        <Input
           value={url}
-          variant="outlined"
+          // variant="outlined"
           onChange={(e) => setUrl(e.target.value)}
           placeholder={t("Profile URL")}
-          InputProps={{
-            sx: { pr: 1 },
-            endAdornment: !url ? (
-              <IconButton
-                size="small"
-                sx={{ p: 0.5 }}
-                title={t("Paste")}
-                onClick={onCopyLink}
-              >
-                <ContentPasteRounded fontSize="inherit" />
-              </IconButton>
-            ) : (
-              <IconButton
-                size="small"
-                sx={{ p: 0.5 }}
-                title={t("Clear")}
-                onClick={() => setUrl("")}
-              >
-                <ClearRounded fontSize="inherit" />
-              </IconButton>
-            ),
-          }}
+          contentAfter={
+            <FluentButton
+              className="fds-subtle"
+              onClick={!url ? onCopyLink : () => setUrl("")}
+              icon={!url ? <ClipboardPasteRegular /> : <DismissRegular />}
+              size="small"
+              appearance="subtle"
+            />
+          }
+          style={{ flex: 1 }}
+          // InputProps={{
+          //   sx: { pr: 1 },
+          //   endAdornment: !url ? (
+          //     <IconButton
+          //       size="small"
+          //       sx={{ p: 0.5 }}
+          //       title={t("Paste")}
+          //       onClick={onCopyLink}
+          //     >
+          //       <ContentPasteRounded fontSize="inherit" />
+          //     </IconButton>
+          //   ) : (
+          //     <IconButton
+          //       size="small"
+          //       sx={{ p: 0.5 }}
+          //       title={t("Clear")}
+          //       onClick={() => setUrl("")}
+          //     >
+          //       <ClearRounded fontSize="inherit" />
+          //     </IconButton>
+          //   ),
+          // }}
         />
-        <LoadingButton
+        {/* <LoadingButton
           disabled={!url || disabled}
           loading={loading}
           variant="contained"
@@ -336,22 +399,36 @@ const ProfilePage = () => {
           onClick={onImport}
         >
           {t("Import")}
-        </LoadingButton>
-        <Button
+        </LoadingButton> */}
+        <FluentButton
+          disabled={!url || disabled}
+          onClick={onImport}
+          icon={loading ? <Spinner size="tiny" /> : null}
+          className="fds"
+        >
+          {t("Import")}
+        </FluentButton>
+        {/* <Button
           variant="contained"
           size="small"
           sx={{ borderRadius: "6px" }}
           onClick={() => viewerRef.current?.create()}
         >
           {t("New")}
-        </Button>
+        </Button> */}
+        <FluentButton
+          appearance="primary"
+          onClick={() => viewerRef.current?.create()}
+        >
+          {t("New")}
+        </FluentButton>
       </Stack>
       <Box
         sx={{
           pt: 1,
           mb: 0.5,
-          pl: "10px",
-          mr: "10px",
+          pl: "20px",
+          mr: "20px",
           height: "calc(100% - 68px)",
           overflowY: "auto",
         }}
@@ -362,14 +439,14 @@ const ProfilePage = () => {
           onDragEnd={onDragEnd}
         >
           <Box sx={{ mb: 1.5 }}>
-            <Grid container spacing={{ xs: 1, lg: 1 }}>
+            <Grid2 container spacing={{ xs: 1, lg: 1 }}>
               <SortableContext
                 items={profileItems.map((x) => {
                   return x.uid;
                 })}
               >
                 {profileItems.map((item) => (
-                  <Grid item xs={12} sm={6} md={4} lg={3} key={item.file}>
+                  <Grid2 size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={item.file}>
                     <ProfileItem
                       id={item.uid}
                       selected={profiles.current === item.uid}
@@ -379,15 +456,17 @@ const ProfilePage = () => {
                       onEdit={() => viewerRef.current?.edit(item)}
                       onSave={async (prev, curr) => {
                         if (prev !== curr && profiles.current === item.uid) {
-                          await onEnhance();
+                          await onEnhance(false);
+                          await restartCore();
+                          Notice.success(t("Clash Core Restarted"), 1000);
                         }
                       }}
                       onDelete={() => onDelete(item.uid)}
                     />
-                  </Grid>
+                  </Grid2>
                 ))}
               </SortableContext>
-            </Grid>
+            </Grid2>
           </Box>
         </DndContext>
         <Divider
@@ -396,33 +475,39 @@ const ProfilePage = () => {
           sx={{ width: `calc(100% - 32px)`, borderColor: dividercolor }}
         ></Divider>
         <Box sx={{ mt: 1.5 }}>
-          <Grid container spacing={{ xs: 1, lg: 1 }}>
-            <Grid item xs={12} sm={6} md={6} lg={6}>
+          <Grid2 container spacing={{ xs: 1, lg: 1 }}>
+            <Grid2 size={{ xs: 12, sm: 6, md: 6, lg: 6 }}>
               <ProfileMore
                 id="Merge"
                 onSave={async (prev, curr) => {
                   if (prev !== curr) {
-                    await onEnhance();
+                    await onEnhance(false);
                   }
                 }}
               />
-            </Grid>
-            <Grid item xs={12} sm={6} md={6} lg={6}>
+            </Grid2>
+            <Grid2 size={{ xs: 12, sm: 6, md: 6, lg: 6 }}>
               <ProfileMore
                 id="Script"
                 logInfo={chainLogs["Script"]}
                 onSave={async (prev, curr) => {
                   if (prev !== curr) {
-                    await onEnhance();
+                    await onEnhance(false);
                   }
                 }}
               />
-            </Grid>
-          </Grid>
+            </Grid2>
+          </Grid2>
         </Box>
       </Box>
 
-      <ProfileViewer ref={viewerRef} onChange={() => mutateProfiles()} />
+      <ProfileViewer
+        ref={viewerRef}
+        onChange={async () => {
+          mutateProfiles();
+          await onEnhance(false);
+        }}
+      />
       <ConfigViewer ref={configRef} />
     </BasePage>
   );

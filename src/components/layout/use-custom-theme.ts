@@ -1,9 +1,12 @@
 import { useEffect, useMemo } from "react";
 import { alpha, createTheme, Shadows, Theme } from "@mui/material";
-import { appWindow } from "@tauri-apps/api/window";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useSetThemeMode, useThemeMode } from "@/services/states";
 import { defaultTheme, defaultDarkTheme } from "@/pages/_theme";
 import { useVerge } from "@/hooks/use-verge";
+import { useTheme } from "@mui/material/styles";
+import { useFluentTheme } from "../../pages/_fluent_theme";
+const appWindow = getCurrentWebviewWindow();
 
 /**
  * custom theme
@@ -21,9 +24,15 @@ export const useCustomTheme = () => {
 
     if (themeMode !== "system") {
       setMode(themeMode);
+      // Sync the native window theme so the Mica/backdrop matches the app theme.
+      // Without this, on a light-themed OS the window backdrop stays light and
+      // switching the app to dark appears to "do nothing".
+      appWindow.setTheme(themeMode as "light" | "dark").catch(() => {});
       return;
     }
 
+    // Follow the system theme.
+    appWindow.setTheme(null).catch(() => {});
     appWindow.theme().then((m) => m && setMode(m));
     const unlisten = appWindow.onThemeChanged((e) => setMode(e.payload));
 
@@ -31,6 +40,8 @@ export const useCustomTheme = () => {
       unlisten.then((fn) => fn());
     };
   }, [theme_mode]);
+
+  const fluentTheme = useFluentTheme();
 
   const theme = useMemo(() => {
     const setting = theme_setting || {};
@@ -45,15 +56,46 @@ export const useCustomTheme = () => {
         },
         palette: {
           mode,
-          primary: { main: setting.primary_color || dt.primary_color },
-          secondary: { main: setting.secondary_color || dt.secondary_color },
+          primary: {
+            main:
+              fluentTheme.colorCompoundBrandStrokeHover ||
+              setting.primary_color ||
+              dt.primary_color,
+          },
+          secondary: {
+            main:
+              fluentTheme.colorPaletteLightGreenBackground2 ||
+              setting.secondary_color ||
+              dt.secondary_color,
+          },
           info: { main: setting.info_color || dt.info_color },
-          error: { main: setting.error_color || dt.error_color },
-          warning: { main: setting.warning_color || dt.warning_color },
-          success: { main: setting.success_color || dt.success_color },
+          error: {
+            main:
+              fluentTheme.colorStatusDangerForeground1 ||
+              setting.error_color ||
+              dt.error_color,
+          },
+          warning: {
+            main:
+              fluentTheme.colorStatusWarningForeground1 ||
+              setting.warning_color ||
+              dt.warning_color,
+          },
+          success: {
+            main:
+              fluentTheme.colorStatusSuccessForeground1 ||
+              setting.success_color ||
+              dt.success_color,
+          },
           text: {
-            primary: setting.primary_text || dt.primary_text,
-            secondary: setting.secondary_text || dt.secondary_text,
+            primary:
+              fluentTheme.colorNeutralForeground1 ||
+              setting.primary_text ||
+              dt.primary_text,
+            secondary:
+              fluentTheme.colorNeutralForeground2 ||
+              setting.secondary_text ||
+              dt.secondary_text,
           },
           background: {
             paper: dt.background_color,
@@ -88,7 +130,7 @@ export const useCustomTheme = () => {
     }
 
     // css
-    const backgroundColor = mode === "light" ? "#f0f0f0" : "#2e303d";
+    const backgroundColor = mode === "light" ? "#ECECEC" : "#2e303d";
     const selectColor = mode === "light" ? "#f5f5f5" : "#d5d5d5";
     const scrollColor = mode === "light" ? "#90939980" : "#54545480";
     const dividerColor =
@@ -102,7 +144,7 @@ export const useCustomTheme = () => {
     rootEle.style.setProperty("--primary-main", theme.palette.primary.main);
     rootEle.style.setProperty(
       "--background-color-alpha",
-      alpha(theme.palette.primary.main, 0.1)
+      alpha(theme.palette.primary.main, 0.1),
     );
 
     // inject css

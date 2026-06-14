@@ -1,7 +1,8 @@
 import React, { ReactNode } from "react";
 import { Typography } from "@mui/material";
 import { BaseErrorBoundary } from "./base-error-boundary";
-import { useCustomTheme } from "@/components/layout/use-custom-theme";
+import { useTheme } from "@mui/material/styles";
+import { Title3, Text } from "@fluentui/react-components";
 
 interface Props {
   title?: React.ReactNode; // the page title
@@ -13,21 +14,24 @@ interface Props {
 
 export const BasePage: React.FC<Props> = (props) => {
   const { title, header, contentStyle, full, children } = props;
-  const { theme } = useCustomTheme();
+  const theme = useTheme();
 
   const isDark = theme.palette.mode === "dark";
 
   return (
     <BaseErrorBoundary>
       <div className="base-page">
-        <header data-tauri-drag-region="true" style={{ userSelect: "none" }}>
-          <Typography
+        {/* <header data-tauri-drag-region="true" style={{ userSelect: "none" }}> */}
+        <header style={{ userSelect: "none" }}>
+          {/* <Typography
             sx={{ fontSize: "20px", fontWeight: "700 " }}
             data-tauri-drag-region="true"
           >
             {title}
-          </Typography>
-
+          </Typography> */}
+          <Text weight="medium" size={600}>
+            {title}
+          </Text>
           {header}
         </header>
 

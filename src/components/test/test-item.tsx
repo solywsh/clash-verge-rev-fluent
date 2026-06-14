@@ -12,15 +12,17 @@ import {
   styled,
   alpha,
 } from "@mui/material";
+import { Button, Spinner } from "@fluentui/react-components";
+import { tokens } from "../../pages/_fluent_theme";
 import { BaseLoading } from "@/components/base";
-import { LanguageTwoTone } from "@mui/icons-material";
+import { LanguageRounded } from "@mui/icons-material";
 import { Notice } from "@/components/base";
 import { TestBox } from "./test-box";
 import delayManager from "@/services/delay";
 import { cmdTestDelay, downloadIconCache } from "@/services/cmds";
-import { listen, UnlistenFn } from "@tauri-apps/api/event";
-import { convertFileSrc } from "@tauri-apps/api/tauri";
-
+import { UnlistenFn } from "@tauri-apps/api/event";
+import { convertFileSrc } from "@tauri-apps/api/core";
+import { useListen } from "@/hooks/use-listen";
 interface Props {
   id: string;
   itemData: IVergeTestItem;
@@ -28,12 +30,18 @@ interface Props {
   onDelete: (uid: string) => void;
 }
 
-let eventListener: UnlistenFn | null = null;
+let eventListener: UnlistenFn = () => {};
 
 export const TestItem = (props: Props) => {
   const { itemData, onEdit, onDelete: onDeleteItem } = props;
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: props.id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: props.id });
 
   const { t } = useTranslation();
   const [anchorEl, setAnchorEl] = useState<any>(null);
@@ -41,6 +49,7 @@ export const TestItem = (props: Props) => {
   const [delay, setDelay] = useState(-1);
   const { uid, name, icon, url } = itemData;
   const [iconCachePath, setIconCachePath] = useState("");
+  const { addListener } = useListen();
 
   useEffect(() => {
     initIconCachePath();
@@ -84,23 +93,23 @@ export const TestItem = (props: Props) => {
   ];
 
   const listenTsetEvent = async () => {
-    if (eventListener !== null) {
-      eventListener();
-    }
-    eventListener = await listen("verge://test-all", () => {
+    eventListener();
+    eventListener = await addListener("verge://test-all", () => {
       onDelay();
     });
   };
 
   useEffect(() => {
     listenTsetEvent();
-  }, []);
+  }, [url]);
 
   return (
     <Box
       sx={{
+        position: "relative",
         transform: CSS.Transform.toString(transform),
         transition,
+        zIndex: isDragging ? "calc(infinity)" : undefined,
       }}
     >
       <TestBox
@@ -138,7 +147,7 @@ export const TestItem = (props: Props) => {
             </Box>
           ) : (
             <Box sx={{ display: "flex", justifyContent: "center" }}>
-              <LanguageTwoTone sx={{ height: "40px" }} fontSize="large" />
+              <LanguageRounded sx={{ height: "40px" }} fontSize="large" />
             </Box>
           )}
 
@@ -158,45 +167,55 @@ export const TestItem = (props: Props) => {
           }}
         >
           {delay === -2 && (
-            <Widget>
-              <BaseLoading />
-            </Widget>
+            <Button appearance="transparent" disabled style={{ height: 32 }}>
+              {/* <BaseLoading /> */}
+              <Spinner size="extra-tiny" />
+            </Button>
           )}
 
           {delay === -1 && (
-            <Widget
+            <Button
               className="the-check"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 onDelay();
               }}
-              sx={({ palette }) => ({
-                ":hover": { bgcolor: alpha(palette.primary.main, 0.15) },
-              })}
+              // sx={({ palette }) => ({
+              //   ":hover": { bgcolor: alpha(palette.primary.main, 0.15) },
+              // })}
+              appearance="subtle"
             >
               {t("Test")}
-            </Widget>
+            </Button>
           )}
 
           {delay >= 0 && (
             // 显示延迟
-            <Widget
+            <Button
               className="the-delay"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 onDelay();
               }}
-              color={delayManager.formatDelayColor(delay)}
-              sx={({ palette }) => ({
-                ":hover": {
-                  bgcolor: alpha(palette.primary.main, 0.15),
-                },
-              })}
+              // color={delayManager.formatDelayColor(delay)}
+              // sx={({ palette }) => ({
+              //   ":hover": {
+              //     bgcolor: alpha(palette.primary.main, 0.15),
+              //   },
+              // })}
+              style={{
+                color: {
+                  "error.main": tokens.colorPaletteRedForeground1,
+                  "success.main": tokens.colorStatusSuccessForeground1,
+                  "warning.main": tokens.colorStatusWarningForeground1,
+                }[delayManager.formatDelayColor(delay)],
+              }}
+              appearance="subtle"
             >
               {delayManager.formatDelay(delay)}
-            </Widget>
+            </Button>
           )}
         </Box>
       </TestBox>

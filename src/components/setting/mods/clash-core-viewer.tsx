@@ -5,7 +5,10 @@ import { useTranslation } from "react-i18next";
 import { useVerge } from "@/hooks/use-verge";
 import { useLockFn } from "ahooks";
 import { LoadingButton } from "@mui/lab";
-import { SwitchAccessShortcut, RestartAlt } from "@mui/icons-material";
+import {
+  SwitchAccessShortcutRounded,
+  RestartAltRounded,
+} from "@mui/icons-material";
 import {
   Box,
   Button,
@@ -14,7 +17,7 @@ import {
   ListItemButton,
   ListItemText,
 } from "@mui/material";
-import { changeClashCore, restartSidecar } from "@/services/cmds";
+import { changeClashCore, restartCore } from "@/services/cmds";
 import { closeAllConnections, upgradeCore } from "@/services/api";
 
 const VALID_CORE = [
@@ -56,7 +59,7 @@ export const ClashCoreViewer = forwardRef<DialogRef>((props, ref) => {
 
   const onRestart = useLockFn(async () => {
     try {
-      await restartSidecar();
+      await restartCore();
       Notice.success(t(`Clash Core Restarted`), 1000);
     } catch (err: any) {
       Notice.error(err?.message || err.toString());
@@ -85,7 +88,7 @@ export const ClashCoreViewer = forwardRef<DialogRef>((props, ref) => {
             <LoadingButton
               variant="contained"
               size="small"
-              startIcon={<SwitchAccessShortcut />}
+              startIcon={<SwitchAccessShortcutRounded />}
               loadingPosition="start"
               loading={upgrading}
               sx={{ marginRight: "8px" }}
@@ -97,7 +100,7 @@ export const ClashCoreViewer = forwardRef<DialogRef>((props, ref) => {
               variant="contained"
               size="small"
               onClick={onRestart}
-              startIcon={<RestartAlt />}
+              startIcon={<RestartAltRounded />}
             >
               {t("Restart")}
             </Button>

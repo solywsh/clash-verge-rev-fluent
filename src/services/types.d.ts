@@ -32,6 +32,7 @@ interface IConfigData {
   "tproxy-port": number;
   "external-controller": string;
   secret: string;
+  "unified-delay": boolean;
   tun: {
     stack: string;
     device: string;
@@ -41,6 +42,22 @@ interface IConfigData {
     "strict-route": boolean;
     mtu: number;
   };
+  dns?: {
+    enable?: boolean;
+    [key: string]: any;
+  };
+  tunnels?: ITunnelItem[];
+  "external-controller-cors"?: {
+    "allow-private-network"?: boolean;
+    "allow-origins"?: string[];
+  };
+}
+
+interface ITunnelItem {
+  network: string[];
+  address: string;
+  target: string;
+  proxy?: string;
 }
 
 interface IRuleItem {
@@ -55,10 +72,13 @@ interface IProxyItem {
   udp: boolean;
   xudp: boolean;
   tfo: boolean;
+  mptcp: boolean;
+  smux: boolean;
   history: {
     time: string;
     delay: number;
   }[];
+  testUrl?: string;
   all?: string[];
   now?: string;
   hidden?: boolean;
@@ -197,6 +217,24 @@ interface IVergeTestItem {
   icon?: string;
   url: string;
 }
+interface IAddress {
+  V4?: {
+    ip: string;
+    broadcast?: string;
+    netmask?: string;
+  };
+  V6?: {
+    ip: string;
+    broadcast?: string;
+    netmask?: string;
+  };
+}
+interface INetworkInterface {
+  name: string;
+  addr: IAddress[];
+  mac_addr?: string;
+  index: number;
+}
 
 interface ISeqProfileConfig {
   prepend: [];
@@ -243,7 +281,7 @@ interface HttpOptions {
   method?: string;
   path?: string[];
   headers?: {
-    [key: string]: string;
+    [key: string]: string[];
   };
 }
 
@@ -260,8 +298,17 @@ interface RealityOptions {
   "public-key"?: string;
   "short-id"?: string;
 }
-
-type NetworkType = "ws" | "http" | "h2" | "grpc";
+type ClientFingerprint =
+  | "chrome"
+  | "firefox"
+  | "safari"
+  | "iOS"
+  | "android"
+  | "edge"
+  | "360"
+  | "qq"
+  | "random";
+type NetworkType = "ws" | "http" | "h2" | "grpc" | "tcp";
 type CipherType =
   | "none"
   | "auto"
@@ -325,7 +372,9 @@ interface IProxyHttpConfig extends IProxyBaseConfig {
   sni?: string;
   "skip-cert-verify"?: boolean;
   fingerprint?: string;
-  headers?: {};
+  headers?: {
+    [key: string]: string;
+  };
 }
 // socks5
 interface IProxySocks5Config extends IProxyBaseConfig {
@@ -374,7 +423,7 @@ interface IProxyTrojanConfig extends IProxyBaseConfig {
     method?: string;
     password?: string;
   };
-  "client-fingerprint"?: string;
+  "client-fingerprint"?: ClientFingerprint;
 }
 // tuic
 interface IProxyTuicConfig extends IProxyBaseConfig {
@@ -430,11 +479,14 @@ interface IProxyVlessConfig extends IProxyBaseConfig {
   "grpc-opts"?: GrpcOptions;
   "ws-opts"?: WsOptions;
   "ws-path"?: string;
-  "ws-headers"?: {};
+  "ws-headers"?: {
+    [key: string]: string;
+  };
   "skip-cert-verify"?: boolean;
   fingerprint?: string;
   servername?: string;
-  "client-fingerprint"?: string;
+  "client-fingerprint"?: ClientFingerprint;
+  smux?: boolean;
 }
 // vmess
 interface IProxyVmessConfig extends IProxyBaseConfig {
@@ -462,7 +514,8 @@ interface IProxyVmessConfig extends IProxyBaseConfig {
   "packet-encoding"?: string;
   "global-padding"?: boolean;
   "authenticated-length"?: boolean;
-  "client-fingerprint"?: string;
+  "client-fingerprint"?: ClientFingerprint;
+  smux?: boolean;
 }
 interface WireGuardPeerOptions {
   server?: string;
@@ -557,7 +610,9 @@ interface IProxyShadowsocksConfig extends IProxyBaseConfig {
     path?: string;
     tls?: string;
     fingerprint?: string;
-    headers?: {};
+    headers?: {
+      [key: string]: string;
+    };
     "skip-cert-verify"?: boolean;
     version?: number;
     mux?: boolean;
@@ -568,7 +623,8 @@ interface IProxyShadowsocksConfig extends IProxyBaseConfig {
   };
   "udp-over-tcp"?: boolean;
   "udp-over-tcp-version"?: number;
-  "client-fingerprint"?: string;
+  "client-fingerprint"?: ClientFingerprint;
+  smux?: boolean;
 }
 // shadowsocksR
 interface IProxyshadowsocksRConfig extends IProxyBaseConfig {
@@ -614,7 +670,8 @@ interface IProxySnellConfig extends IProxyBaseConfig {
   "obfs-opts"?: {};
 }
 interface IProxyConfig
-  extends IProxyBaseConfig,
+  extends
+    IProxyBaseConfig,
     IProxyDirectConfig,
     IProxyDnsConfig,
     IProxyHttpConfig,
@@ -666,9 +723,9 @@ interface IVergeConfig {
   common_tray_icon?: boolean;
   sysproxy_tray_icon?: boolean;
   tun_tray_icon?: boolean;
+  enable_tray_speed?: boolean;
   enable_tun_mode?: boolean;
   enable_auto_launch?: boolean;
-  enable_service_mode?: boolean;
   enable_silent_start?: boolean;
   enable_system_proxy?: boolean;
   proxy_auto_config?: boolean;
@@ -684,6 +741,7 @@ interface IVergeConfig {
   verge_socks_enabled?: boolean;
   verge_http_enabled?: boolean;
   enable_proxy_guard?: boolean;
+  enable_bypass_check?: boolean;
   use_default_bypass?: boolean;
   proxy_guard_duration?: number;
   system_proxy_bypass?: string;
@@ -706,7 +764,41 @@ interface IVergeConfig {
   default_latency_test?: string;
   default_latency_timeout?: number;
   enable_builtin_enhanced?: boolean;
+  enable_auto_light_weight_mode?: boolean;
+  auto_light_weight_minutes?: number;
   auto_log_clean?: 0 | 1 | 2 | 3;
   proxy_layout_column?: number;
   test_list?: IVergeTestItem[];
+  webdav_url?: string;
+  webdav_username?: string;
+  webdav_password?: string;
+}
+
+interface IWebDavFile {
+  filename: string;
+  href: string;
+  last_modified: string;
+  content_length: number;
+  content_type: string;
+  tag: string;
+}
+
+interface ILocalBackupFile {
+  filename: string;
+  path: string;
+  last_modified: string;
+  content_length: number;
+}
+
+interface IUnlockItem {
+  name: string;
+  status: string;
+  region?: string | null;
+  check_time?: string | null;
+}
+
+interface IWebDavConfig {
+  url: string;
+  username: string;
+  password: string;
 }

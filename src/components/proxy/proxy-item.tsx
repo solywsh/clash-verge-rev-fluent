@@ -15,6 +15,7 @@ import {
 import { BaseLoading } from "@/components/base";
 import delayManager from "@/services/delay";
 import { useVerge } from "@/hooks/use-verge";
+import { tokens } from "../../pages/_fluent_theme";
 
 interface Props {
   group: IProxyGroupItem;
@@ -31,7 +32,7 @@ const Widget = styled(Box)(() => ({
   borderRadius: "4px",
 }));
 
-const TypeBox = styled(Box)(({ theme }) => ({
+const TypeBox = styled("span")(({ theme }) => ({
   display: "inline-block",
   border: "1px solid #ccc",
   borderColor: alpha(theme.palette.text.secondary, 0.36),
@@ -73,7 +74,7 @@ export const ProxyItem = (props: Props) => {
   });
 
   return (
-    <ListItem sx={sx}>
+    <ListItem sx={sx} className={(props as any).className}>
       <ListItemButton
         dense
         selected={selected}
@@ -81,7 +82,8 @@ export const ProxyItem = (props: Props) => {
         sx={[
           { borderRadius: 1 },
           ({ palette: { mode, primary } }) => {
-            const bgcolor = mode === "light" ? "#ffffff" : "#24252f";
+            // const bgcolor = mode === "light" ? "#ffffff" : "#24252f";
+            const bgcolor = tokens.surface1;
             const selectColor = mode === "light" ? primary.main : primary.light;
             const showDelay = delay > 0;
 
@@ -121,14 +123,14 @@ export const ProxyItem = (props: Props) => {
                 {showType && proxy.now && ` - ${proxy.now}`}
               </Box>
               {showType && !!proxy.provider && (
-                <TypeBox component="span">{proxy.provider}</TypeBox>
+                <TypeBox>{proxy.provider}</TypeBox>
               )}
-              {showType && <TypeBox component="span">{proxy.type}</TypeBox>}
-              {showType && proxy.udp && <TypeBox component="span">UDP</TypeBox>}
-              {showType && proxy.xudp && (
-                <TypeBox component="span">XUDP</TypeBox>
-              )}
-              {showType && proxy.tfo && <TypeBox component="span">TFO</TypeBox>}
+              {showType && <TypeBox>{proxy.type}</TypeBox>}
+              {showType && proxy.udp && <TypeBox>UDP</TypeBox>}
+              {showType && proxy.xudp && <TypeBox>XUDP</TypeBox>}
+              {showType && proxy.tfo && <TypeBox>TFO</TypeBox>}
+              {showType && proxy.mptcp && <TypeBox>MPTCP</TypeBox>}
+              {showType && proxy.smux && <TypeBox>SMUX</TypeBox>}
             </>
           }
         />

@@ -4,16 +4,16 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import { SWRConfig, mutate } from "swr";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation, useRoutes } from "react-router-dom";
+import { useLocation, useRoutes, useNavigate } from "react-router-dom";
 import { List, Paper, ThemeProvider, SvgIcon } from "@mui/material";
-import { listen } from "@tauri-apps/api/event";
-import { appWindow } from "@tauri-apps/api/window";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { routers } from "./_routers";
 import { getAxios } from "@/services/api";
 import { useVerge } from "@/hooks/use-verge";
 import LogoSvg from "@/assets/image/logo.svg?react";
 import iconLight from "@/assets/image/icon_light.svg?react";
 import iconDark from "@/assets/image/icon_dark.svg?react";
+import Logo from "@/assets/image/logo.png";
 import { useThemeMode } from "@/services/states";
 import { Notice } from "@/components/base";
 import { LayoutItem } from "@/components/layout/layout-item";
@@ -25,12 +25,33 @@ import getSystem from "@/utils/get-system";
 import "dayjs/locale/ru";
 import "dayjs/locale/zh-cn";
 import { getPortableFlag } from "@/services/cmds";
-import { useNavigate } from "react-router-dom";
 import React from "react";
 import { TransitionGroup, CSSTransition } from "react-transition-group";
+import { useListen } from "@/hooks/use-listen";
+import {
+  TabList,
+  Button,
+  makeStyles,
+  mergeClasses,
+  Caption1,
+} from "@fluentui/react-components";
+import { FluentProviderWithTheme, tokens } from "./_fluent_theme";
+import { FluentLayoutItem } from "../components/fluent/layout-item";
+import { NavigationRegular } from "@fluentui/react-icons";
+
+const appWindow = getCurrentWebviewWindow();
 export let portableFlag = false;
 
 dayjs.extend(relativeTime);
+
+const useStyle = makeStyles({
+  sidebar: {
+    transition: `width ${tokens.durationNormal} ${tokens.curveDecelerateMid}`,
+  },
+  traffic: {
+    transition: `opacity ${tokens.durationNormal} ${tokens.curveDecelerateMid}`,
+  },
+});
 
 const OS = getSystem();
 
@@ -45,17 +66,13 @@ const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const routersEles = useRoutes(routers);
+  const { addListener, setupCloseListener } = useListen();
   if (!routersEles) return null;
 
-  useEffect(() => {
-    window.addEventListener("keydown", (e) => {
-      // macOS有cmd+w
-      if (e.key === "Escape" && OS !== "macos") {
-        appWindow.close();
-      }
-    });
+  setupCloseListener();
 
-    listen("verge://refresh-clash-config", async () => {
+  useEffect(() => {
+    addListener("verge://refresh-clash-config", async () => {
       // the clash info may be updated
       await getAxios(true);
       mutate("getProxies");
@@ -65,14 +82,20 @@ const Layout = () => {
     });
 
     // update the verge config
-    listen("verge://refresh-verge-config", () => mutate("getVergeConfig"));
+    addListener("verge://refresh-verge-config", () => mutate("getVergeConfig"));
 
     // 设置提示监听
-    listen("verge://notice-message", ({ payload }) => {
+    addListener("verge://notice-message", ({ payload }) => {
       const [status, msg] = payload as [string, string];
       switch (status) {
-        case "set_config::ok":
-          Notice.success(t("Clash Config Updated"));
+        case "import_sub_url::ok":
+          navigate("/profile", { state: { current: msg } });
+
+          Notice.success(t("Import Subscription Successful"));
+          break;
+        case "import_sub_url::error":
+          navigate("/profile");
+          Notice.error(msg);
           break;
         case "set_config::error":
           Notice.error(msg);
@@ -100,67 +123,84 @@ const Layout = () => {
     }
   }, [language, start_page]);
 
+  const [sideBarExpand, setSideBarExpand] = React.useState(true);
+  const { sidebar, traffic } = useStyle();
+
   return (
     <SWRConfig value={{ errorRetryCount: 3 }}>
       <ThemeProvider theme={theme}>
-        <Paper
-          square
-          elevation={0}
-          className={`${OS} layout`}
-          onContextMenu={(e) => {
-            // only prevent it on Windows
-            const validList = ["input", "textarea"];
-            const target = e.currentTarget;
-            if (
-              OS === "windows" &&
-              !(
-                validList.includes(target.tagName.toLowerCase()) ||
-                target.isContentEditable
-              )
-            ) {
-              e.preventDefault();
-            }
-          }}
-          sx={[
-            ({ palette }) => ({
-              bgcolor: palette.background.paper,
-            }),
-            OS === "linux"
-              ? {
-                  borderRadius: "8px",
-                  border: "2px solid var(--divider-color)",
-                  width: "calc(100vw - 4px)",
-                  height: "calc(100vh - 4px)",
-                }
-              : {},
-          ]}
-        >
-          <div className="layout__left">
-            <div className="the-logo" data-tauri-drag-region="true">
-              <div
-                style={{
-                  height: "27px",
-                  display: "flex",
-                  justifyContent: "space-between",
-                }}
-              >
-                <SvgIcon
-                  component={isDark ? iconDark : iconLight}
-                  style={{
-                    height: "36px",
-                    width: "36px",
-                    marginTop: "-3px",
-                    marginRight: "5px",
-                    marginLeft: "-3px",
-                  }}
-                  inheritViewBox
-                />
-                <LogoSvg fill={isDark ? "white" : "black"} />
-              </div>
-              {<UpdateButton className="the-newbtn" />}
+        <FluentProviderWithTheme>
+          <header
+            className="title-bar"
+            style={{ height: 32 }}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            <div className="title-bar__content">
+              <img src={Logo} width={28} height={28} />
+              <Caption1>Clash verge</Caption1>
             </div>
+          </header>
+          <Paper
+            square
+            elevation={0}
+            className={`${OS} layout`}
+            onContextMenu={(e) => {
+              // only prevent it on Windows
+              const validList = ["input", "textarea"];
+              const target = e.currentTarget;
+              if (
+                OS === "windows" &&
+                !(
+                  validList.includes(target.tagName.toLowerCase()) ||
+                  target.isContentEditable
+                )
+              ) {
+                e.preventDefault();
+              }
+            }}
+            sx={[
+              ({ palette }) => ({
+                bgcolor: palette.background.paper,
+              }),
+              OS === "linux"
+                ? {
+                    borderRadius: "8px",
+                    border: "2px solid var(--divider-color)",
+                    width: "calc(100vw - 4px)",
+                    height: "calc(100vh - 4px)",
+                  }
+                : {},
+            ]}
+          >
+            <div
+              className={mergeClasses("layout__left", sidebar)}
+              style={{ width: sideBarExpand ? "200px" : "48px" }}
+            >
+              {/* <div className="the-logo" data-tauri-drag-region="true">
+                <div
+                  style={{
+                    height: "27px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <SvgIcon
+                    component={isDark ? iconDark : iconLight}
+                    style={{
+                      height: "36px",
+                      width: "36px",
+                      marginTop: "-3px",
+                      marginRight: "5px",
+                      marginLeft: "-3px",
+                    }}
+                    inheritViewBox
+                  />
+                  <LogoSvg fill={isDark ? "white" : "black"} />
+                </div>
+                {<UpdateButton className="the-newbtn" />}
+              </div> */}
 
-            <List className="the-menu">
+              {/* <List className="the-menu">
               {routers.map((router) => (
                 <LayoutItem
                   key={router.label}
@@ -170,39 +210,74 @@ const Layout = () => {
                   {t(router.label)}
                 </LayoutItem>
               ))}
-            </List>
+            </List> */}
+              <Button
+                style={{ marginTop: 24 }}
+                icon={<NavigationRegular fontSize={20} />}
+                appearance="subtle"
+                size="large"
+                onClick={() => setSideBarExpand(!sideBarExpand)}
+              />
+              {renderFluentSideBar()}
 
-            <div className="the-traffic">
-              <LayoutTraffic />
-            </div>
-          </div>
-
-          <div className="layout__right">
-            {
-              <div className="the-bar">
-                <div
-                  className="the-dragbar"
-                  data-tauri-drag-region="true"
-                  style={{ width: "100%" }}
-                ></div>
-                {OS !== "macos" && <LayoutControl />}
-              </div>
-            }
-
-            <TransitionGroup className="the-content">
-              <CSSTransition
-                key={location.pathname}
-                timeout={300}
-                classNames="page"
+              <div
+                className={mergeClasses("the-traffic", traffic)}
+                style={{ opacity: sideBarExpand ? 1 : 0 }}
               >
-                {React.cloneElement(routersEles, { key: location.pathname })}
-              </CSSTransition>
-            </TransitionGroup>
-          </div>
-        </Paper>
+                <LayoutTraffic />
+              </div>
+            </div>
+
+            <div className="layout__right">
+              {OS !== "windows" && (
+                <div className="the-bar">
+                  <div
+                    className="the-dragbar"
+                    data-tauri-drag-region="true"
+                    style={{ width: "100%" }}
+                  ></div>
+                  {OS !== "macos" && <LayoutControl />}
+                </div>
+              )}
+
+              <TransitionGroup className="the-content">
+                <CSSTransition
+                  key={location.pathname}
+                  timeout={300}
+                  classNames="page"
+                >
+                  {React.cloneElement(routersEles, { key: location.pathname })}
+                </CSSTransition>
+              </TransitionGroup>
+            </div>
+          </Paper>
+        </FluentProviderWithTheme>
       </ThemeProvider>
     </SWRConfig>
   );
+
+  function renderFluentSideBar() {
+    return (
+      <TabList
+        className="the-menu"
+        size="medium"
+        vertical
+        selectedValue={location.pathname}
+        onTabSelect={(e, value) => navigate(value.value as string)}
+        // appearance="subtle"
+      >
+        {routers.map((router) => (
+          <FluentLayoutItem
+            key={router.label}
+            to={router.path}
+            icon={router.icon}
+          >
+            {t(router.label)}
+          </FluentLayoutItem>
+        ))}
+      </TabList>
+    );
+  }
 };
 
 export default Layout;

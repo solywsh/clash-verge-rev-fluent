@@ -1,107 +1,91 @@
-import axios, { AxiosInstance } from "axios";
-import { getClashInfo } from "./cmds";
+// Mihomo data layer.
+//
+// Historically this talked to the mihomo HTTP external controller via axios.
+// Upstream v2.5.1 keeps the external controller OFF by default and exposes the
+// core over an IPC socket/named-pipe through `tauri-plugin-mihomo`. This module
+// now bridges to that plugin (`tauri-plugin-mihomo-api`) instead, keeping the
+// same exported function names and return shapes so existing consumers and the
+// frontend `I*` types are unaffected.
+import {
+  getVersion as mihomoGetVersion,
+  getBaseConfig,
+  updateGeo,
+  upgradeCore as mihomoUpgradeCore,
+  getRules as mihomoGetRules,
+  delayProxyByName,
+  selectNodeForGroup,
+  getProxies as mihomoGetProxies,
+  getProxyProviders as mihomoGetProxyProviders,
+  getRuleProviders as mihomoGetRuleProviders,
+  healthcheckProxyProvider,
+  updateProxyProvider,
+  updateRuleProvider,
+  getConnections as mihomoGetConnections,
+  closeConnection,
+  closeAllConnections as mihomoCloseAllConnections,
+  delayGroup,
+} from "tauri-plugin-mihomo-api";
+import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 
-let axiosIns: AxiosInstance = null!;
+const DEFAULT_TEST_URL = "http://cp.cloudflare.com/generate_204";
 
-/// initialize some information
-/// enable force update axiosIns
-export const getAxios = async (force: boolean = false) => {
-  if (axiosIns && !force) return axiosIns;
-
-  let server = "";
-  let secret = "";
-
-  try {
-    const info = await getClashInfo();
-
-    if (info?.server) {
-      server = info.server;
-
-      // compatible width `external-controller`
-      if (server.startsWith(":")) server = `127.0.0.1${server}`;
-      else if (/^\d+$/.test(server)) server = `127.0.0.1:${server}`;
-    }
-    if (info?.secret) secret = info?.secret;
-  } catch {}
-
-  axiosIns = axios.create({
-    baseURL: `http://${server}`,
-    headers: secret ? { Authorization: `Bearer ${secret}` } : {},
-    timeout: 15000,
-  });
-  axiosIns.interceptors.response.use((r) => r.data);
-  return axiosIns;
-};
+/// Kept for backward compatibility. The mihomo plugin talks to the core over a
+/// local IPC pipe, so there is no axios instance / controller endpoint to
+/// (re)initialize anymore — this is now a no-op.
+export const getAxios = async (_force: boolean = false) => {};
 
 /// Get Version
 export const getVersion = async () => {
-  const instance = await getAxios();
-  return instance.get("/version") as Promise<{
+  return (await mihomoGetVersion()) as {
     premium: boolean;
     meta?: boolean;
     version: string;
-  }>;
+  };
 };
 
 /// Get current base configs
 export const getClashConfig = async () => {
-  const instance = await getAxios();
-  return instance.get("/configs") as Promise<IConfigData>;
-};
-
-/// Update current configs
-export const updateConfigs = async (config: Partial<IConfigData>) => {
-  const instance = await getAxios();
-  return instance.patch("/configs", config);
+  return (await getBaseConfig()) as unknown as IConfigData;
 };
 
 /// Update geo data
 export const updateGeoData = async () => {
-  const instance = await getAxios();
-  return instance.post("/configs/geo");
+  return updateGeo();
 };
 
 /// Upgrade clash core
 export const upgradeCore = async () => {
-  const instance = await getAxios();
-  return instance.post("/upgrade");
+  return mihomoUpgradeCore();
 };
 
 /// Get current rules
 export const getRules = async () => {
-  const instance = await getAxios();
-  const response = await instance.get<any, any>("/rules");
-  return response?.rules as IRuleItem[];
+  const response = await mihomoGetRules();
+  return (response?.rules ?? []) as unknown as IRuleItem[];
 };
 
 /// Get Proxy delay
 export const getProxyDelay = async (
   name: string,
   url?: string,
-  timeout?: number
+  timeout?: number,
 ) => {
-  const params = {
-    timeout: timeout || 10000,
-    url: url || "http://1.1.1.1",
-  };
-  const instance = await getAxios();
-  const result = await instance.get(
-    `/proxies/${encodeURIComponent(name)}/delay`,
-    { params }
+  const result = await delayProxyByName(
+    name,
+    url || DEFAULT_TEST_URL,
+    timeout || 10000,
   );
-  return result as any as { delay: number };
+  return result as { delay: number };
 };
 
 /// Update the Proxy Choose
 export const updateProxy = async (group: string, proxy: string) => {
-  const instance = await getAxios();
-  return instance.put(`/proxies/${encodeURIComponent(group)}`, { name: proxy });
+  return selectNodeForGroup(group, proxy);
 };
 
 // get proxy
 export const getProxiesInner = async () => {
-  const instance = await getAxios();
-  const response = await instance.get<any, any>("/proxies");
+  const response = await mihomoGetProxies();
   return (response?.proxies || {}) as Record<string, IProxyItem>;
 };
 
@@ -114,8 +98,8 @@ export const getProxies = async () => {
   // provider name map
   const providerMap = Object.fromEntries(
     Object.entries(providerRecord).flatMap(([provider, item]) =>
-      item.proxies.map((p) => [p.name, { ...p, provider }])
-    )
+      item.proxies.map((p) => [p.name, { ...p, provider }]),
+    ),
   );
 
   // compatible with proxy-providers
@@ -128,6 +112,8 @@ export const getProxies = async () => {
       udp: false,
       xudp: false,
       tfo: false,
+      mptcp: false,
+      smux: false,
       history: [],
     };
   };
@@ -158,7 +144,7 @@ export const getProxies = async () => {
         }
         return acc;
       },
-      []
+      [],
     );
 
     let globalNames = new Set(globalGroups.map((each) => each.name));
@@ -171,8 +157,8 @@ export const getProxies = async () => {
 
   const proxies = [direct, reject].concat(
     Object.values(proxyRecord).filter(
-      (p) => !p.all?.length && p.name !== "DIRECT" && p.name !== "REJECT"
-    )
+      (p) => !p.all?.length && p.name !== "DIRECT" && p.name !== "REJECT",
+    ),
   );
 
   const _global: IProxyGroupItem = {
@@ -185,8 +171,7 @@ export const getProxies = async () => {
 
 // get proxy providers
 export const getProxyProviders = async () => {
-  const instance = await getAxios();
-  const response = await instance.get<any, any>("/providers/proxies");
+  const response = await mihomoGetProxyProviders();
 
   const providers = (response.providers || {}) as Record<
     string,
@@ -197,13 +182,12 @@ export const getProxyProviders = async () => {
     Object.entries(providers).filter(([key, item]) => {
       const type = item.vehicleType.toLowerCase();
       return type === "http" || type === "file";
-    })
+    }),
   );
 };
 
 export const getRuleProviders = async () => {
-  const instance = await getAxios();
-  const response = await instance.get<any, any>("/providers/rules");
+  const response = await mihomoGetRuleProviders();
 
   const providers = (response.providers || {}) as Record<
     string,
@@ -214,81 +198,134 @@ export const getRuleProviders = async () => {
     Object.entries(providers).filter(([key, item]) => {
       const type = item.vehicleType.toLowerCase();
       return type === "http" || type === "file";
-    })
+    }),
   );
 };
 
 // proxy providers health check
 export const providerHealthCheck = async (name: string) => {
-  const instance = await getAxios();
-  return instance.get(
-    `/providers/proxies/${encodeURIComponent(name)}/healthcheck`
-  );
+  return healthcheckProxyProvider(name);
 };
 
 export const proxyProviderUpdate = async (name: string) => {
-  const instance = await getAxios();
-  return instance.put(`/providers/proxies/${encodeURIComponent(name)}`);
+  return updateProxyProvider(name);
 };
 
 export const ruleProviderUpdate = async (name: string) => {
-  const instance = await getAxios();
-  return instance.put(`/providers/rules/${encodeURIComponent(name)}`);
+  return updateRuleProvider(name);
 };
 
 export const getConnections = async () => {
-  const instance = await getAxios();
-  const result = await instance.get("/connections");
-  return result as any as IConnections;
+  const result = await mihomoGetConnections();
+  return {
+    ...result,
+    connections: result.connections ?? [],
+  } as unknown as IConnections;
 };
 
 // Close specific connection
 export const deleteConnection = async (id: string) => {
-  const instance = await getAxios();
-  await instance.delete<any, any>(`/connections/${encodeURIComponent(id)}`);
+  await closeConnection(id);
 };
 
 // Close all connections
 export const closeAllConnections = async () => {
-  const instance = await getAxios();
-  await instance.delete<any, any>(`/connections`);
+  await mihomoCloseAllConnections();
 };
 
 // Get Group Proxy Delays
 export const getGroupProxyDelays = async (
   groupName: string,
   url?: string,
-  timeout?: number
+  timeout?: number,
 ) => {
-  const params = {
-    timeout: timeout || 10000,
-    url: url || "http://1.1.1.1",
-  };
-  const instance = await getAxios();
-  const result = await instance.get(
-    `/group/${encodeURIComponent(groupName)}/delay`,
-    { params }
+  const result = await delayGroup(
+    groupName,
+    url || DEFAULT_TEST_URL,
+    timeout || 10000,
   );
-  return result as any as Record<string, number>;
+  return result as Record<string, number>;
 };
 
 // Is debug enabled
+//
+// The mihomo plugin does not expose the core's /debug endpoints, so the
+// memory-GC debug affordance is disabled under the IPC data layer.
 export const isDebugEnabled = async () => {
-  try {
-    const instance = await getAxios();
-    await instance.get("/debug/pprof");
-    return true;
-  } catch {
-    return false;
-  }
+  return false;
 };
 
-// GC
-export const gc = async () => {
-  try {
-    const instance = await getAxios();
-    await instance.put("/debug/gc");
-  } catch (error) {
-    console.error(`Error gcing: ${error}`);
+// GC — no-op (see isDebugEnabled).
+export const gc = async () => {};
+
+// Public IP / geolocation info (for the Home page IP card).
+export interface IpInfo {
+  ip: string;
+  country_code: string;
+  country: string;
+  region: string;
+  city: string;
+  organization: string;
+  asn: number;
+  asn_organization: string;
+  longitude: number;
+  latitude: number;
+  timezone: string;
+}
+
+// Try a couple of public geoip services in order; first success wins.
+const IP_CHECK_SERVICES: {
+  url: string;
+  mapping: (data: any) => IpInfo;
+}[] = [
+  {
+    url: "https://api.ip.sb/geoip",
+    mapping: (data) => ({
+      ip: data.ip || "",
+      country_code: data.country_code || "",
+      country: data.country || "",
+      region: data.region || "",
+      city: data.city || "",
+      organization: data.organization || data.isp || "",
+      asn: data.asn || 0,
+      asn_organization: data.asn_organization || "",
+      longitude: data.longitude || 0,
+      latitude: data.latitude || 0,
+      timezone: data.timezone || "",
+    }),
+  },
+  {
+    url: "https://ipapi.co/json",
+    mapping: (data) => ({
+      ip: data.ip || "",
+      country_code: data.country_code || "",
+      country: data.country_name || "",
+      region: data.region || "",
+      city: data.city || "",
+      organization: data.org || "",
+      asn: data.asn ? parseInt(String(data.asn).replace("AS", "")) : 0,
+      asn_organization: data.org || "",
+      longitude: data.longitude || 0,
+      latitude: data.latitude || 0,
+      timezone: data.timezone || "",
+    }),
+  },
+];
+
+export const getIpInfo = async (): Promise<IpInfo> => {
+  let lastErr: unknown;
+  for (const service of IP_CHECK_SERVICES) {
+    try {
+      const resp = await tauriFetch(service.url, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      return service.mapping(data);
+    } catch (err) {
+      lastErr = err;
+    }
   }
+  throw lastErr ?? new Error("Failed to fetch IP info");
 };

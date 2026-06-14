@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLockFn } from "ahooks";
 import yaml from "js-yaml";
 import { useTranslation } from "react-i18next";
@@ -23,17 +23,26 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  InputAdornment,
   List,
   ListItem,
   ListItemText,
   TextField,
   styled,
 } from "@mui/material";
+import {
+  VerticalAlignTopRounded,
+  VerticalAlignBottomRounded,
+} from "@mui/icons-material";
 import { GroupItem } from "@/components/profile/group-item";
-import { readProfileFile, saveProfileFile } from "@/services/cmds";
+import {
+  getNetworkInterfaces,
+  readProfileFile,
+  saveProfileFile,
+} from "@/services/cmds";
 import { Notice, Switch } from "@/components/base";
 import getSystem from "@/utils/get-system";
-import { BaseSearchBox } from "../base/base-search-box";
+import { FluentBaseSearchBox as BaseSearchBox } from "../base/base-search-box";
 import { Virtuoso } from "react-virtuoso";
 import MonacoEditor from "react-monaco-editor";
 import { useThemeMode } from "@/services/states";
@@ -60,7 +69,7 @@ export const GroupsEditorViewer = (props: Props) => {
   const [currData, setCurrData] = useState("");
   const [visualization, setVisualization] = useState(true);
   const [match, setMatch] = useState(() => (_: string) => true);
-
+  const [interfaceNameList, setInterfaceNameList] = useState<string[]>([]);
   const { control, watch, register, ...formIns } = useForm<IProxyGroupConfig>({
     defaultValues: {
       type: "select",
@@ -80,27 +89,27 @@ export const GroupsEditorViewer = (props: Props) => {
 
   const filteredPrependSeq = useMemo(
     () => prependSeq.filter((group) => match(group.name)),
-    [prependSeq, match]
+    [prependSeq, match],
   );
   const filteredGroupList = useMemo(
     () => groupList.filter((group) => match(group.name)),
-    [groupList, match]
+    [groupList, match],
   );
   const filteredAppendSeq = useMemo(
     () => appendSeq.filter((group) => match(group.name)),
-    [appendSeq, match]
+    [appendSeq, match],
   );
 
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
   const reorder = (
     list: IProxyGroupConfig[],
     startIndex: number,
-    endIndex: number
+    endIndex: number,
   ) => {
     const result = Array.from(list);
     const [removed] = result.splice(startIndex, 1);
@@ -177,8 +186,8 @@ export const GroupsEditorViewer = (props: Props) => {
           { prepend: prependSeq, append: appendSeq, delete: deleteSeq },
           {
             forceQuotes: true,
-          }
-        )
+          },
+        ),
       );
   }, [prependSeq, appendSeq, deleteSeq]);
 
@@ -205,7 +214,7 @@ export const GroupsEditorViewer = (props: Props) => {
           return !moreDeleteProxies.includes(proxy);
         }
       }),
-      moreAppendProxies
+      moreAppendProxies,
     );
 
     setProxyPolicyList(
@@ -215,8 +224,8 @@ export const GroupsEditorViewer = (props: Props) => {
           .map((group: IProxyGroupConfig) => group.name)
           .filter((name) => !deleteSeq.includes(name)) || [],
         appendSeq.map((group: IProxyGroupConfig) => group.name),
-        proxies.map((proxy: any) => proxy.name)
-      )
+        proxies.map((proxy: any) => proxy.name),
+      ),
     );
   };
   const fetchProfile = async () => {
@@ -245,11 +254,15 @@ export const GroupsEditorViewer = (props: Props) => {
       {},
       originProvider,
       moreProvider,
-      globalProvider
+      globalProvider,
     );
 
     setProxyProviderList(Object.keys(provider));
     setGroupList(originGroupsObj?.["proxy-groups"] || []);
+  };
+  const getInterfaceNameList = async () => {
+    let list = await getNetworkInterfaces();
+    setInterfaceNameList(list);
   };
   useEffect(() => {
     fetchProxyPolicy();
@@ -259,12 +272,13 @@ export const GroupsEditorViewer = (props: Props) => {
     fetchContent();
     fetchProxyPolicy();
     fetchProfile();
+    getInterfaceNameList();
   }, [open]);
 
   const validateGroup = () => {
     let group = formIns.getValues();
     if (group.name === "") {
-      throw new Error(t("Group Name Cannot Be Empty"));
+      throw new Error(t("Group Name Required"));
     }
   };
 
@@ -333,6 +347,11 @@ export const GroupsEditorViewer = (props: Props) => {
                           "relay",
                         ]}
                         value={field.value}
+                        renderOption={(props, option) => (
+                          <li {...props} title={t(option)}>
+                            {option}
+                          </li>
+                        )}
                         onChange={(_, value) => value && field.onChange(value)}
                         renderInput={(params) => <TextField {...params} />}
                       />
@@ -346,7 +365,7 @@ export const GroupsEditorViewer = (props: Props) => {
                     <Item>
                       <ListItemText primary={t("Group Name")} />
                       <TextField
-                        autoComplete="off"
+                        autoComplete="new-password"
                         size="small"
                         sx={{ width: "calc(100% - 150px)" }}
                         {...field}
@@ -361,9 +380,9 @@ export const GroupsEditorViewer = (props: Props) => {
                   control={control}
                   render={({ field }) => (
                     <Item>
-                      <ListItemText primary={t("Icon")} />
+                      <ListItemText primary={t("Proxy Group Icon")} />
                       <TextField
-                        autoComplete="off"
+                        autoComplete="new-password"
                         size="small"
                         sx={{ width: "calc(100% - 150px)" }}
                         {...field}
@@ -387,6 +406,11 @@ export const GroupsEditorViewer = (props: Props) => {
                         disableCloseOnSelect
                         onChange={(_, value) => value && field.onChange(value)}
                         renderInput={(params) => <TextField {...params} />}
+                        renderOption={(props, option) => (
+                          <li {...props} title={t(option)}>
+                            {option}
+                          </li>
+                        )}
                       />
                     </Item>
                   )}
@@ -409,7 +433,6 @@ export const GroupsEditorViewer = (props: Props) => {
                     </Item>
                   )}
                 />
-
                 <Controller
                   name="url"
                   control={control}
@@ -417,10 +440,29 @@ export const GroupsEditorViewer = (props: Props) => {
                     <Item>
                       <ListItemText primary={t("Health Check Url")} />
                       <TextField
-                        autoComplete="off"
+                        autoComplete="new-password"
+                        placeholder="https://www.gstatic.com/generate_204"
                         size="small"
                         sx={{ width: "calc(100% - 150px)" }}
                         {...field}
+                      />
+                    </Item>
+                  )}
+                />
+                <Controller
+                  name="expected-status"
+                  control={control}
+                  render={({ field }) => (
+                    <Item>
+                      <ListItemText primary={t("Expected Status")} />
+                      <TextField
+                        autoComplete="new-password"
+                        placeholder="*"
+                        size="small"
+                        sx={{ width: "calc(100% - 150px)" }}
+                        onChange={(e) => {
+                          field.onChange(parseInt(e.target.value));
+                        }}
                       />
                     </Item>
                   )}
@@ -432,12 +474,20 @@ export const GroupsEditorViewer = (props: Props) => {
                     <Item>
                       <ListItemText primary={t("Interval")} />
                       <TextField
-                        autoComplete="off"
+                        autoComplete="new-password"
+                        placeholder="300"
                         type="number"
                         size="small"
                         sx={{ width: "calc(100% - 150px)" }}
                         onChange={(e) => {
                           field.onChange(parseInt(e.target.value));
+                        }}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              {t("seconds")}
+                            </InputAdornment>
+                          ),
                         }}
                       />
                     </Item>
@@ -450,12 +500,20 @@ export const GroupsEditorViewer = (props: Props) => {
                     <Item>
                       <ListItemText primary={t("Timeout")} />
                       <TextField
-                        autoComplete="off"
+                        autoComplete="new-password"
+                        placeholder="5000"
                         type="number"
                         size="small"
                         sx={{ width: "calc(100% - 150px)" }}
                         onChange={(e) => {
                           field.onChange(parseInt(e.target.value));
+                        }}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              {t("millis")}
+                            </InputAdornment>
+                          ),
                         }}
                       />
                     </Item>
@@ -468,7 +526,8 @@ export const GroupsEditorViewer = (props: Props) => {
                     <Item>
                       <ListItemText primary={t("Max Failed Times")} />
                       <TextField
-                        autoComplete="off"
+                        autoComplete="new-password"
+                        placeholder="5"
                         type="number"
                         size="small"
                         sx={{ width: "calc(100% - 150px)" }}
@@ -485,11 +544,13 @@ export const GroupsEditorViewer = (props: Props) => {
                   render={({ field }) => (
                     <Item>
                       <ListItemText primary={t("Interface Name")} />
-                      <TextField
-                        autoComplete="off"
+                      <Autocomplete
                         size="small"
                         sx={{ width: "calc(100% - 150px)" }}
-                        {...field}
+                        options={interfaceNameList}
+                        value={field.value}
+                        onChange={(_, value) => value && field.onChange(value)}
+                        renderInput={(params) => <TextField {...params} />}
                       />
                     </Item>
                   )}
@@ -501,7 +562,7 @@ export const GroupsEditorViewer = (props: Props) => {
                     <Item>
                       <ListItemText primary={t("Routing Mark")} />
                       <TextField
-                        autoComplete="off"
+                        autoComplete="new-password"
                         type="number"
                         size="small"
                         sx={{ width: "calc(100% - 150px)" }}
@@ -519,7 +580,7 @@ export const GroupsEditorViewer = (props: Props) => {
                     <Item>
                       <ListItemText primary={t("Filter")} />
                       <TextField
-                        autoComplete="off"
+                        autoComplete="new-password"
                         size="small"
                         sx={{ width: "calc(100% - 150px)" }}
                         {...field}
@@ -534,7 +595,7 @@ export const GroupsEditorViewer = (props: Props) => {
                     <Item>
                       <ListItemText primary={t("Exclude Filter")} />
                       <TextField
-                        autoComplete="off"
+                        autoComplete="new-password"
                         size="small"
                         sx={{ width: "calc(100% - 150px)" }}
                         {...field}
@@ -584,23 +645,6 @@ export const GroupsEditorViewer = (props: Props) => {
                           field.onChange(value.join("|"));
                         }}
                         renderInput={(params) => <TextField {...params} />}
-                      />
-                    </Item>
-                  )}
-                />
-                <Controller
-                  name="expected-status"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Expected Status")} />
-                      <TextField
-                        autoComplete="off"
-                        size="small"
-                        sx={{ width: "calc(100% - 150px)" }}
-                        onChange={(e) => {
-                          field.onChange(parseInt(e.target.value));
-                        }}
                       />
                     </Item>
                   )}
@@ -670,15 +714,16 @@ export const GroupsEditorViewer = (props: Props) => {
                 <Button
                   fullWidth
                   variant="contained"
+                  startIcon={<VerticalAlignTopRounded />}
                   onClick={() => {
                     try {
                       validateGroup();
-                      for (const item of prependSeq) {
+                      for (const item of [...prependSeq, ...groupList]) {
                         if (item.name === formIns.getValues().name) {
                           throw new Error(t("Group Name Already Exists"));
                         }
                       }
-                      setPrependSeq([...prependSeq, formIns.getValues()]);
+                      setPrependSeq([formIns.getValues(), ...prependSeq]);
                     } catch (err: any) {
                       Notice.error(err.message || err.toString());
                     }
@@ -691,10 +736,11 @@ export const GroupsEditorViewer = (props: Props) => {
                 <Button
                   fullWidth
                   variant="contained"
+                  startIcon={<VerticalAlignBottomRounded />}
                   onClick={() => {
                     try {
                       validateGroup();
-                      for (const item of appendSeq) {
+                      for (const item of [...appendSeq, ...groupList]) {
                         if (item.name === formIns.getValues().name) {
                           throw new Error(t("Group Name Already Exists"));
                         }
@@ -716,10 +762,7 @@ export const GroupsEditorViewer = (props: Props) => {
                 padding: "0 10px",
               }}
             >
-              <BaseSearchBox
-                matchCase={false}
-                onSearch={(match) => setMatch(() => match)}
-              />
+              <BaseSearchBox onSearch={(match) => setMatch(() => match)} />
               <Virtuoso
                 style={{ height: "calc(100% - 24px)", marginTop: "8px" }}
                 totalCount={
@@ -751,8 +794,8 @@ export const GroupsEditorViewer = (props: Props) => {
                                 onDelete={() => {
                                   setPrependSeq(
                                     prependSeq.filter(
-                                      (v) => v.name !== item.name
-                                    )
+                                      (v) => v.name !== item.name,
+                                    ),
                                   );
                                 }}
                               />
@@ -778,8 +821,8 @@ export const GroupsEditorViewer = (props: Props) => {
                           ) {
                             setDeleteSeq(
                               deleteSeq.filter(
-                                (v) => v !== filteredGroupList[newIndex].name
-                              )
+                                (v) => v !== filteredGroupList[newIndex].name,
+                              ),
                             );
                           } else {
                             setDeleteSeq((prev) => [
@@ -811,8 +854,8 @@ export const GroupsEditorViewer = (props: Props) => {
                                 onDelete={() => {
                                   setAppendSeq(
                                     appendSeq.filter(
-                                      (v) => v.name !== item.name
-                                    )
+                                      (v) => v.name !== item.name,
+                                    ),
                                   );
                                 }}
                               />

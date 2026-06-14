@@ -24,15 +24,18 @@ import {
   DialogTitle,
   List,
   ListItem,
-  ListItemText,
   TextField,
   styled,
 } from "@mui/material";
+import {
+  VerticalAlignTopRounded,
+  VerticalAlignBottomRounded,
+} from "@mui/icons-material";
 import { ProxyItem } from "@/components/profile/proxy-item";
 import { readProfileFile, saveProfileFile } from "@/services/cmds";
 import { Notice } from "@/components/base";
 import getSystem from "@/utils/get-system";
-import { BaseSearchBox } from "../base/base-search-box";
+import { FluentBaseSearchBox as BaseSearchBox } from "../base/base-search-box";
 import { Virtuoso } from "react-virtuoso";
 import MonacoEditor from "react-monaco-editor";
 import { useThemeMode } from "@/services/states";
@@ -63,27 +66,27 @@ export const ProxiesEditorViewer = (props: Props) => {
 
   const filteredPrependSeq = useMemo(
     () => prependSeq.filter((proxy) => match(proxy.name)),
-    [prependSeq, match]
+    [prependSeq, match],
   );
   const filteredProxyList = useMemo(
     () => proxyList.filter((proxy) => match(proxy.name)),
-    [proxyList, match]
+    [proxyList, match],
   );
   const filteredAppendSeq = useMemo(
     () => appendSeq.filter((proxy) => match(proxy.name)),
-    [appendSeq, match]
+    [appendSeq, match],
   );
 
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
   const reorder = (
     list: IProxyConfig[],
     startIndex: number,
-    endIndex: number
+    endIndex: number,
   ) => {
     const result = Array.from(list);
     const [removed] = result.splice(startIndex, 1);
@@ -195,8 +198,8 @@ export const ProxiesEditorViewer = (props: Props) => {
           { prepend: prependSeq, append: appendSeq, delete: deleteSeq },
           {
             forceQuotes: true,
-          }
-        )
+          },
+        ),
       );
   }, [prependSeq, appendSeq, deleteSeq]);
 
@@ -256,7 +259,7 @@ export const ProxiesEditorViewer = (props: Props) => {
               >
                 <Item>
                   <TextField
-                    autoComplete="off"
+                    autoComplete="new-password"
                     placeholder={t("Use newlines for multiple uri")}
                     fullWidth
                     rows={9}
@@ -270,9 +273,10 @@ export const ProxiesEditorViewer = (props: Props) => {
                 <Button
                   fullWidth
                   variant="contained"
+                  startIcon={<VerticalAlignTopRounded />}
                   onClick={() => {
                     let proxies = handleParse();
-                    setPrependSeq([...prependSeq, ...proxies]);
+                    setPrependSeq([...proxies, ...prependSeq]);
                   }}
                 >
                   {t("Prepend Proxy")}
@@ -282,6 +286,7 @@ export const ProxiesEditorViewer = (props: Props) => {
                 <Button
                   fullWidth
                   variant="contained"
+                  startIcon={<VerticalAlignBottomRounded />}
                   onClick={() => {
                     let proxies = handleParse();
                     setAppendSeq([...appendSeq, ...proxies]);
@@ -298,10 +303,7 @@ export const ProxiesEditorViewer = (props: Props) => {
                 padding: "0 10px",
               }}
             >
-              <BaseSearchBox
-                matchCase={false}
-                onSearch={(match) => setMatch(() => match)}
-              />
+              <BaseSearchBox onSearch={(match) => setMatch(() => match)} />
               <Virtuoso
                 style={{ height: "calc(100% - 24px)", marginTop: "8px" }}
                 totalCount={
@@ -333,8 +335,8 @@ export const ProxiesEditorViewer = (props: Props) => {
                                 onDelete={() => {
                                   setPrependSeq(
                                     prependSeq.filter(
-                                      (v) => v.name !== item.name
-                                    )
+                                      (v) => v.name !== item.name,
+                                    ),
                                   );
                                 }}
                               />
@@ -360,8 +362,8 @@ export const ProxiesEditorViewer = (props: Props) => {
                           ) {
                             setDeleteSeq(
                               deleteSeq.filter(
-                                (v) => v !== filteredProxyList[newIndex].name
-                              )
+                                (v) => v !== filteredProxyList[newIndex].name,
+                              ),
                             );
                           } else {
                             setDeleteSeq((prev) => [
@@ -393,8 +395,8 @@ export const ProxiesEditorViewer = (props: Props) => {
                                 onDelete={() => {
                                   setAppendSeq(
                                     appendSeq.filter(
-                                      (v) => v.name !== item.name
-                                    )
+                                      (v) => v.name !== item.name,
+                                    ),
                                   );
                                 }}
                               />

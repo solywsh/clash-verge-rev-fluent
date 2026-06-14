@@ -34,7 +34,7 @@ export const ProviderButton = () => {
 
   const hasProvider = Object.keys(data || {}).length > 0;
   const [updating, setUpdating] = useState(
-    Object.keys(data || {}).map(() => false)
+    Object.keys(data || {}).map(() => false),
   );
 
   const setUpdatingAt = (status: boolean, index: number) => {
@@ -105,8 +105,9 @@ export const ProviderButton = () => {
             const download = sub?.Download || 0;
             const total = sub?.Total || 0;
             const expire = sub?.Expire || 0;
-            const progress = Math.round(
-              ((download + upload) * 100) / (total + 0.1)
+            const progress = Math.min(
+              Math.round(((download + upload) * 100) / (total + 0.01)) + 1,
+              100,
             );
             return (
               <>
@@ -159,6 +160,7 @@ export const ProviderButton = () => {
                             <LinearProgress
                               variant="determinate"
                               value={progress}
+                              style={{ opacity: total > 0 ? 1 : 0 }}
                             />
                           </>
                         )}
@@ -188,7 +190,7 @@ export const ProviderButton = () => {
     </>
   );
 };
-const TypeBox = styled(Box)(({ theme }) => ({
+const TypeBox = styled(Box)<{ component?: React.ElementType }>(({ theme }) => ({
   display: "inline-block",
   border: "1px solid #ccc",
   borderColor: alpha(theme.palette.secondary.main, 0.5),
@@ -200,17 +202,19 @@ const TypeBox = styled(Box)(({ theme }) => ({
   lineHeight: 1.25,
 }));
 
-const StyledTypeBox = styled(Box)(({ theme }) => ({
-  display: "inline-block",
-  border: "1px solid #ccc",
-  borderColor: alpha(theme.palette.primary.main, 0.5),
-  color: alpha(theme.palette.primary.main, 0.8),
-  borderRadius: 4,
-  fontSize: 10,
-  marginRight: "4px",
-  padding: "0 2px",
-  lineHeight: 1.25,
-}));
+const StyledTypeBox = styled(Box)<{ component?: React.ElementType }>(
+  ({ theme }) => ({
+    display: "inline-block",
+    border: "1px solid #ccc",
+    borderColor: alpha(theme.palette.primary.main, 0.5),
+    color: alpha(theme.palette.primary.main, 0.8),
+    borderRadius: 4,
+    fontSize: 10,
+    marginRight: "4px",
+    padding: "0 2px",
+    lineHeight: 1.25,
+  }),
+);
 
 const boxStyle = {
   height: 26,

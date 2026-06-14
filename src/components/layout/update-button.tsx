@@ -1,7 +1,7 @@
 import useSWR from "swr";
 import { useRef } from "react";
 import { Button } from "@mui/material";
-import { checkUpdate } from "@tauri-apps/api/updater";
+import { check } from "@tauri-apps/plugin-updater";
 import { UpdateViewer } from "../setting/mods/update-viewer";
 import { DialogRef } from "../base";
 import { useVerge } from "@/hooks/use-verge";
@@ -11,6 +11,7 @@ interface Props {
 }
 
 export const UpdateButton = (props: Props) => {
+  return null;
   const { className } = props;
   const { verge } = useVerge();
   const { auto_check_update } = verge || {};
@@ -19,15 +20,15 @@ export const UpdateButton = (props: Props) => {
 
   const { data: updateInfo } = useSWR(
     auto_check_update || auto_check_update === null ? "checkUpdate" : null,
-    checkUpdate,
+    check,
     {
       errorRetryCount: 2,
       revalidateIfStale: false,
       focusThrottleInterval: 36e5, // 1 hour
-    }
+    },
   );
 
-  if (!updateInfo?.shouldUpdate) return null;
+  if (!updateInfo?.available) return null;
 
   return (
     <>

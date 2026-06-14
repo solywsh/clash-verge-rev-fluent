@@ -12,8 +12,14 @@ import {
 } from "@mui/material";
 import { useClash } from "@/hooks/use-clash";
 import { BaseDialog, DialogRef, Notice, Switch } from "@/components/base";
-import { StackModeSwitch } from "./stack-mode-switch";
+import { FluentModeSwitch, StackModeSwitch } from "./stack-mode-switch";
+import { Expander } from "../../fluent/expander";
 import { enhanceProfiles } from "@/services/cmds";
+import {
+  Switch as FluentSwitch,
+  Button as FluentButton,
+  Input,
+} from "@fluentui/react-components";
 
 export const TunViewer = forwardRef<DialogRef>((props, ref) => {
   const { t } = useTranslation();
@@ -22,7 +28,7 @@ export const TunViewer = forwardRef<DialogRef>((props, ref) => {
 
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState({
-    stack: "gvisor",
+    stack: "mixed",
     device: "Mihomo",
     autoRoute: true,
     autoDetectInterface: true,
@@ -35,7 +41,7 @@ export const TunViewer = forwardRef<DialogRef>((props, ref) => {
     open: () => {
       setOpen(true);
       setValues({
-        stack: clash?.tun.stack ?? "gvisor",
+        stack: clash?.tun.stack ?? "mixed",
         device: clash?.tun.device ?? "Mihomo",
         autoRoute: clash?.tun["auto-route"] ?? true,
         autoDetectInterface: clash?.tun["auto-detect-interface"] ?? true,
@@ -64,7 +70,7 @@ export const TunViewer = forwardRef<DialogRef>((props, ref) => {
           ...(old! || {}),
           tun,
         }),
-        false
+        false,
       );
       try {
         await enhanceProfiles();
@@ -79,6 +85,137 @@ export const TunViewer = forwardRef<DialogRef>((props, ref) => {
   });
 
   return (
+    <>
+      <Expander
+        left={t("Stack")}
+        right={
+          // <StackModeSwitch
+          //   value={values.stack}
+          //   onChange={(value) => {
+          //     setValues((v) => ({
+          //       ...v,
+          //       stack: value,
+          //     }));
+          //   }}
+          // />
+          <FluentModeSwitch
+            value={values.stack}
+            onChange={(value) => {
+              setValues((v) => ({
+                ...v,
+                stack: value,
+              }));
+            }}
+          />
+        }
+      ></Expander>
+
+      <Expander
+        left={t("Device")}
+        right={
+          <Input
+            autoComplete="new-password"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
+            value={values.device}
+            placeholder="Mihomo"
+            onChange={(e) =>
+              setValues((v) => ({ ...v, device: e.target.value }))
+            }
+          />
+        }
+      ></Expander>
+
+      <Expander
+        left={t("Auto Route")}
+        right={
+          <FluentSwitch
+            checked={values.autoRoute}
+            onChange={(_, c) =>
+              setValues((v) => ({ ...v, autoRoute: c.checked }))
+            }
+          />
+        }
+      ></Expander>
+
+      <Expander
+        left={t("Strict Route")}
+        right={
+          <FluentSwitch
+            checked={values.strictRoute}
+            onChange={(_, c) =>
+              setValues((v) => ({ ...v, strictRoute: c.checked }))
+            }
+          />
+        }
+      ></Expander>
+
+      <Expander
+        left={t("Auto Detect Interface")}
+        right={
+          <FluentSwitch
+            checked={values.autoDetectInterface}
+            onChange={(_, c) =>
+              setValues((v) => ({ ...v, autoDetectInterface: c.checked }))
+            }
+          />
+        }
+      ></Expander>
+
+      <Expander
+        left={t("DNS Hijack")}
+        right={
+          <Input
+            autoComplete="new-password"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
+            value={values.dnsHijack.join(",")}
+            placeholder="Please use , to separate multiple DNS servers"
+            onChange={(e) =>
+              setValues((v) => ({ ...v, dnsHijack: e.target.value.split(",") }))
+            }
+          />
+        }
+      ></Expander>
+
+      <Expander
+        left={t("MTU")}
+        right={
+          <Input
+            autoComplete="new-password"
+            type="number"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
+            value={values.mtu + ""}
+            placeholder="1500"
+            onChange={(e) =>
+              setValues((v) => ({
+                ...v,
+                mtu: parseInt(e.target.value),
+              }))
+            }
+          />
+        }
+      ></Expander>
+
+      <Expander
+        right={
+          <FluentButton
+            appearance="primary"
+            onClick={onSave}
+            style={{ marginBlock: 4 }}
+          >
+            {t("Save")}
+          </FluentButton>
+        }
+      ></Expander>
+    </>
+  );
+
+  return (
     <BaseDialog
       open={open}
       title={
@@ -89,7 +226,7 @@ export const TunViewer = forwardRef<DialogRef>((props, ref) => {
             size="small"
             onClick={async () => {
               let tun = {
-                stack: "gvisor",
+                stack: "mixed",
                 device: "Mihomo",
                 "auto-route": true,
                 "auto-detect-interface": true,
@@ -98,7 +235,7 @@ export const TunViewer = forwardRef<DialogRef>((props, ref) => {
                 mtu: 1500,
               };
               setValues({
-                stack: "gvisor",
+                stack: "mixed",
                 device: "Mihomo",
                 autoRoute: true,
                 autoDetectInterface: true,
@@ -112,7 +249,7 @@ export const TunViewer = forwardRef<DialogRef>((props, ref) => {
                   ...(old! || {}),
                   tun,
                 }),
-                false
+                false,
               );
             }}
           >
@@ -144,7 +281,7 @@ export const TunViewer = forwardRef<DialogRef>((props, ref) => {
         <ListItem sx={{ padding: "5px 2px" }}>
           <ListItemText primary={t("Device")} />
           <TextField
-            autoComplete="off"
+            autoComplete="new-password"
             size="small"
             autoCorrect="off"
             autoCapitalize="off"
@@ -190,7 +327,7 @@ export const TunViewer = forwardRef<DialogRef>((props, ref) => {
         <ListItem sx={{ padding: "5px 2px" }}>
           <ListItemText primary={t("DNS Hijack")} />
           <TextField
-            autoComplete="off"
+            autoComplete="new-password"
             size="small"
             autoCorrect="off"
             autoCapitalize="off"
@@ -207,7 +344,7 @@ export const TunViewer = forwardRef<DialogRef>((props, ref) => {
         <ListItem sx={{ padding: "5px 2px" }}>
           <ListItemText primary={t("MTU")} />
           <TextField
-            autoComplete="off"
+            autoComplete="new-password"
             size="small"
             type="number"
             autoCorrect="off"
