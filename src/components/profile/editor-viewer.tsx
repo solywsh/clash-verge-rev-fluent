@@ -3,13 +3,13 @@ import { useLockFn } from "ahooks";
 import { useTranslation } from "react-i18next";
 import {
   Button,
-  ButtonGroup,
   Dialog,
   DialogActions,
+  DialogBody,
   DialogContent,
+  DialogSurface,
   DialogTitle,
-  IconButton,
-} from "@mui/material";
+} from "@fluentui/react-components";
 import {
   FormatPaintRounded,
   OpenInFullRounded,
@@ -170,85 +170,107 @@ export const EditorViewer = <T extends Language>(props: Props<T>) => {
   }, []);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth>
-      <DialogTitle>{title}</DialogTitle>
-
-      <DialogContent
-        sx={{
-          width: "auto",
-          height: "calc(100vh - 185px)",
-          overflow: "hidden",
-        }}
+    <Dialog
+      open={open}
+      onOpenChange={(_, data) => {
+        if (!data.open) onClose();
+      }}
+    >
+      <DialogSurface
+        style={{ maxWidth: "90vw", width: "90vw", maxHeight: "92vh" }}
       >
-        <MonacoEditor
-          language={language}
-          theme={themeMode === "light" ? "vs" : "vs-dark"}
-          options={{
-            tabSize: ["yaml", "javascript", "css"].includes(language) ? 2 : 4, // 根据语言类型设置缩进大小
-            minimap: {
-              enabled: document.documentElement.clientWidth >= 1500, // 超过一定宽度显示minimap滚动条
-            },
-            mouseWheelZoom: true, // 按住Ctrl滚轮调节缩放比例
-            readOnly: readOnly, // 只读模式
-            readOnlyMessage: { value: t("ReadOnlyMessage") }, // 只读模式尝试编辑时的提示信息
-            renderValidationDecorations: "on", // 只读模式下显示校验信息
-            quickSuggestions: {
-              strings: true, // 字符串类型的建议
-              comments: true, // 注释类型的建议
-              other: true, // 其他类型的建议
-            },
-            padding: {
-              top: 33, // 顶部padding防止遮挡snippets
-            },
-            fontFamily: `Fira Code, JetBrains Mono, Roboto Mono, "Source Code Pro", Consolas, Menlo, Monaco, monospace, "Courier New", "Apple Color Emoji"${
-              getSystem() === "windows" ? ", twemoji mozilla" : ""
-            }`,
-            fontLigatures: false, // 连字符
-            smoothScrolling: true, // 平滑滚动
-          }}
-          editorWillMount={editorWillMount}
-          editorDidMount={editorDidMount}
-          onChange={handleChange}
-        />
+        <DialogBody style={{ maxHeight: "none" }}>
+          <DialogTitle>{title}</DialogTitle>
 
-        <ButtonGroup
-          variant="contained"
-          sx={{ position: "absolute", left: "14px", bottom: "8px" }}
-        >
-          <IconButton
-            size="medium"
-            color="inherit"
-            sx={{ display: readOnly ? "none" : "" }}
-            title={t("Format document")}
-            onClick={() =>
-              editorRef.current
-                ?.getAction("editor.action.formatDocument")
-                ?.run()
-            }
+          <DialogContent
+            style={{
+              position: "relative",
+              width: "auto",
+              height: "calc(100vh - 185px)",
+              overflow: "hidden",
+            }}
           >
-            <FormatPaintRounded fontSize="inherit" />
-          </IconButton>
-          <IconButton
-            size="medium"
-            color="inherit"
-            title={t(isMaximized ? "Minimize" : "Maximize")}
-            onClick={() => appWindow.toggleMaximize().then(editorResize)}
-          >
-            {isMaximized ? <CloseFullscreenRounded /> : <OpenInFullRounded />}
-          </IconButton>
-        </ButtonGroup>
-      </DialogContent>
+            <MonacoEditor
+              language={language}
+              theme={themeMode === "light" ? "vs" : "vs-dark"}
+              options={{
+                tabSize: ["yaml", "javascript", "css"].includes(language)
+                  ? 2
+                  : 4, // 根据语言类型设置缩进大小
+                minimap: {
+                  enabled: document.documentElement.clientWidth >= 1500, // 超过一定宽度显示minimap滚动条
+                },
+                mouseWheelZoom: true, // 按住Ctrl滚轮调节缩放比例
+                readOnly: readOnly, // 只读模式
+                readOnlyMessage: { value: t("ReadOnlyMessage") }, // 只读模式尝试编辑时的提示信息
+                renderValidationDecorations: "on", // 只读模式下显示校验信息
+                quickSuggestions: {
+                  strings: true, // 字符串类型的建议
+                  comments: true, // 注释类型的建议
+                  other: true, // 其他类型的建议
+                },
+                padding: {
+                  top: 33, // 顶部padding防止遮挡snippets
+                },
+                fontFamily: `Fira Code, JetBrains Mono, Roboto Mono, "Source Code Pro", Consolas, Menlo, Monaco, monospace, "Courier New", "Apple Color Emoji"${
+                  getSystem() === "windows" ? ", twemoji mozilla" : ""
+                }`,
+                fontLigatures: false, // 连字符
+                smoothScrolling: true, // 平滑滚动
+              }}
+              editorWillMount={editorWillMount}
+              editorDidMount={editorDidMount}
+              onChange={handleChange}
+            />
 
-      <DialogActions>
-        <Button onClick={handleClose} variant="outlined">
-          {t(readOnly ? "Close" : "Cancel")}
-        </Button>
-        {!readOnly && (
-          <Button onClick={handleSave} variant="contained">
-            {t("Save")}
-          </Button>
-        )}
-      </DialogActions>
+            <div
+              style={{
+                position: "absolute",
+                left: "14px",
+                bottom: "8px",
+                display: "flex",
+                gap: "4px",
+              }}
+            >
+              {!readOnly && (
+                <Button
+                  appearance="subtle"
+                  title={t("Format document")}
+                  icon={<FormatPaintRounded fontSize="inherit" />}
+                  onClick={() =>
+                    editorRef.current
+                      ?.getAction("editor.action.formatDocument")
+                      ?.run()
+                  }
+                />
+              )}
+              <Button
+                appearance="subtle"
+                title={t(isMaximized ? "Minimize" : "Maximize")}
+                icon={
+                  isMaximized ? (
+                    <CloseFullscreenRounded />
+                  ) : (
+                    <OpenInFullRounded />
+                  )
+                }
+                onClick={() => appWindow.toggleMaximize().then(editorResize)}
+              />
+            </div>
+          </DialogContent>
+
+          <DialogActions>
+            <Button appearance="secondary" onClick={handleClose}>
+              {t(readOnly ? "Close" : "Cancel")}
+            </Button>
+            {!readOnly && (
+              <Button appearance="primary" onClick={handleSave}>
+                {t("Save")}
+              </Button>
+            )}
+          </DialogActions>
+        </DialogBody>
+      </DialogSurface>
     </Dialog>
   );
 };
