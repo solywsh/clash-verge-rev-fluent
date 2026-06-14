@@ -47,6 +47,7 @@
     }
   },
   "app": {
+    "withGlobalTauri": true,
     "security": {
       "capabilities": ["desktop-capability", "migrated"],
       "assetProtocol": {
