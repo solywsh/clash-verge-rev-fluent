@@ -18,3 +18,7 @@ CLAUDE.md
 .vfox/
 .claude
 AGENTS.md
+
+# local dev/debug artifacts (see docs/upgrade-v2.5.1-progress.md)
+.dev-diff.log
+.cdp-eval.mjs
