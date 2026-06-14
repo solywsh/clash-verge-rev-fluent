@@ -5,6 +5,7 @@ import ProfilesPage from "./profiles";
 import SettingsPage from "./settings";
 import ConnectionsPage from "./connections";
 import RulesPage from "./rules";
+import UnlockPage from "./unlock";
 import { BaseErrorBoundary } from "@/components/base";
 
 import ProxiesSvg from "@/assets/image/itemicon/proxies.svg?react";
@@ -22,6 +23,7 @@ import ForkRightRoundedIcon from "@mui/icons-material/ForkRightRounded";
 import SubjectRoundedIcon from "@mui/icons-material/SubjectRounded";
 import WifiTetheringRoundedIcon from "@mui/icons-material/WifiTetheringRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
+import LockOpenRoundedIcon from "@mui/icons-material/LockOpenRounded";
 
 import {
   BroadActivityFeedRegular,
@@ -32,6 +34,7 @@ import {
   SettingsRegular,
   TextAlignLeftRegular,
   TopSpeedRegular,
+  LockOpenRegular,
 } from "@fluentui/react-icons";
 
 export const routers = [
@@ -74,6 +77,12 @@ export const routers = [
     path: "/test",
     icon: [<WifiTetheringRoundedIcon />, <TestSvg />, <TopSpeedRegular />],
     element: <TestPage />,
+  },
+  {
+    label: "Label-Unlock",
+    path: "/unlock",
+    icon: [<LockOpenRoundedIcon />, <LockOpenRegular />, <LockOpenRegular />],
+    element: <UnlockPage />,
   },
   {
     label: "Label-Settings",

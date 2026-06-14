@@ -790,6 +790,13 @@ interface ILocalBackupFile {
   content_length: number;
 }
 
+interface IUnlockItem {
+  name: string;
+  status: string;
+  region?: string | null;
+  check_time?: string | null;
+}
+
 interface IWebDavConfig {
   url: string;
   username: string;

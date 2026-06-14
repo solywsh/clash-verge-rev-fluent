@@ -1,4 +1,10 @@
 {
+  "Label-Unlock": "Unlock",
+  "Unlock Test": "Unlock Test",
+  "Testing": "Testing",
+  "Unlock Test Failed": "Detection failed or timed out",
+  "Export Diagnostic Info": "Export Diagnostic Info",
+  "Diagnostic Info Exported": "Diagnostic info exported",
   "External Controller CORS": "External Controller CORS",
   "Allow Private Network": "Allow Private Network",
   "Allowed Origins": "Allowed Origins",

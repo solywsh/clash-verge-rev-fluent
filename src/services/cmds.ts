@@ -310,3 +310,17 @@ export async function importLocalBackup(source: string) {
 export async function exportLocalBackup(filename: string, destination: string) {
   return invoke<void>("export_local_backup", { filename, destination });
 }
+
+// ===== 诊断信息导出 =====
+export async function exportDiagnosticInfo() {
+  return invoke<void>("export_diagnostic_info");
+}
+
+// ===== 流媒体解锁检测 =====
+export async function getUnlockItems() {
+  return invoke<IUnlockItem[]>("get_unlock_items");
+}
+
+export async function checkMediaUnlock() {
+  return invoke<IUnlockItem[]>("check_media_unlock");
+}

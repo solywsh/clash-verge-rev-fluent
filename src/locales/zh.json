@@ -1,4 +1,10 @@
 {
+  "Label-Unlock": "解锁",
+  "Unlock Test": "解锁检测",
+  "Testing": "检测中",
+  "Unlock Test Failed": "检测失败或超时",
+  "Export Diagnostic Info": "导出诊断信息",
+  "Diagnostic Info Exported": "诊断信息已导出",
   "External Controller CORS": "外部控制器 CORS",
   "Allow Private Network": "允许私有网络",
   "Allowed Origins": "允许的来源",

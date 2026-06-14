@@ -9,6 +9,7 @@ import {
   openLogsDir,
   openDevTools,
   copyClashEnv,
+  exportDiagnosticInfo,
 } from "@/services/cmds";
 import { check as checkUpdate } from "@tauri-apps/plugin-updater";
 import { useVerge } from "@/hooks/use-verge";
@@ -391,6 +392,18 @@ const SettingVerge = ({ onError }: Props) => {
         label={t("Local Backup")}
         canExpand
         content={<LocalBackupViewer ref={localBackupRef} />}
+      />
+
+      <FluentSettingItem
+        label={t("Export Diagnostic Info")}
+        onClick={async () => {
+          try {
+            await exportDiagnosticInfo();
+            Notice.success(t("Diagnostic Info Exported"), 1000);
+          } catch (err: any) {
+            Notice.error(err?.message || err?.toString());
+          }
+        }}
       />
 
       <FluentSettingItem
