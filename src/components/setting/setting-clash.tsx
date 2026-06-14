@@ -1,115 +1,120 @@
-import { LanRounded, SettingsRounded } from '@mui/icons-material'
-import { MenuItem, Select, TextField, Typography } from '@mui/material'
-import { invoke } from '@tauri-apps/api/core'
-import { useLockFn } from 'ahooks'
-import { useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { updateGeo } from 'tauri-plugin-mihomo-api'
+import { useRef } from "react";
+import { useTranslation } from "react-i18next";
+import { TextField, Select, MenuItem, Typography } from "@mui/material";
+import {
+  SettingsRounded,
+  ShuffleRounded,
+  LanRounded,
+} from "@mui/icons-material";
+import {
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuPopover,
+  MenuTrigger,
+  Switch as FluentSwitch,
+  MenuItem as FluentMenuItem,
+  MenuItemRadio,
+  makeStyles,
+  Tooltip,
+  Button,
+  Caption1,
+  Body2,
+} from "@fluentui/react-components";
+import { DialogRef, Notice, Switch } from "@/components/base";
+import { useClash } from "@/hooks/use-clash";
+import { GuardState } from "./mods/guard-state";
+import { WebUIViewer } from "./mods/web-ui-viewer";
+import { ClashPortViewer } from "./mods/clash-port-viewer";
+import { ControllerViewer } from "./mods/controller-viewer";
+import {
+  SettingList,
+  SettingItem,
+  FluentSettingItem,
+  FluentSettingList,
+} from "./mods/setting-comp";
+import { useSettingSystemStyle } from "./setting-system";
+import { ConnectedRegular, SettingsRegular } from "@fluentui/react-icons";
+import { ClashCoreViewer } from "./mods/clash-core-viewer";
+import { invoke_uwp_tool } from "@/services/cmds";
+import getSystem from "@/utils/get-system";
+import { useVerge } from "@/hooks/use-verge";
+import { updateGeoData } from "@/services/api";
+import {
+  TooltipIcon,
+  FluentTooltipIcon,
+} from "@/components/base/base-tooltip-icon";
+import { NetworkInterfaceViewer } from "./mods/network-interface-viewer";
 
-import { DialogRef, Switch, TooltipIcon } from '@/components/base'
-import { useClash } from '@/hooks/use-clash'
-import { useClashLog } from '@/hooks/use-clash-log'
-import { useVerge } from '@/hooks/use-verge'
-import { invoke_uwp_tool } from '@/services/cmds'
-import { showNotice } from '@/services/notice-service'
-import getSystem from '@/utils/get-system'
+const useStyles = makeStyles({
+  expander: {
+    height: "72px",
+  },
+});
 
-import { ClashCoreViewer } from './mods/clash-core-viewer'
-import { ClashPortViewer } from './mods/clash-port-viewer'
-import { ControllerViewer } from './mods/controller-viewer'
-import { DnsViewer } from './mods/dns-viewer'
-import { HeaderConfiguration } from './mods/external-controller-cors'
-import { GuardState } from './mods/guard-state'
-import { NetworkInterfaceViewer } from './mods/network-interface-viewer'
-import { SettingItem, SettingList } from './mods/setting-comp'
-import { TunnelsViewer } from './mods/tunnels-viewer'
-import { WebUIViewer } from './mods/web-ui-viewer'
-
-const isWIN = getSystem() === 'windows'
+const isWIN = getSystem() === "windows";
 
 interface Props {
-  onError: (err: Error) => void
+  onError: (err: Error) => void;
 }
 
 const SettingClash = ({ onError }: Props) => {
-  const { t } = useTranslation()
+  const { t } = useTranslation();
 
-  const { clash, version, mutateClash, patchClash } = useClash()
-  const { verge, patchVerge } = useVerge()
-  const [, setClashLog] = useClashLog()
+  const { clash, version, mutateClash, patchClash } = useClash();
+  const { verge, mutateVerge, patchVerge } = useVerge();
 
   const {
     ipv6,
-    'allow-lan': allowLan,
-    'log-level': logLevel,
-    'unified-delay': unifiedDelay,
-  } = clash ?? {}
+    "allow-lan": allowLan,
+    "log-level": logLevel,
+    "unified-delay": unifiedDelay,
+  } = clash ?? {};
 
-  const { verge_mixed_port } = verge ?? {}
+  const { enable_random_port = false, verge_mixed_port } = verge ?? {};
 
-  // 独立跟踪DNS设置开关状态
-  const [dnsSettingsEnabled, setDnsSettingsEnabled] = useState(() => {
-    return verge?.enable_dns_settings ?? false
-  })
+  const webRef = useRef<DialogRef>(null);
+  const portRef = useRef<DialogRef>(null);
+  const ctrlRef = useRef<DialogRef>(null);
+  const coreRef = useRef<DialogRef>(null);
+  const networkRef = useRef<DialogRef>(null);
 
-  const webRef = useRef<DialogRef>(null)
-  const portRef = useRef<DialogRef>(null)
-  const ctrlRef = useRef<DialogRef>(null)
-  const coreRef = useRef<DialogRef>(null)
-  const networkRef = useRef<DialogRef>(null)
-  const dnsRef = useRef<DialogRef>(null)
-  const corsRef = useRef<DialogRef>(null)
-  const tunnelRef = useRef<DialogRef>(null)
-
-  const onSwitchFormat = (_e: any, value: boolean) => value
+  const onSwitchFormat = (_e: any, data: { checked: boolean }) => data.checked;
   const onChangeData = (patch: Partial<IConfigData>) => {
-    mutateClash((old) => ({ ...old!, ...patch }), false)
-  }
+    mutateClash((old) => ({ ...(old! || {}), ...patch }), false);
+  };
+  const onChangeVerge = (patch: Partial<IVergeConfig>) => {
+    mutateVerge({ ...verge, ...patch }, false);
+  };
   const onUpdateGeo = async () => {
     try {
-      await updateGeo()
-      showNotice.success('settings.feedback.notifications.clash.geoDataUpdated')
+      await updateGeoData();
+      Notice.success(t("GeoData Updated"));
     } catch (err: any) {
-      showNotice.error(err)
+      Notice.error(err?.response.data.message || err.toString());
     }
-  }
+  };
 
-  // 实现DNS设置开关处理函数
-  const handleDnsToggle = useLockFn(async (enable: boolean) => {
-    try {
-      setDnsSettingsEnabled(enable)
-      await patchVerge({ enable_dns_settings: enable })
-      await invoke('apply_dns_config', { apply: enable })
-      setTimeout(() => {
-        mutateClash()
-      }, 500)
-    } catch (err: any) {
-      setDnsSettingsEnabled(!enable)
-      showNotice.error(err)
-      await patchVerge({ enable_dns_settings: !enable }).catch(() => {})
-      throw err
-    }
-  })
+  const classes = useStyles();
+  const settingsClasses = useSettingSystemStyle();
 
   return (
-    <SettingList title={t('settings.sections.clash.title')}>
+    <FluentSettingList title={t("Clash Setting")}>
       <WebUIViewer ref={webRef} />
-      <ClashPortViewer ref={portRef} />
+      {/* <ClashPortViewer ref={portRef} /> */}
       <ControllerViewer ref={ctrlRef} />
       <ClashCoreViewer ref={coreRef} />
       <NetworkInterfaceViewer ref={networkRef} />
-      <DnsViewer ref={dnsRef} />
-      <HeaderConfiguration ref={corsRef} />
-      <TunnelsViewer ref={tunnelRef} />
-      <SettingItem
-        label={t('settings.sections.clash.form.fields.allowLan')}
+
+      {/* <SettingItem
+        label={t("Allow Lan")}
         extra={
           <TooltipIcon
-            title={t('settings.sections.clash.form.tooltips.networkInterface')}
-            color={'inherit'}
+            title={t("Network Interface")}
+            color={"inherit"}
             icon={LanRounded}
             onClick={() => {
-              networkRef.current?.open()
+              networkRef.current?.open();
             }}
           />
         }
@@ -119,30 +124,33 @@ const SettingClash = ({ onError }: Props) => {
           valueProps="checked"
           onCatch={onError}
           onFormat={onSwitchFormat}
-          onChange={(e) => onChangeData({ 'allow-lan': e })}
-          onGuard={(e) => patchClash({ 'allow-lan': e })}
+          onChange={(e) => onChangeData({ "allow-lan": e })}
+          onGuard={(e) => patchClash({ "allow-lan": e })}
         >
           <Switch edge="end" />
         </GuardState>
-      </SettingItem>
+      </SettingItem> */}
 
-      <SettingItem
-        label={t('settings.sections.clash.form.fields.dnsOverwrite')}
-        extra={
-          <TooltipIcon
-            icon={SettingsRounded}
-            onClick={() => dnsRef.current?.open()}
-          />
-        }
-      >
-        <Switch
-          edge="end"
-          checked={dnsSettingsEnabled}
-          onChange={(_, checked) => handleDnsToggle(checked)}
+      <FluentSettingItem label={t("Allow Lan")}>
+        <Button
+          icon={<ConnectedRegular />}
+          appearance="subtle"
+          onClick={() => networkRef.current?.open()}
+          title={t("Network Interface")}
         />
-      </SettingItem>
+        <GuardState
+          value={allowLan ?? false}
+          valueProps="checked"
+          onCatch={onError}
+          onFormat={onSwitchFormat}
+          onChange={(e) => onChangeData({ "allow-lan": e })}
+          onGuard={(e) => patchClash({ "allow-lan": e })}
+        >
+          <FluentSwitch />
+        </GuardState>
+      </FluentSettingItem>
 
-      <SettingItem label={t('settings.sections.clash.form.fields.ipv6')}>
+      <FluentSettingItem label={t("IPv6")}>
         <GuardState
           value={ipv6 ?? false}
           valueProps="checked"
@@ -151,142 +159,162 @@ const SettingClash = ({ onError }: Props) => {
           onChange={(e) => onChangeData({ ipv6: e })}
           onGuard={(e) => patchClash({ ipv6: e })}
         >
-          <Switch edge="end" />
+          <FluentSwitch />
         </GuardState>
-      </SettingItem>
+      </FluentSettingItem>
 
-      <SettingItem
-        label={t('settings.sections.clash.form.fields.unifiedDelay')}
-        extra={
-          <TooltipIcon
-            title={t('settings.sections.clash.form.tooltips.unifiedDelay')}
-            sx={{ opacity: '0.7' }}
-          />
-        }
+      <FluentSettingItem
+        label={t("Unified Delay")}
+        extra={<FluentTooltipIcon title={t("Unified Delay Info")} />}
+        // extra={
+        //   <TooltipIcon
+        //     title={t("Unified Delay Info")}
+        //     sx={{ opacity: "0.7" }}
+        //   />
+        // }
       >
         <GuardState
           value={unifiedDelay ?? false}
           valueProps="checked"
           onCatch={onError}
           onFormat={onSwitchFormat}
-          onChange={(e) => onChangeData({ 'unified-delay': e })}
-          onGuard={(e) => patchClash({ 'unified-delay': e })}
+          onChange={(e) => onChangeData({ "unified-delay": e })}
+          onGuard={(e) => patchClash({ "unified-delay": e })}
         >
-          <Switch edge="end" />
+          <FluentSwitch />
         </GuardState>
-      </SettingItem>
+      </FluentSettingItem>
 
-      <SettingItem
-        label={t('settings.sections.clash.form.fields.logLevel')}
+      <FluentSettingItem
+        label={t("Log Level")}
         extra={
-          <TooltipIcon
-            title={t('settings.sections.clash.form.tooltips.logLevel')}
-            sx={{ opacity: '0.7' }}
+          <FluentTooltipIcon
+            title={t("Log Level Info")}
+            sx={{ opacity: "0.7" }}
           />
         }
       >
         <GuardState
-          value={logLevel === 'warn' ? 'warning' : (logLevel ?? 'info')}
-          onCatch={onError}
-          onFormat={(e: any) => e.target.value}
-          onChange={(e) => onChangeData({ 'log-level': e })}
-          onGuard={(e) => {
-            setClashLog((pre) => ({ ...pre!, logLevel: e }))
-            return patchClash({ 'log-level': e })
+          // clash premium 2022.08.26 值为warn
+          // value={logLevel === "warn" ? "warning" : (logLevel ?? "info")}
+          value={{
+            level: [logLevel === "warn" ? "warning" : (logLevel ?? "info")],
           }}
+          onCatch={onError}
+          // onFormat={(e: any) => e.target.value}
+          onFormat={(_, data) => data.checkedItems[0]}
+          onChange={(e) => onChangeData({ "log-level": e })}
+          onGuard={(e) => patchClash({ "log-level": e })}
+          onChangeProps="onCheckedValueChange"
+          valueProps="checkedValues"
         >
-          <Select size="small" sx={{ width: 100, '> div': { py: '7.5px' } }}>
-            <MenuItem value="debug">
-              {t('settings.sections.clash.form.options.logLevel.debug')}
-            </MenuItem>
-            <MenuItem value="info">
-              {t('settings.sections.clash.form.options.logLevel.info')}
-            </MenuItem>
-            <MenuItem value="warning">
-              {t('settings.sections.clash.form.options.logLevel.warning')}
-            </MenuItem>
-            <MenuItem value="error">
-              {t('settings.sections.clash.form.options.logLevel.error')}
-            </MenuItem>
-            <MenuItem value="silent">
-              {t('settings.sections.clash.form.options.logLevel.silent')}
-            </MenuItem>
-          </Select>
+          {/* <Select size="small" sx={{ width: 100, "> div": { py: "7.5px" } }}>
+            <MenuItem value="debug">Debug</MenuItem>
+            <MenuItem value="info">Info</MenuItem>
+            <MenuItem value="warning">Warn</MenuItem>
+            <MenuItem value="error">Error</MenuItem>
+            <MenuItem value="silent">Silent</MenuItem>
+          </Select> */}
+          <Menu>
+            <MenuTrigger>
+              <MenuButton>{logLevel}</MenuButton>
+            </MenuTrigger>
+            <MenuPopover>
+              <MenuList>
+                <MenuItemRadio name="level" value="debug">
+                  Debug
+                </MenuItemRadio>
+                <MenuItemRadio name="level" value="info">
+                  Info
+                </MenuItemRadio>
+                <MenuItemRadio name="level" value="warning">
+                  Warn
+                </MenuItemRadio>
+                <MenuItemRadio name="level" value="error">
+                  Error
+                </MenuItemRadio>
+                <MenuItemRadio name="level" value="silent">
+                  Silent
+                </MenuItemRadio>
+              </MenuList>
+            </MenuPopover>
+          </Menu>
         </GuardState>
-      </SettingItem>
+      </FluentSettingItem>
 
-      <SettingItem label={t('settings.sections.clash.form.fields.portConfig')}>
-        <TextField
+      <FluentSettingItem
+        label={t("Port Config")}
+        canExpand
+        // extra={
+        //   <TooltipIcon
+        //     title={t("Random Port")}
+        //     color={enable_random_port ? "primary" : "inherit"}
+        //     icon={ShuffleRounded}
+        //     onClick={() => {
+        //       Notice.success(
+        //         t("Restart Application to Apply Modifications"),
+        //         1000,
+        //       );
+        //       onChangeVerge({ enable_random_port: !enable_random_port });
+        //       patchVerge({ enable_random_port: !enable_random_port });
+        //     }}
+        //   />
+        // }
+        content={<ClashPortViewer ref={portRef} />}
+      >
+        {/* <TextField
           autoComplete="new-password"
-          disabled={false}
+          disabled={enable_random_port}
           size="small"
           value={verge_mixed_port ?? 7897}
-          sx={{ width: 100, input: { py: '7.5px', cursor: 'pointer' } }}
+          sx={{ width: 100, input: { py: "7.5px", cursor: "pointer" } }}
           onClick={(e) => {
-            portRef.current?.open()
-            ;(e.target as any).blur()
+            portRef.current?.open();
+            (e.target as any).blur();
           }}
-        />
-      </SettingItem>
+        /> */}
+      </FluentSettingItem>
 
-      <SettingItem
-        label={t('settings.sections.clash.form.fields.external')}
-        extra={
-          <TooltipIcon
-            title={t('settings.sections.externalCors.tooltips.open')}
-            icon={SettingsRounded}
-            onClick={(e) => {
-              e.stopPropagation()
-              corsRef.current?.open()
-            }}
-          />
-        }
-        onClick={() => {
-          ctrlRef.current?.open()
-        }}
+      <FluentSettingItem
+        onClick={() => ctrlRef.current?.open()}
+        label={t("External")}
       />
 
-      <SettingItem
+      <FluentSettingItem
         onClick={() => webRef.current?.open()}
-        label={t('settings.sections.clash.form.fields.webUI')}
+        label={t("Web UI")}
       />
 
-      <SettingItem
-        label={t('settings.sections.clash.form.fields.clashCore')}
-        extra={
-          <TooltipIcon
-            icon={SettingsRounded}
-            onClick={() => coreRef.current?.open()}
-          />
-        }
+      <FluentSettingItem
+        label={t("Clash Core")}
+        // extra={
+        //   <FluentTooltipIcon
+        //     icon={SettingsRounded}
+        //     onClick={() => coreRef.current?.open()}
+        //   />
+        // }
+        onClick={() => coreRef.current?.open()}
       >
-        <Typography sx={{ py: '7px', pr: 1 }}>{version}</Typography>
-      </SettingItem>
+        {/* <Typography sx={{ py: "7px", pr: 1 }}>{version}</Typography> */}
+        <Body2>{version}</Body2>
+      </FluentSettingItem>
 
       {isWIN && (
-        <SettingItem
+        <FluentSettingItem
           onClick={invoke_uwp_tool}
-          label={t('settings.sections.clash.form.fields.openUwpTool')}
+          label={t("Open UWP tool")}
           extra={
-            <TooltipIcon
-              title={t('settings.sections.clash.form.tooltips.openUwpTool')}
-              sx={{ opacity: '0.7' }}
+            <FluentTooltipIcon
+              title={t("Open UWP tool Info")}
+              sx={{ opacity: "0.7" }}
             />
           }
         />
       )}
 
-      <SettingItem
-        onClick={onUpdateGeo}
-        label={t('settings.sections.clash.form.fields.updateGeoData')}
-      />
+      <FluentSettingItem onClick={onUpdateGeo} label={t("Update GeoData")} />
+    </FluentSettingList>
+  );
+};
 
-      <SettingItem
-        label={t('settings.sections.clash.form.fields.tunnels.title')}
-        onClick={() => tunnelRef.current?.open()}
-      />
-    </SettingList>
-  )
-}
-
-export default SettingClash
+export default SettingClash;

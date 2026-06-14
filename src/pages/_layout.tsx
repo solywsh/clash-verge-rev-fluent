@@ -1,480 +1,283 @@
+import dayjs from "dayjs";
+import i18next from "i18next";
+import relativeTime from "dayjs/plugin/relativeTime";
+import { SWRConfig, mutate } from "swr";
+import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { useLocation, useRoutes, useNavigate } from "react-router-dom";
+import { List, Paper, ThemeProvider, SvgIcon } from "@mui/material";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { routers } from "./_routers";
+import { getAxios } from "@/services/api";
+import { useVerge } from "@/hooks/use-verge";
+import LogoSvg from "@/assets/image/logo.svg?react";
+import iconLight from "@/assets/image/icon_light.svg?react";
+import iconDark from "@/assets/image/icon_dark.svg?react";
+import Logo from "@/assets/image/logo.png";
+import { useThemeMode } from "@/services/states";
+import { Notice } from "@/components/base";
+import { LayoutItem } from "@/components/layout/layout-item";
+import { LayoutControl } from "@/components/layout/layout-control";
+import { LayoutTraffic } from "@/components/layout/layout-traffic";
+import { UpdateButton } from "@/components/layout/update-button";
+import { useCustomTheme } from "@/components/layout/use-custom-theme";
+import getSystem from "@/utils/get-system";
+import "dayjs/locale/ru";
+import "dayjs/locale/zh-cn";
+import { getPortableFlag } from "@/services/cmds";
+import React from "react";
+import { TransitionGroup, CSSTransition } from "react-transition-group";
+import { useListen } from "@/hooks/use-listen";
 import {
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core'
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import {
-  Box,
-  List,
-  Menu,
-  MenuItem,
-  Paper,
-  SvgIcon,
-  ThemeProvider,
-} from '@mui/material'
-import dayjs from 'dayjs'
-import relativeTime from 'dayjs/plugin/relativeTime'
-import type { CSSProperties } from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Outlet, useLocation, useNavigate } from 'react-router'
+  TabList,
+  Button,
+  makeStyles,
+  mergeClasses,
+  Caption1,
+} from "@fluentui/react-components";
+import { FluentProviderWithTheme, tokens } from "./_fluent_theme";
+import { FluentLayoutItem } from "../components/fluent/layout-item";
+import { NavigationRegular } from "@fluentui/react-icons";
 
-import iconDark from '@/assets/image/icon_dark.svg?react'
-import iconLight from '@/assets/image/icon_light.svg?react'
-import LogoSvg from '@/assets/image/logo.svg?react'
-import { BaseErrorBoundary } from '@/components/base'
-import { LayoutItem } from '@/components/layout/layout-item'
-import { LayoutTraffic } from '@/components/layout/layout-traffic'
-import { NoticeManager } from '@/components/layout/notice-manager'
-import { UpdateButton } from '@/components/layout/update-button'
-import { WindowControls } from '@/components/layout/window-controller'
-import { useI18n } from '@/hooks/use-i18n'
-import { useVerge } from '@/hooks/use-verge'
-import { useWindowDecorations } from '@/hooks/use-window'
-import { useThemeMode } from '@/services/states'
-import getSystem from '@/utils/get-system'
+const appWindow = getCurrentWebviewWindow();
+export let portableFlag = false;
 
-import {
-  useCustomTheme,
-  useLayoutEvents,
-  useLoadingOverlay,
-  useNavMenuOrder,
-} from './_layout/hooks'
-import { handleNoticeMessage } from './_layout/utils'
-import { navItems } from './_routers'
-import LogsPage from './logs'
+dayjs.extend(relativeTime);
 
-import 'dayjs/locale/ru'
-import 'dayjs/locale/zh-cn'
+const useStyle = makeStyles({
+  sidebar: {
+    transition: `width ${tokens.durationNormal} ${tokens.curveDecelerateMid}`,
+  },
+  traffic: {
+    transition: `opacity ${tokens.durationNormal} ${tokens.curveDecelerateMid}`,
+  },
+});
 
-export const portableFlag = false
-
-type NavItem = (typeof navItems)[number]
-
-type MenuContextPosition = { top: number; left: number }
-
-interface SortableNavMenuItemProps {
-  item: NavItem
-  label: string
-}
-
-const SortableNavMenuItem = ({ item, label }: SortableNavMenuItemProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: item.path,
-  })
-
-  const style: CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  }
-
-  if (isDragging) {
-    style.zIndex = 100
-  }
-
-  return (
-    <LayoutItem
-      to={item.path}
-      icon={item.icon}
-      sortable={{
-        setNodeRef,
-        attributes,
-        listeners,
-        style,
-        isDragging,
-      }}
-    >
-      {label}
-    </LayoutItem>
-  )
-}
-
-dayjs.extend(relativeTime)
-
-const OS = getSystem()
+const OS = getSystem();
 
 const Layout = () => {
-  const mode = useThemeMode()
-  const isDark = mode !== 'light'
-  const { t } = useTranslation()
-  const { theme } = useCustomTheme()
-  const { verge, mutateVerge, patchVerge } = useVerge()
-  const { language } = verge ?? {}
-  const navCollapsed = verge?.collapse_navbar ?? false
-  const { switchLanguage } = useI18n()
-  const navigate = useNavigate()
-  const { pathname } = useLocation()
-  const isLogsPage = pathname === '/logs'
-  const logsPageMountedRef = useRef(false)
-  if (isLogsPage) logsPageMountedRef.current = true
-  const themeReady = useMemo(() => Boolean(theme), [theme])
+  const mode = useThemeMode();
+  const isDark = mode === "light" ? false : true;
+  const { t } = useTranslation();
+  const { theme } = useCustomTheme();
 
-  const [menuUnlocked, setMenuUnlocked] = useState(false)
-  const [menuContextPosition, setMenuContextPosition] =
-    useState<MenuContextPosition | null>(null)
+  const { verge } = useVerge();
+  const { language, start_page } = verge || {};
+  const navigate = useNavigate();
+  const location = useLocation();
+  const routersEles = useRoutes(routers);
+  const { addListener, setupCloseListener } = useListen();
+  if (!routersEles) return null;
 
-  const windowControlsRef = useRef<any>(null)
-  const { decorated } = useWindowDecorations()
+  setupCloseListener();
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 6,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  )
+  useEffect(() => {
+    addListener("verge://refresh-clash-config", async () => {
+      // the clash info may be updated
+      await getAxios(true);
+      mutate("getProxies");
+      mutate("getVersion");
+      mutate("getClashConfig");
+      mutate("getProxyProviders");
+    });
 
-  const handleMenuOrderOptimisticUpdate = useCallback(
-    (order: string[]) => {
-      mutateVerge(
-        (prev) => (prev ? { ...prev, menu_order: order } : prev),
-        false,
-      )
-    },
-    [mutateVerge],
-  )
+    // update the verge config
+    addListener("verge://refresh-verge-config", () => mutate("getVergeConfig"));
 
-  const handleMenuOrderPersist = useCallback(
-    (order: string[]) => patchVerge({ menu_order: order }),
-    [patchVerge],
-  )
+    // 设置提示监听
+    addListener("verge://notice-message", ({ payload }) => {
+      const [status, msg] = payload as [string, string];
+      switch (status) {
+        case "import_sub_url::ok":
+          navigate("/profile", { state: { current: msg } });
 
-  const {
-    menuOrder,
-    navItemMap,
-    handleMenuDragEnd,
-    isDefaultOrder,
-    resetMenuOrder,
-  } = useNavMenuOrder({
-    enabled: menuUnlocked,
-    items: navItems,
-    storedOrder: verge?.menu_order,
-    onOptimisticUpdate: handleMenuOrderOptimisticUpdate,
-    onPersist: handleMenuOrderPersist,
-  })
-
-  const handleMenuContextMenu = useCallback(
-    (event: React.MouseEvent<HTMLElement>) => {
-      event.preventDefault()
-      event.stopPropagation()
-      setMenuContextPosition({ top: event.clientY, left: event.clientX })
-    },
-    [],
-  )
-
-  const handleMenuContextClose = useCallback(() => {
-    setMenuContextPosition(null)
-  }, [])
-
-  const handleResetMenuOrder = useCallback(() => {
-    setMenuContextPosition(null)
-    void resetMenuOrder()
-  }, [resetMenuOrder])
-
-  const handleUnlockMenu = useCallback(() => {
-    setMenuUnlocked(true)
-    setMenuContextPosition(null)
-  }, [])
-
-  const handleLockMenu = useCallback(() => {
-    setMenuUnlocked(false)
-    setMenuContextPosition(null)
-  }, [])
-
-  const handleToggleNavCollapsed = useCallback(() => {
-    setMenuContextPosition(null)
-    void patchVerge({ collapse_navbar: !navCollapsed })
-  }, [navCollapsed, patchVerge])
-
-  const customTitlebar = useMemo(
-    () =>
-      !decorated ? (
-        <div className="the_titlebar">
-          <div
-            className="the_titlebar-drag-region"
-            data-tauri-drag-region="true"
-          />
-          <WindowControls ref={windowControlsRef} />
-        </div>
-      ) : null,
-    [decorated],
-  )
-
-  useLoadingOverlay(themeReady)
-
-  const handleNotice = useCallback(
-    (payload: [string, string]) => {
-      const [status, msg] = payload
-      try {
-        handleNoticeMessage(status, msg, t, navigate)
-      } catch (error) {
-        console.error('[通知处理] 失败:', error)
+          Notice.success(t("Import Subscription Successful"));
+          break;
+        case "import_sub_url::error":
+          navigate("/profile");
+          Notice.error(msg);
+          break;
+        case "set_config::error":
+          Notice.error(msg);
+          break;
+        default:
+          break;
       }
-    },
-    [t, navigate],
-  )
+    });
 
-  useLayoutEvents(handleNotice)
+    setTimeout(async () => {
+      portableFlag = await getPortableFlag();
+      await appWindow.unminimize();
+      await appWindow.show();
+      await appWindow.setFocus();
+    }, 50);
+  }, []);
 
   useEffect(() => {
     if (language) {
-      dayjs.locale(language === 'zh' ? 'zh-cn' : language)
-      switchLanguage(language)
+      dayjs.locale(language === "zh" ? "zh-cn" : language);
+      i18next.changeLanguage(language);
     }
-  }, [language, switchLanguage])
+    if (start_page) {
+      navigate(start_page);
+    }
+  }, [language, start_page]);
 
-  if (!themeReady) {
-    return (
-      <div
-        style={{
-          width: '100vw',
-          height: '100vh',
-          background: mode === 'light' ? '#fff' : '#181a1b',
-          transition: 'background 0.2s',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: mode === 'light' ? '#333' : '#fff',
-        }}
-      ></div>
-    )
-  }
+  const [sideBarExpand, setSideBarExpand] = React.useState(true);
+  const { sidebar, traffic } = useStyle();
 
   return (
-    <ThemeProvider theme={theme}>
-      {/* 左侧底部窗口控制按钮 */}
-      <NoticeManager position={verge?.notice_position} />
-      <div
-        style={{
-          animation: 'fadeIn 0.5s',
-          WebkitAnimation: 'fadeIn 0.5s',
-        }}
-      />
-      <style>
-        {`
-            @keyframes fadeIn {
-              from { opacity: 0; }
-              to { opacity: 1; }
-            }
-          `}
-      </style>
-      <Paper
-        square
-        elevation={0}
-        className={`${OS} layout${navCollapsed ? ' layout--nav-collapsed' : ''}`}
-        style={{
-          borderTopLeftRadius: '0px',
-          borderTopRightRadius: '0px',
-        }}
-        onContextMenu={(e) => {
-          if (
-            OS === 'windows' &&
-            !['input', 'textarea'].includes(
-              e.currentTarget.tagName.toLowerCase(),
-            ) &&
-            !e.currentTarget.isContentEditable
-          ) {
-            e.preventDefault()
-          }
-        }}
-        sx={[
-          ({ palette }) => ({ bgcolor: palette.background.paper }),
-          OS === 'linux'
-            ? {
-                borderRadius: '8px',
-                width: '100vw',
-                height: '100vh',
-              }
-            : {},
-        ]}
-      >
-        {/* Custom titlebar - rendered only when decorated is false, memoized for performance */}
-        {customTitlebar}
-
-        <div className="layout-content">
-          <div className="layout-content__left">
-            <div className="the-logo" data-tauri-drag-region="false">
-              <div
-                data-tauri-drag-region="true"
-                style={{
-                  height: '27px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <SvgIcon
-                  component={isDark ? iconDark : iconLight}
-                  style={{
-                    height: '36px',
-                    width: '36px',
-                    marginTop: '-3px',
-                    marginRight: '5px',
-                    marginLeft: '-3px',
-                  }}
-                  inheritViewBox
-                />
-                <LogoSvg fill={isDark ? 'white' : 'black'} />
-              </div>
-              <UpdateButton className="the-newbtn" />
+    <SWRConfig value={{ errorRetryCount: 3 }}>
+      <ThemeProvider theme={theme}>
+        <FluentProviderWithTheme>
+          <header
+            className="title-bar"
+            style={{ height: 32 }}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            <div className="title-bar__content">
+              <img src={Logo} width={28} height={28} />
+              <Caption1>Clash verge</Caption1>
             </div>
-
-            {menuUnlocked && (
-              <Box
-                sx={(theme) => ({
-                  px: 1.5,
-                  py: 0.75,
-                  mx: 'auto',
-                  mb: 1,
-                  maxWidth: 250,
-                  borderRadius: 1.5,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  textAlign: 'center',
-                  color: theme.palette.warning.contrastText,
-                  bgcolor:
-                    theme.palette.mode === 'light'
-                      ? theme.palette.warning.main
-                      : theme.palette.warning.dark,
-                })}
-              >
-                {t('layout.components.navigation.menu.reorderMode')}
-              </Box>
-            )}
-
-            {menuUnlocked ? (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleMenuDragEnd}
-              >
-                <SortableContext items={menuOrder}>
-                  <List
-                    className="the-menu"
-                    onContextMenu={handleMenuContextMenu}
-                  >
-                    {menuOrder.map((path) => {
-                      const item = navItemMap.get(path)
-                      if (!item) {
-                        return null
-                      }
-                      return (
-                        <SortableNavMenuItem
-                          key={item.path}
-                          item={item}
-                          label={t(item.label)}
-                        />
-                      )
-                    })}
-                  </List>
-                </SortableContext>
-              </DndContext>
-            ) : (
-              <List className="the-menu" onContextMenu={handleMenuContextMenu}>
-                {menuOrder.map((path) => {
-                  const item = navItemMap.get(path)
-                  if (!item) {
-                    return null
+          </header>
+          <Paper
+            square
+            elevation={0}
+            className={`${OS} layout`}
+            onContextMenu={(e) => {
+              // only prevent it on Windows
+              const validList = ["input", "textarea"];
+              const target = e.currentTarget;
+              if (
+                OS === "windows" &&
+                !(
+                  validList.includes(target.tagName.toLowerCase()) ||
+                  target.isContentEditable
+                )
+              ) {
+                e.preventDefault();
+              }
+            }}
+            sx={[
+              ({ palette }) => ({
+                bgcolor: palette.background.paper,
+              }),
+              OS === "linux"
+                ? {
+                    borderRadius: "8px",
+                    border: "2px solid var(--divider-color)",
+                    width: "calc(100vw - 4px)",
+                    height: "calc(100vh - 4px)",
                   }
-                  return (
-                    <LayoutItem key={item.path} to={item.path} icon={item.icon}>
-                      {t(item.label)}
-                    </LayoutItem>
-                  )
-                })}
-              </List>
-            )}
-
-            <Menu
-              open={Boolean(menuContextPosition)}
-              onClose={handleMenuContextClose}
-              anchorReference="anchorPosition"
-              anchorPosition={
-                menuContextPosition
-                  ? {
-                      top: menuContextPosition.top,
-                      left: menuContextPosition.left,
-                    }
-                  : undefined
-              }
-              transitionDuration={200}
-              slotProps={{
-                list: {
-                  sx: { py: 0.5 },
-                },
-              }}
+                : {},
+            ]}
+          >
+            <div
+              className={mergeClasses("layout__left", sidebar)}
+              style={{ width: sideBarExpand ? "200px" : "48px" }}
             >
-              <MenuItem onClick={handleToggleNavCollapsed} dense>
-                {navCollapsed
-                  ? t('layout.components.navigation.menu.expandNavBar')
-                  : t('layout.components.navigation.menu.collapseNavBar')}
-              </MenuItem>
-              <MenuItem
-                onClick={menuUnlocked ? handleLockMenu : handleUnlockMenu}
-                dense
-              >
-                {menuUnlocked
-                  ? t('layout.components.navigation.menu.lock')
-                  : t('layout.components.navigation.menu.unlock')}
-              </MenuItem>
-              <MenuItem
-                onClick={handleResetMenuOrder}
-                dense
-                disabled={isDefaultOrder}
-              >
-                {t('layout.components.navigation.menu.restoreDefaultOrder')}
-              </MenuItem>
-            </Menu>
-
-            <div className="the-traffic">
-              <LayoutTraffic />
-            </div>
-          </div>
-
-          <div className="layout-content__right">
-            <div className="the-bar"></div>
-            <div className="the-content">
-              <BaseErrorBoundary>
-                <Outlet />
-              </BaseErrorBoundary>
-              {logsPageMountedRef.current && (
+              {/* <div className="the-logo" data-tauri-drag-region="true">
                 <div
                   style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    display: isLogsPage ? undefined : 'none',
+                    height: "27px",
+                    display: "flex",
+                    justifyContent: "space-between",
                   }}
                 >
-                  <LogsPage />
+                  <SvgIcon
+                    component={isDark ? iconDark : iconLight}
+                    style={{
+                      height: "36px",
+                      width: "36px",
+                      marginTop: "-3px",
+                      marginRight: "5px",
+                      marginLeft: "-3px",
+                    }}
+                    inheritViewBox
+                  />
+                  <LogoSvg fill={isDark ? "white" : "black"} />
+                </div>
+                {<UpdateButton className="the-newbtn" />}
+              </div> */}
+
+              {/* <List className="the-menu">
+              {routers.map((router) => (
+                <LayoutItem
+                  key={router.label}
+                  to={router.path}
+                  icon={router.icon}
+                >
+                  {t(router.label)}
+                </LayoutItem>
+              ))}
+            </List> */}
+              <Button
+                style={{ marginTop: 24 }}
+                icon={<NavigationRegular fontSize={20} />}
+                appearance="subtle"
+                size="large"
+                onClick={() => setSideBarExpand(!sideBarExpand)}
+              />
+              {renderFluentSideBar()}
+
+              <div
+                className={mergeClasses("the-traffic", traffic)}
+                style={{ opacity: sideBarExpand ? 1 : 0 }}
+              >
+                <LayoutTraffic />
+              </div>
+            </div>
+
+            <div className="layout__right">
+              {OS !== "windows" && (
+                <div className="the-bar">
+                  <div
+                    className="the-dragbar"
+                    data-tauri-drag-region="true"
+                    style={{ width: "100%" }}
+                  ></div>
+                  {OS !== "macos" && <LayoutControl />}
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-      </Paper>
-    </ThemeProvider>
-  )
-}
 
-export default Layout
+              <TransitionGroup className="the-content">
+                <CSSTransition
+                  key={location.pathname}
+                  timeout={300}
+                  classNames="page"
+                >
+                  {React.cloneElement(routersEles, { key: location.pathname })}
+                </CSSTransition>
+              </TransitionGroup>
+            </div>
+          </Paper>
+        </FluentProviderWithTheme>
+      </ThemeProvider>
+    </SWRConfig>
+  );
+
+  function renderFluentSideBar() {
+    return (
+      <TabList
+        className="the-menu"
+        size="medium"
+        vertical
+        selectedValue={location.pathname}
+        onTabSelect={(e, value) => navigate(value.value as string)}
+        // appearance="subtle"
+      >
+        {routers.map((router) => (
+          <FluentLayoutItem
+            key={router.label}
+            to={router.path}
+            icon={router.icon}
+          >
+            {t(router.label)}
+          </FluentLayoutItem>
+        ))}
+      </TabList>
+    );
+  }
+};
+
+export default Layout;

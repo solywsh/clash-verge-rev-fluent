@@ -1,4 +1,6 @@
-import { CheckCircleOutlineRounded } from '@mui/icons-material'
+import { useEffect, useState } from "react";
+import { useLockFn } from "ahooks";
+import { CheckCircleOutlineRounded } from "@mui/icons-material";
 import {
   alpha,
   Box,
@@ -9,50 +11,70 @@ import {
   styled,
   SxProps,
   Theme,
-} from '@mui/material'
-
-import { BaseLoading } from '@/components/base'
-import { useProxyDelayState } from '@/hooks/use-proxy-delay-state'
-import delayManager from '@/services/delay'
+} from "@mui/material";
+import { BaseLoading } from "@/components/base";
+import delayManager from "@/services/delay";
+import { useVerge } from "@/hooks/use-verge";
+import { tokens } from "../../pages/_fluent_theme";
 
 interface Props {
-  group: IProxyGroupItem
-  proxy: IProxyItem
-  selected: boolean
-  showType?: boolean
-  sx?: SxProps<Theme>
-  onClick?: (name: string) => void
+  group: IProxyGroupItem;
+  proxy: IProxyItem;
+  selected: boolean;
+  showType?: boolean;
+  sx?: SxProps<Theme>;
+  onClick?: (name: string) => void;
 }
 
 const Widget = styled(Box)(() => ({
-  padding: '3px 6px',
+  padding: "3px 6px",
   fontSize: 14,
-  borderRadius: '4px',
-}))
+  borderRadius: "4px",
+}));
 
-const TypeBox = styled('span')(({ theme }) => ({
-  display: 'inline-block',
-  border: '1px solid #ccc',
+const TypeBox = styled("span")(({ theme }) => ({
+  display: "inline-block",
+  border: "1px solid #ccc",
   borderColor: alpha(theme.palette.text.secondary, 0.36),
   color: alpha(theme.palette.text.secondary, 0.42),
   borderRadius: 4,
   fontSize: 10,
-  marginRight: '4px',
-  padding: '0 2px',
+  marginRight: "4px",
+  padding: "0 2px",
   lineHeight: 1.25,
-}))
+}));
 
 export const ProxyItem = (props: Props) => {
-  const { group, proxy, selected, showType = true, sx, onClick } = props
+  const { group, proxy, selected, showType = true, sx, onClick } = props;
 
-  // -1/<=0 为不显示，-2 为 loading
-  const { delayValue, isPreset, timeout, onDelay } = useProxyDelayState(
-    proxy,
-    group.name,
-  )
+  const presetList = ["DIRECT", "REJECT", "REJECT-DROP", "PASS", "COMPATIBLE"];
+  const isPreset = presetList.includes(proxy.name);
+  // -1/<=0 为 不显示
+  // -2 为 loading
+  const [delay, setDelay] = useState(-1);
+  const { verge } = useVerge();
+  const timeout = verge?.default_latency_timeout || 10000;
+  useEffect(() => {
+    if (isPreset) return;
+    delayManager.setListener(proxy.name, group.name, setDelay);
+
+    return () => {
+      delayManager.removeListener(proxy.name, group.name);
+    };
+  }, [proxy.name, group.name]);
+
+  useEffect(() => {
+    if (!proxy) return;
+    setDelay(delayManager.getDelayFix(proxy, group.name));
+  }, [proxy]);
+
+  const onDelay = useLockFn(async () => {
+    setDelay(-2);
+    setDelay(await delayManager.checkDelay(proxy.name, group.name, timeout));
+  });
 
   return (
-    <ListItem sx={sx}>
+    <ListItem sx={sx} className={(props as any).className}>
       <ListItemButton
         dense
         selected={selected}
@@ -60,27 +82,28 @@ export const ProxyItem = (props: Props) => {
         sx={[
           { borderRadius: 1 },
           ({ palette: { mode, primary } }) => {
-            const bgcolor = mode === 'light' ? '#ffffff' : '#24252f'
-            const selectColor = mode === 'light' ? primary.main : primary.light
-            const showDelay = delayValue > 0
+            // const bgcolor = mode === "light" ? "#ffffff" : "#24252f";
+            const bgcolor = tokens.surface1;
+            const selectColor = mode === "light" ? primary.main : primary.light;
+            const showDelay = delay > 0;
 
             return {
-              '&:hover .the-check': { display: !showDelay ? 'block' : 'none' },
-              '&:hover .the-delay': { display: showDelay ? 'block' : 'none' },
-              '&:hover .the-icon': { display: 'none' },
-              '&.Mui-selected': {
+              "&:hover .the-check": { display: !showDelay ? "block" : "none" },
+              "&:hover .the-delay": { display: showDelay ? "block" : "none" },
+              "&:hover .the-icon": { display: "none" },
+              "&.Mui-selected": {
                 width: `calc(100% + 3px)`,
                 marginLeft: `-3px`,
                 borderLeft: `3px solid ${selectColor}`,
                 bgcolor:
-                  mode === 'light'
+                  mode === "light"
                     ? alpha(primary.main, 0.15)
                     : alpha(primary.main, 0.35),
               },
               backgroundColor: bgcolor,
-              marginBottom: '8px',
-              height: '40px',
-            }
+              marginBottom: "8px",
+              height: "40px",
+            };
           },
         ]}
       >
@@ -90,10 +113,10 @@ export const ProxyItem = (props: Props) => {
             <>
               <Box
                 sx={{
-                  display: 'inline-block',
-                  marginRight: '8px',
-                  fontSize: '14px',
-                  color: 'text.primary',
+                  display: "inline-block",
+                  marginRight: "8px",
+                  fontSize: "14px",
+                  color: "text.primary",
                 }}
               >
                 {proxy.name}
@@ -114,58 +137,58 @@ export const ProxyItem = (props: Props) => {
 
         <ListItemIcon
           sx={{
-            justifyContent: 'flex-end',
-            color: 'primary.main',
-            display: isPreset ? 'none' : '',
+            justifyContent: "flex-end",
+            color: "primary.main",
+            display: isPreset ? "none" : "",
           }}
         >
-          {delayValue === -2 && (
+          {delay === -2 && (
             <Widget>
               <BaseLoading />
             </Widget>
           )}
 
-          {!proxy.provider && delayValue !== -2 && (
-            // provider 的节点不支持检测
+          {!proxy.provider && delay !== -2 && (
+            // provider的节点不支持检测
             <Widget
               className="the-check"
               onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                onDelay()
+                e.preventDefault();
+                e.stopPropagation();
+                onDelay();
               }}
               sx={({ palette }) => ({
-                display: 'none', // hover 时显示
-                ':hover': { bgcolor: alpha(palette.primary.main, 0.15) },
+                display: "none", // hover才显示
+                ":hover": { bgcolor: alpha(palette.primary.main, 0.15) },
               })}
             >
               Check
             </Widget>
           )}
 
-          {delayValue > 0 && (
+          {delay > 0 && (
             // 显示延迟
             <Widget
               className="the-delay"
               onClick={(e) => {
-                if (proxy.provider) return
-                e.preventDefault()
-                e.stopPropagation()
-                onDelay()
+                if (proxy.provider) return;
+                e.preventDefault();
+                e.stopPropagation();
+                onDelay();
               }}
-              sx={({ palette }) => ({
-                color: delayManager.formatDelayColor(delayValue, timeout),
-                ...(!proxy.provider
-                  ? { ':hover': { bgcolor: alpha(palette.primary.main, 0.15) } }
-                  : {}),
-              })}
+              color={delayManager.formatDelayColor(delay, timeout)}
+              sx={({ palette }) =>
+                !proxy.provider
+                  ? { ":hover": { bgcolor: alpha(palette.primary.main, 0.15) } }
+                  : {}
+              }
             >
-              {delayManager.formatDelay(delayValue, timeout)}
+              {delayManager.formatDelay(delay, timeout)}
             </Widget>
           )}
 
-          {delayValue !== -2 && delayValue <= 0 && selected && (
-            // 展示已选择的 icon
+          {delay !== -2 && delay <= 0 && selected && (
+            // 展示已选择的icon
             <CheckCircleOutlineRounded
               className="the-icon"
               sx={{ fontSize: 16 }}
@@ -174,5 +197,5 @@ export const ProxyItem = (props: Props) => {
         </ListItemIcon>
       </ListItemButton>
     </ListItem>
-  )
-}
+  );
+};

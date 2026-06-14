@@ -1,86 +1,149 @@
-import React, { useRef } from 'react'
-import { useTranslation } from 'react-i18next'
+import useSWR from "swr";
+import { useRef } from "react";
+import { useTranslation } from "react-i18next";
+import { SettingsRounded } from "@mui/icons-material";
+import { useVerge } from "@/hooks/use-verge";
+import { DialogRef, Notice, Switch } from "@/components/base";
+import {
+  SettingList,
+  SettingItem,
+  FluentSettingItem,
+  FluentSettingList,
+} from "./mods/setting-comp";
+import { GuardState } from "./mods/guard-state";
+import { SysproxyViewer } from "./mods/sysproxy-viewer";
+import { TunViewer } from "./mods/tun-viewer";
+import {
+  FluentTooltipIcon,
+  TooltipIcon,
+} from "@/components/base/base-tooltip-icon";
+import { Expander } from "../fluent/expander";
+import {
+  Button,
+  Caption1,
+  Caption2,
+  makeStyles,
+  Switch as FluentSwitch,
+  Tooltip,
+} from "@fluentui/react-components";
+import { InfoRegular, SettingsRegular } from "@fluentui/react-icons";
+import { tokens } from "../../pages/_fluent_theme";
 
-import { DialogRef, Switch, TooltipIcon } from '@/components/base'
-import ProxyControlSwitches from '@/components/shared/proxy-control-switches'
-import { useVerge } from '@/hooks/use-verge'
+const useStyle = makeStyles({
+  expander: {
+    paddingBlock: "16px",
+  },
+  caption: {
+    display: "block",
+    color: tokens.colorNeutralForeground4,
+    paddingBottom: "3px",
+  },
+});
 
-import { GuardState } from './mods/guard-state'
-import { SettingList, SettingItem } from './mods/setting-comp'
-import { SysproxyViewer } from './mods/sysproxy-viewer'
-import { TunViewer } from './mods/tun-viewer'
+export { useStyle as useSettingSystemStyle };
 
 interface Props {
-  onError?: (err: Error) => void
+  onError?: (err: Error) => void;
 }
 
 const SettingSystem = ({ onError }: Props) => {
-  const { t } = useTranslation()
+  const { t } = useTranslation();
 
-  const { verge, mutateVerge, patchVerge } = useVerge()
+  const { verge, mutateVerge, patchVerge } = useVerge();
 
-  const { enable_auto_launch, enable_silent_start } = verge ?? {}
+  const sysproxyRef = useRef<DialogRef>(null);
+  const tunRef = useRef<DialogRef>(null);
 
-  const sysproxyRef = useRef<DialogRef>(null)
-  const tunRef = useRef<DialogRef>(null)
+  const {
+    enable_tun_mode,
+    enable_auto_launch,
+    enable_silent_start,
+    enable_system_proxy,
+  } = verge ?? {};
 
-  const onSwitchFormat = (
-    _e: React.ChangeEvent<HTMLInputElement>,
-    value: boolean,
-  ) => value
+  // const onSwitchFormat = (_e: any, value: boolean) => value;
+  const onSwitchFormat = (_e: any, { checked: value }: { checked: boolean }) =>
+    value;
   const onChangeData = (patch: Partial<IVergeConfig>) => {
-    mutateVerge({ ...verge, ...patch }, false)
-  }
+    mutateVerge({ ...verge, ...patch }, false);
+  };
+
+  const classes = useStyle();
 
   return (
-    <SettingList title={t('settings.sections.system.title')}>
+    <FluentSettingList title={t("System Setting")}>
       <SysproxyViewer ref={sysproxyRef} />
-      <TunViewer ref={tunRef} />
+      {/* <TunViewer ref={tunRef} /> */}
 
-      <ProxyControlSwitches
-        label={t('settings.sections.system.toggles.tunMode')}
-        onError={onError}
-      />
+      <FluentSettingItem
+        label={t("Tun Mode")}
+        // extra={
+        //   <TooltipIcon
+        //     title={t("Tun Mode Info")}
+        //     icon={SettingsRounded}
+        //     onClick={() => tunRef.current?.open()}
+        //   />
+        // }
+        canExpand
+        content={<TunViewer ref={tunRef} />}
+      >
+        <GuardState
+          value={enable_tun_mode ?? false}
+          valueProps="checked"
+          onCatch={onError}
+          onFormat={onSwitchFormat}
+          onChange={(e) => {
+            onChangeData({ enable_tun_mode: e });
+          }}
+          onGuard={(e) => {
+            return patchVerge({ enable_tun_mode: e });
+          }}
+        >
+          <FluentSwitch />
+        </GuardState>
+      </FluentSettingItem>
+      <FluentSettingItem
+        label={t("System Proxy")}
+        extra={<FluentTooltipIcon title={t("System Proxy Info")} />}
+        // extra={
+        //   <>
+        //     <TooltipIcon
+        //       title={t("System Proxy Info")}
+        //       icon={SettingsRounded}
+        //       onClick={() => sysproxyRef.current?.open()}
+        //     />
+        //   </>
+        // }
+        onClick={() => sysproxyRef.current?.open()}
+      >
+        <GuardState
+          value={enable_system_proxy ?? false}
+          valueProps="checked"
+          onCatch={onError}
+          onFormat={onSwitchFormat}
+          onChange={(e) => onChangeData({ enable_system_proxy: e })}
+          onGuard={(e) => patchVerge({ enable_system_proxy: e })}
+        >
+          <FluentSwitch />
+        </GuardState>
+      </FluentSettingItem>
 
-      <ProxyControlSwitches
-        label={t('settings.sections.system.toggles.systemProxy')}
-        onError={onError}
-      />
-
-      <SettingItem label={t('settings.sections.system.fields.autoLaunch')}>
+      <FluentSettingItem label={t("Auto Launch")}>
         <GuardState
           value={enable_auto_launch ?? false}
           valueProps="checked"
           onCatch={onError}
           onFormat={onSwitchFormat}
-          onChange={(e) => {
-            onChangeData({ enable_auto_launch: e })
-          }}
-          onGuard={async (e) => {
-            try {
-              // 先触发UI更新立即看到反馈
-              onChangeData({ enable_auto_launch: e })
-              await patchVerge({ enable_auto_launch: e })
-              return Promise.resolve()
-            } catch (error) {
-              // 如果出错，恢复原始状态
-              onChangeData({ enable_auto_launch: !e })
-              return Promise.reject(error)
-            }
-          }}
+          onChange={(e) => onChangeData({ enable_auto_launch: e })}
+          onGuard={(e) => patchVerge({ enable_auto_launch: e })}
         >
-          <Switch edge="end" />
+          <FluentSwitch />
         </GuardState>
-      </SettingItem>
+      </FluentSettingItem>
 
-      <SettingItem
-        label={t('settings.sections.system.fields.silentStart')}
-        extra={
-          <TooltipIcon
-            title={t('settings.sections.system.tooltips.silentStart')}
-            sx={{ opacity: '0.7' }}
-          />
-        }
+      <FluentSettingItem
+        label={t("Silent Start")}
+        extra={<FluentTooltipIcon title={t("Silent Start Info")} />}
       >
         <GuardState
           value={enable_silent_start ?? false}
@@ -90,11 +153,11 @@ const SettingSystem = ({ onError }: Props) => {
           onChange={(e) => onChangeData({ enable_silent_start: e })}
           onGuard={(e) => patchVerge({ enable_silent_start: e })}
         >
-          <Switch edge="end" />
+          <FluentSwitch />
         </GuardState>
-      </SettingItem>
-    </SettingList>
-  )
-}
+      </FluentSettingItem>
+    </FluentSettingList>
+  );
+};
 
-export default SettingSystem
+export default SettingSystem;

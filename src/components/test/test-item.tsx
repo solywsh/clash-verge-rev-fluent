@@ -1,35 +1,39 @@
-import { useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import { LanguageRounded } from '@mui/icons-material'
-import { Box, Divider, MenuItem, Menu, styled, alpha } from '@mui/material'
-import { UnlistenFn } from '@tauri-apps/api/event'
-import { useLockFn } from 'ahooks'
-import { useCallback, useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-
-import { BaseLoading } from '@/components/base'
-import { useIconCache } from '@/hooks/use-icon-cache'
-import { useListen } from '@/hooks/use-listen'
-import { cmdTestDelay } from '@/services/cmds'
-import delayManager from '@/services/delay'
-import { showNotice } from '@/services/notice-service'
-import { debugLog } from '@/utils/debug'
-
-import { TestBox } from './test-box'
-
+import { useEffect, useState } from "react";
+import { useLockFn } from "ahooks";
+import { useTranslation } from "react-i18next";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
+  Box,
+  Typography,
+  Divider,
+  MenuItem,
+  Menu,
+  styled,
+  alpha,
+} from "@mui/material";
+import { Button, Spinner } from "@fluentui/react-components";
+import { tokens } from "../../pages/_fluent_theme";
+import { BaseLoading } from "@/components/base";
+import { LanguageRounded } from "@mui/icons-material";
+import { Notice } from "@/components/base";
+import { TestBox } from "./test-box";
+import delayManager from "@/services/delay";
+import { cmdTestDelay, downloadIconCache } from "@/services/cmds";
+import { UnlistenFn } from "@tauri-apps/api/event";
+import { convertFileSrc } from "@tauri-apps/api/core";
+import { useListen } from "@/hooks/use-listen";
 interface Props {
-  id: string
-  itemData: IVergeTestItem
-  onEdit: () => void
-  onDelete: (uid: string) => void
+  id: string;
+  itemData: IVergeTestItem;
+  onEdit: () => void;
+  onDelete: (uid: string) => void;
 }
 
-export const TestItem = ({
-  id,
-  itemData,
-  onEdit,
-  onDelete: removeTest,
-}: Props) => {
+let eventListener: UnlistenFn = () => {};
+
+export const TestItem = (props: Props) => {
+  const { itemData, onEdit, onDelete: onDeleteItem } = props;
   const {
     attributes,
     listeners,
@@ -37,102 +41,104 @@ export const TestItem = ({
     transform,
     transition,
     isDragging,
-  } = useSortable({
-    id,
-  })
+  } = useSortable({ id: props.id });
 
-  const { t } = useTranslation()
-  const [anchorEl, setAnchorEl] = useState<any>(null)
-  const [position, setPosition] = useState({ left: 0, top: 0 })
-  const [delay, setDelay] = useState(-1)
-  const { uid, name, icon, url } = itemData
-  const iconCachePath = useIconCache({ icon, cacheKey: uid })
-  const { addListener } = useListen()
-
-  const onDelay = useCallback(async () => {
-    setDelay(-2)
-    const result = await cmdTestDelay(url)
-    setDelay(result)
-  }, [url])
-
-  const onEditTest = () => {
-    setAnchorEl(null)
-    onEdit()
-  }
-
-  const onDelete = useLockFn(async () => {
-    setAnchorEl(null)
-    try {
-      removeTest(uid)
-    } catch (err: any) {
-      showNotice.error(err)
-    }
-  })
-
-  const menu = [
-    { label: 'Edit', handler: onEditTest },
-    { label: 'Delete', handler: onDelete },
-  ]
+  const { t } = useTranslation();
+  const [anchorEl, setAnchorEl] = useState<any>(null);
+  const [position, setPosition] = useState({ left: 0, top: 0 });
+  const [delay, setDelay] = useState(-1);
+  const { uid, name, icon, url } = itemData;
+  const [iconCachePath, setIconCachePath] = useState("");
+  const { addListener } = useListen();
 
   useEffect(() => {
-    let unlistenFn: UnlistenFn | null = null
+    initIconCachePath();
+  }, [icon]);
 
-    const setupListener = async () => {
-      if (unlistenFn) {
-        unlistenFn()
-      }
-      unlistenFn = await addListener('verge://test-all', () => {
-        onDelay()
-      })
+  async function initIconCachePath() {
+    if (icon && icon.trim().startsWith("http")) {
+      const fileName = uid + "-" + getFileName(icon);
+      const iconPath = await downloadIconCache(icon, fileName);
+      setIconCachePath(convertFileSrc(iconPath));
     }
+  }
 
-    setupListener()
+  function getFileName(url: string) {
+    return url.substring(url.lastIndexOf("/") + 1);
+  }
 
-    return () => {
-      if (unlistenFn) {
-        debugLog(
-          `TestItem for ${id} unmounting or url changed, cleaning up test-all listener.`,
-        )
-        unlistenFn()
-      }
+  const onDelay = async () => {
+    setDelay(-2);
+    const result = await cmdTestDelay(url);
+    setDelay(result);
+  };
+
+  const onEditTest = () => {
+    setAnchorEl(null);
+    onEdit();
+  };
+
+  const onDelete = useLockFn(async () => {
+    setAnchorEl(null);
+    try {
+      onDeleteItem(uid);
+    } catch (err: any) {
+      Notice.error(err?.message || err.toString());
     }
-  }, [url, addListener, onDelay, id])
+  });
+
+  const menu = [
+    { label: "Edit", handler: onEditTest },
+    { label: "Delete", handler: onDelete },
+  ];
+
+  const listenTsetEvent = async () => {
+    eventListener();
+    eventListener = await addListener("verge://test-all", () => {
+      onDelay();
+    });
+  };
+
+  useEffect(() => {
+    listenTsetEvent();
+  }, [url]);
 
   return (
     <Box
       sx={{
-        position: 'relative',
+        position: "relative",
         transform: CSS.Transform.toString(transform),
         transition,
-        zIndex: isDragging ? 'calc(infinity)' : undefined,
+        zIndex: isDragging ? "calc(infinity)" : undefined,
       }}
     >
       <TestBox
         onContextMenu={(event) => {
-          const { clientX, clientY } = event
-          setPosition({ top: clientY, left: clientX })
-          setAnchorEl(event.currentTarget)
-          event.preventDefault()
+          const { clientX, clientY } = event;
+          setPosition({ top: clientY, left: clientX });
+          setAnchorEl(event.currentTarget);
+          event.preventDefault();
         }}
       >
         <Box
-          sx={{ position: 'relative', cursor: 'move' }}
+          position="relative"
+          sx={{ cursor: "move" }}
           ref={setNodeRef}
           {...attributes}
           {...listeners}
         >
-          {icon && icon.trim() !== '' ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-              {icon.trim().startsWith('http') && (
+          {icon && icon.trim() !== "" ? (
+            <Box sx={{ display: "flex", justifyContent: "center" }}>
+              {icon.trim().startsWith("http") && (
                 <img
-                  src={iconCachePath === '' ? icon : iconCachePath}
+                  src={iconCachePath === "" ? icon : iconCachePath}
                   height="40px"
                 />
               )}
-              {icon.trim().startsWith('data') && (
+              {icon.trim().startsWith("data") && (
                 <img src={icon} height="40px" />
               )}
-              {icon.trim().startsWith('<svg') && (
+              {icon.trim().startsWith("<svg") && (
                 <img
                   src={`data:image/svg+xml;base64,${btoa(icon)}`}
                   height="40px"
@@ -140,62 +146,76 @@ export const TestItem = ({
               )}
             </Box>
           ) : (
-            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-              <LanguageRounded sx={{ height: '40px' }} fontSize="large" />
+            <Box sx={{ display: "flex", justifyContent: "center" }}>
+              <LanguageRounded sx={{ height: "40px" }} fontSize="large" />
             </Box>
           )}
 
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>{name}</Box>
+          <Box sx={{ display: "flex", justifyContent: "center" }}>
+            <Typography variant="h6" component="h2" noWrap title={name}>
+              {name}
+            </Typography>
+          </Box>
         </Box>
-        <Divider sx={{ marginTop: '8px' }} />
+        <Divider sx={{ marginTop: "8px" }} />
         <Box
           sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            marginTop: '8px',
-            color: 'primary.main',
+            display: "flex",
+            justifyContent: "center",
+            marginTop: "8px",
+            color: "primary.main",
           }}
         >
           {delay === -2 && (
-            <Widget>
-              <BaseLoading />
-            </Widget>
+            <Button appearance="transparent" disabled style={{ height: 32 }}>
+              {/* <BaseLoading /> */}
+              <Spinner size="extra-tiny" />
+            </Button>
           )}
 
           {delay === -1 && (
-            <Widget
+            <Button
               className="the-check"
               onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                onDelay()
+                e.preventDefault();
+                e.stopPropagation();
+                onDelay();
               }}
-              sx={({ palette }) => ({
-                ':hover': { bgcolor: alpha(palette.primary.main, 0.15) },
-              })}
+              // sx={({ palette }) => ({
+              //   ":hover": { bgcolor: alpha(palette.primary.main, 0.15) },
+              // })}
+              appearance="subtle"
             >
-              {t('tests.components.item.actions.test')}
-            </Widget>
+              {t("Test")}
+            </Button>
           )}
 
           {delay >= 0 && (
             // 显示延迟
-            <Widget
+            <Button
               className="the-delay"
               onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                onDelay()
+                e.preventDefault();
+                e.stopPropagation();
+                onDelay();
               }}
-              sx={({ palette }) => ({
-                color: delayManager.formatDelayColor(delay),
-                ':hover': {
-                  bgcolor: alpha(palette.primary.main, 0.15),
-                },
-              })}
+              // color={delayManager.formatDelayColor(delay)}
+              // sx={({ palette }) => ({
+              //   ":hover": {
+              //     bgcolor: alpha(palette.primary.main, 0.15),
+              //   },
+              // })}
+              style={{
+                color: {
+                  "error.main": tokens.colorPaletteRedForeground1,
+                  "success.main": tokens.colorStatusSuccessForeground1,
+                  "warning.main": tokens.colorStatusWarningForeground1,
+                }[delayManager.formatDelayColor(delay)],
+              }}
+              appearance="subtle"
             >
               {delayManager.formatDelay(delay)}
-            </Widget>
+            </Button>
           )}
         </Box>
       </TestBox>
@@ -207,10 +227,10 @@ export const TestItem = ({
         anchorPosition={position}
         anchorReference="anchorPosition"
         transitionDuration={225}
-        slotProps={{ list: { sx: { py: 0.5 } } }}
+        MenuListProps={{ sx: { py: 0.5 } }}
         onContextMenu={(e) => {
-          setAnchorEl(null)
-          e.preventDefault()
+          setAnchorEl(null);
+          e.preventDefault();
         }}
       >
         {menu.map((item) => (
@@ -225,11 +245,11 @@ export const TestItem = ({
         ))}
       </Menu>
     </Box>
-  )
-}
+  );
+};
 const Widget = styled(Box)(({ theme: { typography } }) => ({
-  padding: '3px 6px',
+  padding: "3px 6px",
   fontSize: 14,
   fontFamily: typography.fontFamily,
-  borderRadius: '4px',
-}))
+  borderRadius: "4px",
+}));

@@ -1,289 +1,324 @@
-import { RefreshRounded, StorageOutlined } from '@mui/icons-material'
+import dayjs from "dayjs";
+import useSWR, { mutate } from "swr";
+import { useState } from "react";
 import {
-  Box,
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Divider,
   IconButton,
   List,
   ListItem,
   ListItemText,
   Typography,
-  alpha,
   styled,
-} from '@mui/material'
-import { useLockFn } from 'ahooks'
-import dayjs from 'dayjs'
-import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { updateRuleProvider } from 'tauri-plugin-mihomo-api'
+  Box,
+  alpha,
+  Divider,
+  keyframes,
+} from "@mui/material";
+import {
+  Button as FluentButton,
+  Dialog,
+  DialogActions,
+  DialogBody,
+  DialogContent,
+  DialogSurface,
+  DialogTitle,
+  DialogTrigger,
+} from "@fluentui/react-components";
+import { RefreshRounded } from "@mui/icons-material";
+import { useTranslation } from "react-i18next";
+import { getRuleProviders, ruleProviderUpdate } from "@/services/api";
+import { BaseDialog } from "../base";
 
-import { useAppRefreshers, useRulesData } from '@/providers/app-data-context'
-import { showNotice } from '@/services/notice-service'
-
-// 辅助组件 - 类型框
-const TypeBox = styled(Box)<{ component?: React.ElementType }>(({ theme }) => ({
-  display: 'inline-block',
-  border: '1px solid #ccc',
-  borderColor: alpha(theme.palette.secondary.main, 0.5),
-  color: alpha(theme.palette.secondary.main, 0.8),
-  borderRadius: 4,
-  fontSize: 10,
-  marginRight: '4px',
-  padding: '0 2px',
-  lineHeight: 1.25,
-}))
+const round = keyframes`
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+`;
 
 export const ProviderButton = () => {
-  const { t } = useTranslation()
-  const [open, setOpen] = useState(false)
-  const { ruleProviders } = useRulesData()
-  const { refreshRules, refreshRuleProviders } = useAppRefreshers()
-  const [updating, setUpdating] = useState<Record<string, boolean>>({})
+  const { t } = useTranslation();
+  const { data } = useSWR("getRuleProviders", getRuleProviders);
 
-  // 检查是否有提供者
-  const hasProviders = Object.keys(ruleProviders || {}).length > 0
+  const [open, setOpen] = useState(false);
 
-  // 更新单个规则提供者
-  const updateProvider = useLockFn(async (name: string) => {
-    try {
-      // 设置更新状态
-      setUpdating((prev) => ({ ...prev, [name]: true }))
+  const hasProvider = Object.keys(data || {}).length > 0;
+  const [updating, setUpdating] = useState(
+    Object.keys(data || {}).map(() => false),
+  );
 
-      await updateRuleProvider(name)
-
-      // 刷新数据
-      await refreshRules()
-      await refreshRuleProviders()
-
-      showNotice.success(
-        'rules.feedback.notifications.provider.updateSuccess',
-        {
-          name,
-        },
-      )
-    } catch (err) {
-      showNotice.error('rules.feedback.notifications.provider.updateFailed', {
-        name,
-        message: String(err),
+  const setUpdatingAt = (status: boolean, index: number) => {
+    setUpdating((prev) => {
+      const next = [...prev];
+      next[index] = status;
+      return next;
+    });
+  };
+  const handleUpdate = async (key: string, index: number) => {
+    setUpdatingAt(true, index);
+    ruleProviderUpdate(key)
+      .then(async () => {
+        setUpdatingAt(false, index);
+        await mutate("getRules");
+        await mutate("getRuleProviders");
       })
-    } finally {
-      // 清除更新状态
-      setUpdating((prev) => ({ ...prev, [name]: false }))
-    }
-  })
+      .catch(async () => {
+        setUpdatingAt(false, index);
+        await mutate("getRules");
+        await mutate("getRuleProviders");
+      });
+  };
 
-  // 更新所有规则提供者
-  const updateAllProviders = useLockFn(async () => {
-    try {
-      // 获取所有provider的名称
-      const allProviders = Object.keys(ruleProviders || {})
-      if (allProviders.length === 0) {
-        showNotice.info('rules.feedback.notifications.provider.none')
-        return
-      }
+  if (!hasProvider) return null;
 
-      // 设置所有provider为更新中状态
-      const newUpdating = allProviders.reduce(
-        (acc, key) => {
-          acc[key] = true
-          return acc
-        },
-        {} as Record<string, boolean>,
-      )
-      setUpdating(newUpdating)
+  return (
+    <>
+      <Dialog
+        open={open}
+        onOpenChange={(_, data) => setOpen(data.open)}
+        modalType="non-modal"
+      >
+        <DialogTrigger disableButtonEnhancement>
+          <FluentButton
+            style={{ textTransform: "capitalize" }}
+            onClick={() => setOpen(true)}
+            className="fds"
+          >
+            {t("Rule Provider")}
+          </FluentButton>
+        </DialogTrigger>
 
-      // 改为串行逐个更新所有provider
-      for (const name of allProviders) {
-        try {
-          await updateRuleProvider(name)
-          // 每个更新完成后更新状态
-          setUpdating((prev) => ({ ...prev, [name]: false }))
-        } catch (err) {
-          console.error(`更新 ${name} 失败`, err)
-          // 继续执行下一个，不中断整体流程
-        }
-      }
-
-      // 刷新数据
-      await refreshRules()
-      await refreshRuleProviders()
-
-      showNotice.success('rules.feedback.notifications.provider.allUpdated')
-    } catch (err) {
-      showNotice.error('rules.feedback.notifications.provider.genericError', {
-        message: String(err),
-      })
-    } finally {
-      // 清除所有更新状态
-      setUpdating({})
-    }
-  })
-
-  const handleClose = () => {
-    setOpen(false)
-  }
-
-  if (!hasProviders) return null
+        <DialogSurface>
+          <DialogBody>
+            <DialogTitle>{t("Rule Provider")}</DialogTitle>
+            {/* <Box display="flex" justifyContent="space-between" gap={1}>
+            <Typography variant="h6">{t("Rule Provider")}</Typography>
+            <FluentButton
+              appearance="primary"
+              onClick={async () => {
+                Object.entries(data || {}).forEach(async ([key], index) => {
+                  await handleUpdate(key, index);
+                });
+              }}
+            >
+              {t("Update All")}
+            </Button>
+          </Box> */}
+            <DialogContent style={{ maxHeight: "70vh" }}>
+              <List sx={{ py: 0, minHeight: 250 }}>
+                {Object.entries(data || {}).map(([key, item], index) => {
+                  const time = dayjs(item.updatedAt);
+                  return (
+                    <>
+                      <ListItem
+                        sx={{
+                          p: 0,
+                          borderRadius: "10px",
+                          border: "solid 2px var(--divider-color)",
+                          mb: 1,
+                        }}
+                        key={key}
+                      >
+                        <ListItemText
+                          sx={{ px: 1 }}
+                          primary={
+                            <>
+                              <Typography
+                                variant="h6"
+                                component="span"
+                                noWrap
+                                title={key}
+                              >
+                                {key}
+                              </Typography>
+                              <TypeBox
+                                component="span"
+                                sx={{ marginLeft: "8px" }}
+                              >
+                                {item.ruleCount}
+                              </TypeBox>
+                            </>
+                          }
+                          secondary={
+                            <>
+                              <StyledTypeBox component="span">
+                                {item.vehicleType}
+                              </StyledTypeBox>
+                              <StyledTypeBox component="span">
+                                {item.behavior}
+                              </StyledTypeBox>
+                              <StyledTypeBox component="span">
+                                {t("Update At")} {time.fromNow()}
+                              </StyledTypeBox>
+                            </>
+                          }
+                        />
+                        <Divider orientation="vertical" flexItem />
+                        <IconButton
+                          size="small"
+                          color="inherit"
+                          title={`${t("Update")}${t("Rule Provider")}`}
+                          onClick={() => handleUpdate(key, index)}
+                          sx={{
+                            animation: updating[index]
+                              ? `1s linear infinite ${round}`
+                              : "none",
+                          }}
+                        >
+                          <RefreshRounded />
+                        </IconButton>
+                      </ListItem>
+                    </>
+                  );
+                })}
+              </List>
+            </DialogContent>
+            <DialogActions>
+              <FluentButton onClick={() => setOpen(false)}>
+                {t("Close")}
+              </FluentButton>
+              <FluentButton
+                appearance="primary"
+                onClick={async () => {
+                  Object.entries(data || {}).forEach(async ([key], index) => {
+                    await handleUpdate(key, index);
+                  });
+                }}
+              >
+                {t("Update All")}
+              </FluentButton>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
+    </>
+  );
 
   return (
     <>
       <Button
-        variant="outlined"
         size="small"
-        startIcon={<StorageOutlined />}
+        variant="outlined"
+        sx={{ textTransform: "capitalize" }}
         onClick={() => setOpen(true)}
       >
-        {t('rules.page.provider.trigger')}
+        {t("Rule Provider")}
       </Button>
 
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <Typography variant="h6">
-              {t('rules.page.provider.dialogTitle')}
-            </Typography>
+      <BaseDialog
+        open={open}
+        title={
+          <Box display="flex" justifyContent="space-between" gap={1}>
+            <Typography variant="h6">{t("Rule Provider")}</Typography>
             <Button
               variant="contained"
               size="small"
-              onClick={updateAllProviders}
+              onClick={async () => {
+                Object.entries(data || {}).forEach(async ([key], index) => {
+                  await handleUpdate(key, index);
+                });
+              }}
             >
-              {t('rules.page.provider.actions.updateAll')}
+              {t("Update All")}
             </Button>
           </Box>
-        </DialogTitle>
-
-        <DialogContent>
-          <List sx={{ py: 0, minHeight: 250 }}>
-            {Object.entries(ruleProviders || {})
-              .sort()
-              .map(([key, item]) => {
-                const provider = item
-                const time = dayjs(provider.updatedAt)
-                const isUpdating = updating[key]
-
-                return (
-                  <ListItem
-                    key={key}
-                    sx={[
-                      {
-                        p: 0,
-                        mb: '8px',
-                        borderRadius: 2,
-                        overflow: 'hidden',
-                        transition: 'all 0.2s',
-                      },
-                      ({ palette: { mode, primary } }) => {
-                        const bgcolor = mode === 'light' ? '#ffffff' : '#24252f'
-                        const hoverColor =
-                          mode === 'light'
-                            ? alpha(primary.main, 0.1)
-                            : alpha(primary.main, 0.2)
-
-                        return {
-                          backgroundColor: bgcolor,
-                          '&:hover': {
-                            backgroundColor: hoverColor,
-                            borderColor: alpha(primary.main, 0.3),
-                          },
-                        }
-                      },
-                    ]}
-                  >
-                    <ListItemText
-                      sx={{ px: 2, py: 1 }}
-                      primary={
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                          }}
+        }
+        contentSx={{ width: 400 }}
+        disableOk
+        cancelBtn={t("Close")}
+        onClose={() => setOpen(false)}
+        onCancel={() => setOpen(false)}
+      >
+        <List sx={{ py: 0, minHeight: 250 }}>
+          {Object.entries(data || {}).map(([key, item], index) => {
+            const time = dayjs(item.updatedAt);
+            return (
+              <>
+                <ListItem
+                  sx={{
+                    p: 0,
+                    borderRadius: "10px",
+                    border: "solid 2px var(--divider-color)",
+                    mb: 1,
+                  }}
+                  key={key}
+                >
+                  <ListItemText
+                    sx={{ px: 1 }}
+                    primary={
+                      <>
+                        <Typography
+                          variant="h6"
+                          component="span"
+                          noWrap
+                          title={key}
                         >
-                          <Typography
-                            variant="subtitle1"
-                            component="div"
-                            noWrap
-                            title={key}
-                            sx={{ display: 'flex', alignItems: 'center' }}
-                          >
-                            <span style={{ marginRight: '8px' }}>{key}</span>
-                            <TypeBox component="span">
-                              {provider.ruleCount}
-                            </TypeBox>
-                          </Typography>
-
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            noWrap
-                          >
-                            <small>{t('shared.labels.updateAt')}: </small>
-                            {time.fromNow()}
-                          </Typography>
-                        </Box>
-                      }
-                      secondary={
-                        <Box sx={{ display: 'flex' }}>
-                          <TypeBox component="span">
-                            {provider.vehicleType}
-                          </TypeBox>
-                          <TypeBox component="span">
-                            {provider.behavior}
-                          </TypeBox>
-                        </Box>
-                      }
-                    />
-                    <Divider orientation="vertical" flexItem />
-                    <Box
-                      sx={{
-                        width: 40,
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={() => updateProvider(key)}
-                        disabled={isUpdating}
-                        aria-label={t('rules.page.provider.actions.update')}
-                        sx={{
-                          animation: isUpdating
-                            ? 'spin 1s linear infinite'
-                            : 'none',
-                          '@keyframes spin': {
-                            '0%': { transform: 'rotate(0deg)' },
-                            '100%': { transform: 'rotate(360deg)' },
-                          },
-                        }}
-                        title={t('rules.page.provider.actions.update')}
-                      >
-                        <RefreshRounded />
-                      </IconButton>
-                    </Box>
-                  </ListItem>
-                )
-              })}
-          </List>
-        </DialogContent>
-
-        <DialogActions>
-          <Button onClick={handleClose} variant="outlined">
-            {t('shared.actions.close')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+                          {key}
+                        </Typography>
+                        <TypeBox component="span" sx={{ marginLeft: "8px" }}>
+                          {item.ruleCount}
+                        </TypeBox>
+                      </>
+                    }
+                    secondary={
+                      <>
+                        <StyledTypeBox component="span">
+                          {item.vehicleType}
+                        </StyledTypeBox>
+                        <StyledTypeBox component="span">
+                          {item.behavior}
+                        </StyledTypeBox>
+                        <StyledTypeBox component="span">
+                          {t("Update At")} {time.fromNow()}
+                        </StyledTypeBox>
+                      </>
+                    }
+                  />
+                  <Divider orientation="vertical" flexItem />
+                  <IconButton
+                    size="small"
+                    color="inherit"
+                    title={`${t("Update")}${t("Rule Provider")}`}
+                    onClick={() => handleUpdate(key, index)}
+                    sx={{
+                      animation: updating[index]
+                        ? `1s linear infinite ${round}`
+                        : "none",
+                    }}
+                  >
+                    <RefreshRounded />
+                  </IconButton>
+                </ListItem>
+              </>
+            );
+          })}
+        </List>
+      </BaseDialog>
     </>
-  )
-}
+  );
+};
+const TypeBox = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "component",
+})<{ component?: React.ElementType }>(({ theme }) => ({
+  display: "inline-block",
+  border: "1px solid #ccc",
+  borderColor: alpha(theme.palette.secondary.main, 0.5),
+  color: alpha(theme.palette.secondary.main, 0.8),
+  borderRadius: 4,
+  fontSize: 10,
+  marginRight: "4px",
+  padding: "0 2px",
+  lineHeight: 1.25,
+}));
+
+const StyledTypeBox = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "component",
+})<{ component?: React.ElementType }>(({ theme }) => ({
+  display: "inline-block",
+  border: "1px solid #ccc",
+  borderColor: alpha(theme.palette.primary.main, 0.5),
+  color: alpha(theme.palette.primary.main, 0.8),
+  borderRadius: 4,
+  fontSize: 10,
+  marginRight: "4px",
+  padding: "0 2px",
+  lineHeight: 1.25,
+}));

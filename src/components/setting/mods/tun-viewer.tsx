@@ -1,215 +1,285 @@
+import { forwardRef, useImperativeHandle, useState } from "react";
+import { useLockFn } from "ahooks";
+import { useTranslation } from "react-i18next";
 import {
-  Box,
-  Button,
   List,
   ListItem,
   ListItemText,
-  TextField,
+  Box,
   Typography,
-} from '@mui/material'
-import { useLockFn } from 'ahooks'
-import type { Ref } from 'react'
-import { useImperativeHandle, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-
+  Button,
+  TextField,
+} from "@mui/material";
+import { useClash } from "@/hooks/use-clash";
+import { BaseDialog, DialogRef, Notice, Switch } from "@/components/base";
+import { FluentModeSwitch, StackModeSwitch } from "./stack-mode-switch";
+import { Expander } from "../../fluent/expander";
+import { enhanceProfiles } from "@/services/cmds";
 import {
-  BaseDialog,
-  BaseSplitChipEditor,
-  TooltipIcon,
-  DialogRef,
-  Switch,
-} from '@/components/base'
-import { useClash } from '@/hooks/use-clash'
-import { enhanceProfiles } from '@/services/cmds'
-import { showNotice } from '@/services/notice-service'
-import getSystem from '@/utils/get-system'
-import { areValidIpCidrs } from '@/utils/network'
+  Switch as FluentSwitch,
+  Button as FluentButton,
+  Input,
+} from "@fluentui/react-components";
 
-import { StackModeSwitch } from './stack-mode-switch'
+export const TunViewer = forwardRef<DialogRef>((props, ref) => {
+  const { t } = useTranslation();
 
-const OS = getSystem()
+  const { clash, mutateClash, patchClash } = useClash();
 
-const splitRouteExcludeAddress = (value: string) =>
-  value
-    .split(/[,\n;\r]+/)
-    .map((item) => item.trim())
-    .filter(Boolean)
-
-export function TunViewer({ ref }: { ref?: Ref<DialogRef> }) {
-  const { t } = useTranslation()
-
-  const { clash, mutateClash, patchClash } = useClash()
-
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
   const [values, setValues] = useState({
-    stack: 'mixed',
-    device: OS === 'macos' ? 'utun1024' : 'Mihomo',
+    stack: "mixed",
+    device: "Mihomo",
     autoRoute: true,
-    routeExcludeAddress: '',
-    autoRedirect: false,
     autoDetectInterface: true,
-    dnsHijack: ['any:53'],
+    dnsHijack: ["any:53"],
     strictRoute: false,
     mtu: 1500,
-  })
-
-  const routeExcludeAddressItems = splitRouteExcludeAddress(
-    values.routeExcludeAddress,
-  )
-  const routeExcludeAddressError =
-    values.autoRoute &&
-    routeExcludeAddressItems.length > 0 &&
-    !areValidIpCidrs(routeExcludeAddressItems)
-  const routeExcludeAddressHelperText = routeExcludeAddressError
-    ? t('settings.modals.tun.messages.invalidRouteExcludeAddress')
-    : t('settings.modals.tun.messages.routeExcludeAddressHint')
+  });
 
   useImperativeHandle(ref, () => ({
     open: () => {
-      setOpen(true)
-      const nextAutoRoute = clash?.tun['auto-route'] ?? true
-      const rawAutoRedirect = clash?.tun['auto-redirect'] ?? false
-      const computedAutoRedirect =
-        OS === 'linux' ? (nextAutoRoute ? rawAutoRedirect : false) : false
+      setOpen(true);
       setValues({
-        stack: clash?.tun.stack ?? 'gvisor',
-        device: clash?.tun.device ?? (OS === 'macos' ? 'utun1024' : 'Mihomo'),
-        autoRoute: nextAutoRoute,
-        routeExcludeAddress: (clash?.tun['route-exclude-address'] ?? []).join(
-          ',',
-        ),
-        autoRedirect: computedAutoRedirect,
-        autoDetectInterface: clash?.tun['auto-detect-interface'] ?? true,
-        dnsHijack: clash?.tun['dns-hijack'] ?? ['any:53'],
-        strictRoute: clash?.tun['strict-route'] ?? false,
+        stack: clash?.tun.stack ?? "mixed",
+        device: clash?.tun.device ?? "Mihomo",
+        autoRoute: clash?.tun["auto-route"] ?? true,
+        autoDetectInterface: clash?.tun["auto-detect-interface"] ?? true,
+        dnsHijack: clash?.tun["dns-hijack"] ?? ["any:53"],
+        strictRoute: clash?.tun["strict-route"] ?? false,
         mtu: clash?.tun.mtu ?? 1500,
-      })
+      });
     },
     close: () => setOpen(false),
-  }))
+  }));
 
   const onSave = useLockFn(async () => {
     try {
-      const routeExcludeAddress = routeExcludeAddressItems
-
-      if (routeExcludeAddressError) {
-        showNotice.error(
-          'settings.modals.tun.messages.invalidRouteExcludeAddress',
-        )
-        return
-      }
-
-      const tun: IConfigData['tun'] = {
+      let tun = {
         stack: values.stack,
-        device:
-          values.device === ''
-            ? OS === 'macos'
-              ? 'utun1024'
-              : 'Mihomo'
-            : values.device,
-        'auto-route': values.autoRoute,
-        'route-exclude-address': routeExcludeAddress,
-        ...(OS === 'linux'
-          ? {
-              'auto-redirect': values.autoRedirect,
-            }
-          : {}),
-        'auto-detect-interface': values.autoDetectInterface,
-        'dns-hijack': values.dnsHijack[0] === '' ? [] : values.dnsHijack,
-        'strict-route': values.strictRoute,
+        device: values.device === "" ? "Mihomo" : values.device,
+        "auto-route": values.autoRoute,
+        "auto-detect-interface": values.autoDetectInterface,
+        "dns-hijack": values.dnsHijack[0] === "" ? [] : values.dnsHijack,
+        "strict-route": values.strictRoute,
         mtu: values.mtu ?? 1500,
-      }
-      await patchClash({ tun })
+      };
+      await patchClash({ tun });
       await mutateClash(
         (old) => ({
-          ...old!,
+          ...(old! || {}),
           tun,
         }),
         false,
-      )
-      setOpen(false)
-      showNotice.success('settings.modals.tun.messages.applied')
-      void enhanceProfiles().catch((err: any) => {
-        showNotice.error(err)
-      })
+      );
+      try {
+        await enhanceProfiles();
+        Notice.success(t("Settings Applied"), 1000);
+      } catch (err: any) {
+        Notice.error(err.message || err.toString(), 3000);
+      }
+      setOpen(false);
     } catch (err: any) {
-      showNotice.error(err)
+      Notice.error(err.message || err.toString());
     }
-  })
+  });
+
+  return (
+    <>
+      <Expander
+        left={t("Stack")}
+        right={
+          // <StackModeSwitch
+          //   value={values.stack}
+          //   onChange={(value) => {
+          //     setValues((v) => ({
+          //       ...v,
+          //       stack: value,
+          //     }));
+          //   }}
+          // />
+          <FluentModeSwitch
+            value={values.stack}
+            onChange={(value) => {
+              setValues((v) => ({
+                ...v,
+                stack: value,
+              }));
+            }}
+          />
+        }
+      ></Expander>
+
+      <Expander
+        left={t("Device")}
+        right={
+          <Input
+            autoComplete="new-password"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
+            value={values.device}
+            placeholder="Mihomo"
+            onChange={(e) =>
+              setValues((v) => ({ ...v, device: e.target.value }))
+            }
+          />
+        }
+      ></Expander>
+
+      <Expander
+        left={t("Auto Route")}
+        right={
+          <FluentSwitch
+            checked={values.autoRoute}
+            onChange={(_, c) =>
+              setValues((v) => ({ ...v, autoRoute: c.checked }))
+            }
+          />
+        }
+      ></Expander>
+
+      <Expander
+        left={t("Strict Route")}
+        right={
+          <FluentSwitch
+            checked={values.strictRoute}
+            onChange={(_, c) =>
+              setValues((v) => ({ ...v, strictRoute: c.checked }))
+            }
+          />
+        }
+      ></Expander>
+
+      <Expander
+        left={t("Auto Detect Interface")}
+        right={
+          <FluentSwitch
+            checked={values.autoDetectInterface}
+            onChange={(_, c) =>
+              setValues((v) => ({ ...v, autoDetectInterface: c.checked }))
+            }
+          />
+        }
+      ></Expander>
+
+      <Expander
+        left={t("DNS Hijack")}
+        right={
+          <Input
+            autoComplete="new-password"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
+            value={values.dnsHijack.join(",")}
+            placeholder="Please use , to separate multiple DNS servers"
+            onChange={(e) =>
+              setValues((v) => ({ ...v, dnsHijack: e.target.value.split(",") }))
+            }
+          />
+        }
+      ></Expander>
+
+      <Expander
+        left={t("MTU")}
+        right={
+          <Input
+            autoComplete="new-password"
+            type="number"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
+            value={values.mtu + ""}
+            placeholder="1500"
+            onChange={(e) =>
+              setValues((v) => ({
+                ...v,
+                mtu: parseInt(e.target.value),
+              }))
+            }
+          />
+        }
+      ></Expander>
+
+      <Expander
+        right={
+          <FluentButton
+            appearance="primary"
+            onClick={onSave}
+            style={{ marginBlock: 4 }}
+          >
+            {t("Save")}
+          </FluentButton>
+        }
+      ></Expander>
+    </>
+  );
 
   return (
     <BaseDialog
       open={open}
       title={
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1 }}>
-          <Typography variant="h6">{t('settings.modals.tun.title')}</Typography>
+        <Box display="flex" justifyContent="space-between" gap={1}>
+          <Typography variant="h6">{t("Tun Mode")}</Typography>
           <Button
             variant="outlined"
             size="small"
             onClick={async () => {
-              const tun: IConfigData['tun'] = {
-                stack: 'gvisor',
-                device: OS === 'macos' ? 'utun1024' : 'Mihomo',
-                'auto-route': true,
-                ...(OS === 'linux'
-                  ? {
-                      'auto-redirect': false,
-                    }
-                  : {}),
-                'auto-detect-interface': true,
-                'dns-hijack': ['any:53'],
-                'route-exclude-address': [],
-                'strict-route': false,
+              let tun = {
+                stack: "mixed",
+                device: "Mihomo",
+                "auto-route": true,
+                "auto-detect-interface": true,
+                "dns-hijack": ["any:53"],
+                "strict-route": false,
                 mtu: 1500,
-              }
+              };
               setValues({
-                stack: 'gvisor',
-                device: OS === 'macos' ? 'utun1024' : 'Mihomo',
+                stack: "mixed",
+                device: "Mihomo",
                 autoRoute: true,
-                routeExcludeAddress: '',
-                autoRedirect: false,
                 autoDetectInterface: true,
-                dnsHijack: ['any:53'],
+                dnsHijack: ["any:53"],
                 strictRoute: false,
                 mtu: 1500,
-              })
-              await patchClash({ tun })
+              });
+              await patchClash({ tun });
               await mutateClash(
                 (old) => ({
-                  ...old!,
+                  ...(old! || {}),
                   tun,
                 }),
                 false,
-              )
+              );
             }}
           >
-            {t('shared.actions.resetToDefault')}
+            {t("Reset to Default")}
           </Button>
         </Box>
       }
       contentSx={{ width: 450 }}
-      okBtn={t('shared.actions.save')}
-      cancelBtn={t('shared.actions.cancel')}
+      okBtn={t("Save")}
+      cancelBtn={t("Cancel")}
       onClose={() => setOpen(false)}
       onCancel={() => setOpen(false)}
       onOk={onSave}
     >
       <List>
-        <ListItem sx={{ padding: '5px 2px' }}>
-          <ListItemText primary={t('settings.modals.tun.fields.stack')} />
+        <ListItem sx={{ padding: "5px 2px" }}>
+          <ListItemText primary={t("Stack")} />
           <StackModeSwitch
             value={values.stack}
             onChange={(value) => {
               setValues((v) => ({
                 ...v,
                 stack: value,
-              }))
+              }));
             }}
           />
         </ListItem>
 
-        <ListItem sx={{ padding: '5px 2px' }}>
-          <ListItemText primary={t('settings.modals.tun.fields.device')} />
+        <ListItem sx={{ padding: "5px 2px" }}>
+          <ListItemText primary={t("Device")} />
           <TextField
             autoComplete="new-password"
             size="small"
@@ -225,48 +295,17 @@ export function TunViewer({ ref }: { ref?: Ref<DialogRef> }) {
           />
         </ListItem>
 
-        <ListItem sx={{ padding: '5px 2px' }}>
-          <ListItemText primary={t('settings.modals.tun.fields.autoRoute')} />
+        <ListItem sx={{ padding: "5px 2px" }}>
+          <ListItemText primary={t("Auto Route")} />
           <Switch
             edge="end"
             checked={values.autoRoute}
-            onChange={(_, c) =>
-              setValues((v) => ({
-                ...v,
-                autoRoute: c,
-                autoRedirect: c ? v.autoRedirect : false,
-              }))
-            }
+            onChange={(_, c) => setValues((v) => ({ ...v, autoRoute: c }))}
           />
         </ListItem>
 
-        {OS === 'linux' && (
-          <ListItem sx={{ padding: '5px 2px' }}>
-            <ListItemText
-              primary={t('settings.modals.tun.fields.autoRedirect')}
-              sx={{ maxWidth: 'fit-content' }}
-            />
-            <TooltipIcon
-              title={t('settings.modals.tun.tooltips.autoRedirect')}
-              sx={{ opacity: values.autoRoute ? 0.7 : 0.3 }}
-            />
-            <Switch
-              edge="end"
-              checked={values.autoRedirect}
-              onChange={(_, c) =>
-                setValues((v) => ({
-                  ...v,
-                  autoRedirect: v.autoRoute ? c : v.autoRedirect,
-                }))
-              }
-              disabled={!values.autoRoute}
-              sx={{ marginLeft: 'auto' }}
-            />
-          </ListItem>
-        )}
-
-        <ListItem sx={{ padding: '5px 2px' }}>
-          <ListItemText primary={t('settings.modals.tun.fields.strictRoute')} />
+        <ListItem sx={{ padding: "5px 2px" }}>
+          <ListItemText primary={t("Strict Route")} />
           <Switch
             edge="end"
             checked={values.strictRoute}
@@ -274,10 +313,8 @@ export function TunViewer({ ref }: { ref?: Ref<DialogRef> }) {
           />
         </ListItem>
 
-        <ListItem sx={{ padding: '5px 2px' }}>
-          <ListItemText
-            primary={t('settings.modals.tun.fields.autoDetectInterface')}
-          />
+        <ListItem sx={{ padding: "5px 2px" }}>
+          <ListItemText primary={t("Auto Detect Interface")} />
           <Switch
             edge="end"
             checked={values.autoDetectInterface}
@@ -287,8 +324,8 @@ export function TunViewer({ ref }: { ref?: Ref<DialogRef> }) {
           />
         </ListItem>
 
-        <ListItem sx={{ padding: '5px 2px' }}>
-          <ListItemText primary={t('settings.modals.tun.fields.dnsHijack')} />
+        <ListItem sx={{ padding: "5px 2px" }}>
+          <ListItemText primary={t("DNS Hijack")} />
           <TextField
             autoComplete="new-password"
             size="small"
@@ -296,16 +333,16 @@ export function TunViewer({ ref }: { ref?: Ref<DialogRef> }) {
             autoCapitalize="off"
             spellCheck="false"
             sx={{ width: 250 }}
-            value={values.dnsHijack.join(',')}
-            placeholder={t('settings.modals.tun.tooltips.dnsHijack')}
+            value={values.dnsHijack.join(",")}
+            placeholder="Please use , to separate multiple DNS servers"
             onChange={(e) =>
-              setValues((v) => ({ ...v, dnsHijack: e.target.value.split(',') }))
+              setValues((v) => ({ ...v, dnsHijack: e.target.value.split(",") }))
             }
           />
         </ListItem>
 
-        <ListItem sx={{ padding: '5px 2px' }}>
-          <ListItemText primary={t('settings.modals.tun.fields.mtu')} />
+        <ListItem sx={{ padding: "5px 2px" }}>
+          <ListItemText primary={t("MTU")} />
           <TextField
             autoComplete="new-password"
             size="small"
@@ -324,29 +361,7 @@ export function TunViewer({ ref }: { ref?: Ref<DialogRef> }) {
             }
           />
         </ListItem>
-
-        <BaseSplitChipEditor
-          value={values.routeExcludeAddress}
-          placeholder="192.168.0.0/16"
-          ariaLabel={t('settings.modals.tun.fields.routeExcludeAddress')}
-          disabled={!values.autoRoute}
-          error={routeExcludeAddressError}
-          helperText={routeExcludeAddressHelperText}
-          onChange={(nextValue) =>
-            setValues((v) => ({ ...v, routeExcludeAddress: nextValue }))
-          }
-          renderHeader={(modeToggle) => (
-            <ListItem sx={{ padding: '5px 2px' }}>
-              <ListItemText
-                primary={t('settings.modals.tun.fields.routeExcludeAddress')}
-              />
-              {modeToggle ? (
-                <Box sx={{ marginLeft: 'auto' }}>{modeToggle}</Box>
-              ) : null}
-            </ListItem>
-          )}
-        />
       </List>
     </BaseDialog>
-  )
-}
+  );
+});

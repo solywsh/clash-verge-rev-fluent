@@ -1,152 +1,92 @@
+import { useMemo, useState } from "react";
+import { Box, Button, IconButton, MenuItem } from "@mui/material";
+import { Virtuoso } from "react-virtuoso";
+import { useTranslation } from "react-i18next";
+import { useLocalStorage } from "foxact/use-local-storage";
+import {
+  Button as FluentButton,
+  MenuButton,
+  Menu,
+  MenuTrigger,
+  TabList,
+  Tab,
+  MenuPopover,
+  MenuList,
+  MenuItemRadio,
+} from "@fluentui/react-components";
+import { tokens } from "./_fluent_theme";
+import { PauseCircleRegular, PlayCircleRegular } from "@fluentui/react-icons";
 import {
   PlayCircleOutlineRounded,
   PauseCircleOutlineRounded,
-  SwapVertRounded,
-} from '@mui/icons-material'
-import { Box, Button, IconButton, MenuItem } from '@mui/material'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-
-import {
-  BaseEmpty,
-  BasePage,
-  BaseSearchBox,
-  BaseStyledSelect,
-  type SearchState,
-  VirtualList,
-  type VirtualListHandle,
-} from '@/components/base'
-import LogItem from '@/components/log/log-item'
-import { useClashLog } from '@/hooks/use-clash-log'
-import { useLogData } from '@/hooks/use-log-data'
+} from "@mui/icons-material";
+import { useLogData, LogLevel, clearLogs } from "@/hooks/use-log-data";
+import { useEnableLog } from "@/services/states";
+import { BaseEmpty, BasePage } from "@/components/base";
+import LogItem from "@/components/log/log-item";
+import { useTheme } from "@mui/material/styles";
+import { FluentBaseSearchBox as BaseSearchBox } from "@/components/base/base-search-box";
+import { BaseStyledSelect } from "@/components/base/base-styled-select";
+import { SearchState } from "@/components/base/base-search-box";
 
 const LogPage = () => {
-  const { t } = useTranslation()
-  const [clashLog, setClashLog] = useClashLog()
-  const enableLog = clashLog.enable
-  const logState = clashLog.logFilter
-  const logOrder = clashLog.logOrder ?? 'asc'
-  const isDescending = logOrder === 'desc'
-
-  const [match, setMatch] = useState(() => (_: string) => true)
-  const [searchState, setSearchState] = useState<SearchState>()
-  const {
-    response: { data: logData },
-    refreshGetClashLog,
-  } = useLogData()
+  const { t } = useTranslation();
+  const [enableLog, setEnableLog] = useEnableLog();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
+  const [logLevel, setLogLevel] = useLocalStorage<LogLevel>(
+    "log:log-level",
+    "info",
+  );
+  const [match, setMatch] = useState(() => (_: string) => true);
+  const logData = useLogData(logLevel);
+  const [searchState, setSearchState] = useState<SearchState>();
 
   const filterLogs = useMemo(() => {
-    if (!logData || logData.length === 0) {
-      return []
-    }
-
-    // Server-side filtering handles level filtering via query parameters
-    // We only need to apply search filtering here
-    return logData.filter((data) => {
-      // 构建完整的搜索文本，包含时间、类型和内容
-      const searchText =
-        `${data.time || ''} ${data.type} ${data.payload}`.toLowerCase()
-
-      const matchesSearch = match(searchText)
-
-      return (
-        (logState == 'all' ? true : data.type.includes(logState)) &&
-        matchesSearch
-      )
-    })
-  }, [logData, logState, match])
-
-  const filteredLogs = useMemo(
-    () => (isDescending ? [...filterLogs].reverse() : filterLogs),
-    [filterLogs, isDescending],
-  )
-
-  const virtuosoRef = useRef<VirtualListHandle>(null)
-
-  useEffect(() => {
-    if (!isDescending && filteredLogs.length > 0) {
-      virtuosoRef.current?.scrollToIndex(filteredLogs.length - 1, {
-        behavior: 'smooth',
-      })
-    }
-  }, [filteredLogs.length, isDescending])
-
-  const handleLogLevelChange = (newLevel: LogFilter) => {
-    setClashLog((pre) => ({ ...pre!, logFilter: newLevel }))
-  }
-
-  const handleToggleLog = async () => {
-    setClashLog((pre) => ({ ...pre!, enable: !enableLog }))
-  }
-
-  const handleToggleOrder = () => {
-    setClashLog((pre) => ({
-      ...pre!,
-      logOrder: pre!.logOrder === 'desc' ? 'asc' : 'desc',
-    }))
-  }
+    return logData
+      ? logData.filter((data) =>
+          logLevel === "all"
+            ? match(data.payload)
+            : data.type.includes(logLevel) && match(data.payload),
+        )
+      : [];
+  }, [logData, logLevel, match]);
 
   return (
     <BasePage
       full
-      title={t('logs.page.title')}
-      contentStyle={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'auto',
-      }}
+      title={t("Logs")}
+      contentStyle={{ height: "100%" }}
       header={
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton
-            title={t(
-              enableLog ? 'shared.actions.pause' : 'shared.actions.resume',
-            )}
-            aria-label={t(
-              enableLog ? 'shared.actions.pause' : 'shared.actions.resume',
-            )}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          {/* <IconButton
+            title={t("Pause")}
             size="small"
             color="inherit"
-            onClick={handleToggleLog}
+            onClick={() => setEnableLog((e) => !e)}
           >
             {enableLog ? (
               <PauseCircleOutlineRounded />
             ) : (
               <PlayCircleOutlineRounded />
             )}
-          </IconButton>
-          <IconButton
-            title={t(
-              isDescending
-                ? 'logs.actions.showAscending'
-                : 'logs.actions.showDescending',
-            )}
-            aria-label={t(
-              isDescending
-                ? 'logs.actions.showAscending'
-                : 'logs.actions.showDescending',
-            )}
+          </IconButton> */}
+          <FluentButton
+            onClick={() => setEnableLog((e) => !e)}
+            icon={enableLog ? <PauseCircleRegular /> : <PlayCircleRegular />}
+            appearance="subtle"
             size="small"
-            color="inherit"
-            onClick={handleToggleOrder}
-          >
-            <SwapVertRounded
-              sx={{
-                transform: isDescending ? 'scaleY(-1)' : 'none',
-                transition: 'transform 0.2s ease',
+          />
+          {enableLog === true && (
+            <FluentButton
+              onClick={() => {
+                clearLogs(logLevel);
               }}
-            />
-          </IconButton>
-
-          <Button
-            size="small"
-            variant="contained"
-            onClick={() => {
-              refreshGetClashLog(true)
-            }}
-          >
-            {t('shared.actions.clear')}
-          </Button>
+              className="fds"
+            >
+              {t("Clear")}
+            </FluentButton>
+          )}
         </Box>
       }
     >
@@ -154,47 +94,85 @@ const LogPage = () => {
         sx={{
           pt: 1,
           mb: 0.5,
-          mx: '10px',
-          height: '39px',
-          display: 'flex',
-          alignItems: 'center',
+          mx: "20px",
+          height: "36px",
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
         }}
       >
-        <BaseStyledSelect
-          value={logState}
-          onChange={(e) => handleLogLevelChange(e.target.value as LogFilter)}
+        {/* <BaseStyledSelect
+          value={logLevel}
+          onChange={(e) => setLogLevel(e.target.value as LogLevel)}
         >
-          <MenuItem value="all">{t('shared.filters.logLevels.all')}</MenuItem>
-          <MenuItem value="debug">
-            {t('shared.filters.logLevels.debug')}
-          </MenuItem>
-          <MenuItem value="info">{t('shared.filters.logLevels.info')}</MenuItem>
-          <MenuItem value="warn">{t('shared.filters.logLevels.warn')}</MenuItem>
-          <MenuItem value="err">{t('shared.filters.logLevels.error')}</MenuItem>
-        </BaseStyledSelect>
+          <MenuItem value="all">ALL</MenuItem>
+          <MenuItem value="info">INFO</MenuItem>
+          <MenuItem value="warning">WARNING</MenuItem>
+          <MenuItem value="error">ERROR</MenuItem>
+          <MenuItem value="debug">DEBUG</MenuItem>
+        </BaseStyledSelect> */}
+        <Menu>
+          <MenuTrigger>
+            <MenuButton>{logLevel}</MenuButton>
+          </MenuTrigger>
+          <MenuPopover>
+            <MenuList
+              onCheckedValueChange={(_, { checkedItems }) =>
+                setLogLevel(checkedItems[0] as LogLevel)
+              }
+              checkedValues={{ logState: [logLevel] }}
+            >
+              <MenuItemRadio name="logState" value="all">
+                ALL
+              </MenuItemRadio>
+              <MenuItemRadio name="logState" value="info">
+                INFO
+              </MenuItemRadio>
+              <MenuItemRadio name="logState" value="warn">
+                WARN
+              </MenuItemRadio>
+              <MenuItemRadio name="logState" value="error">
+                ERROR
+              </MenuItemRadio>
+              <MenuItemRadio name="logState" value="debug">
+                DEBUG
+              </MenuItemRadio>
+            </MenuList>
+          </MenuPopover>
+        </Menu>
         <BaseSearchBox
           onSearch={(matcher, state) => {
-            setMatch(() => matcher)
-            setSearchState(state)
+            setMatch(() => matcher);
+            setSearchState(state);
           }}
         />
       </Box>
 
-      {filteredLogs.length > 0 ? (
-        <VirtualList
-          ref={virtuosoRef}
-          count={filteredLogs.length}
-          estimateSize={50}
-          renderItem={(i) => (
-            <LogItem value={filteredLogs[i]} searchState={searchState} />
-          )}
-          style={{ flex: 1 }}
-        />
-      ) : (
-        <BaseEmpty />
-      )}
+      <Box
+        height="calc(100% - 65px)"
+        sx={{
+          margin: "10px",
+          mx: "20px",
+          borderRadius: "8px",
+          // bgcolor: isDark ? "#282a36" : "#ffffff",
+          bgcolor: tokens.surface1,
+        }}
+      >
+        {filterLogs.length > 0 ? (
+          <Virtuoso
+            initialTopMostItemIndex={999}
+            data={filterLogs}
+            itemContent={(index, item) => (
+              <LogItem value={item} searchState={searchState} />
+            )}
+            followOutput={"smooth"}
+          />
+        ) : (
+          <BaseEmpty />
+        )}
+      </Box>
     </BasePage>
-  )
-}
+  );
+};
 
-export default LogPage
+export default LogPage;
