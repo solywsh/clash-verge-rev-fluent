@@ -1,20 +1,21 @@
 import { forwardRef, useImperativeHandle, useState } from "react";
 import { useLockFn } from "ahooks";
 import { useTranslation } from "react-i18next";
-import {
-  Button,
-  List,
-  ListItem,
-  ListItemText,
-  styled,
-  TextField,
-  useTheme,
-} from "@mui/material";
+import { Button, Input, Label } from "@fluentui/react-components";
 import { useVerge } from "@/hooks/use-verge";
+import { useThemeMode } from "@/services/states";
 import { defaultTheme, defaultDarkTheme } from "@/pages/_theme";
 import { BaseDialog, DialogRef, Notice } from "@/components/base";
 import { EditorViewer } from "@/components/profile/editor-viewer";
 import { EditRounded } from "@mui/icons-material";
+
+const rowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 12,
+  padding: "5px 2px",
+};
 
 export const ThemeViewer = forwardRef<DialogRef>((props, ref) => {
   const { t } = useTranslation();
@@ -33,14 +34,8 @@ export const ThemeViewer = forwardRef<DialogRef>((props, ref) => {
     close: () => setOpen(false),
   }));
 
-  const textProps = {
-    size: "small",
-    autoComplete: "off",
-    sx: { width: 135 },
-  } as const;
-
-  const handleChange = (field: keyof typeof theme) => (e: any) => {
-    setTheme((t) => ({ ...t, [field]: e.target.value }));
+  const handleChange = (field: keyof typeof theme) => (value: string) => {
+    setTheme((t) => ({ ...t, [field]: value }));
   };
 
   const onSave = useLockFn(async () => {
@@ -53,25 +48,35 @@ export const ThemeViewer = forwardRef<DialogRef>((props, ref) => {
   });
 
   // default theme
-  const { palette } = useTheme();
-
-  const dt = palette.mode === "light" ? defaultTheme : defaultDarkTheme;
+  const mode = useThemeMode();
+  const dt = mode === "light" ? defaultTheme : defaultDarkTheme;
 
   type ThemeKey = keyof typeof theme & keyof typeof defaultTheme;
 
   const renderItem = (label: string, key: ThemeKey) => {
     return (
-      <Item>
-        <ListItemText primary={label} />
-        <Round sx={{ background: theme[key] || dt[key] }} />
-        <TextField
-          {...textProps}
-          value={theme[key] ?? ""}
-          placeholder={dt[key]}
-          onChange={handleChange(key)}
-          onKeyDown={(e) => e.key === "Enter" && onSave()}
-        />
-      </Item>
+      <div style={rowStyle}>
+        <Label>{label}</Label>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 18,
+              display: "inline-block",
+              background: theme[key] || dt[key],
+            }}
+          />
+          <Input
+            autoComplete="off"
+            style={{ width: 135 }}
+            value={theme[key] ?? ""}
+            placeholder={dt[key]}
+            onChange={(_, data) => handleChange(key)(data.value)}
+            onKeyDown={(e) => e.key === "Enter" && onSave()}
+          />
+        </div>
+      </div>
     );
   };
 
@@ -86,37 +91,31 @@ export const ThemeViewer = forwardRef<DialogRef>((props, ref) => {
       onCancel={() => setOpen(false)}
       onOk={onSave}
     >
-      <List sx={{ pt: 0 }}>
+      <div style={{ display: "flex", flexDirection: "column" }}>
         {renderItem(t("Primary Color"), "primary_color")}
-
         {renderItem(t("Secondary Color"), "secondary_color")}
-
         {renderItem(t("Primary Text"), "primary_text")}
-
         {renderItem(t("Secondary Text"), "secondary_text")}
-
         {renderItem(t("Info Color"), "info_color")}
-
         {renderItem(t("Warning Color"), "warning_color")}
-
         {renderItem(t("Error Color"), "error_color")}
-
         {renderItem(t("Success Color"), "success_color")}
 
-        <Item>
-          <ListItemText primary={t("Font Family")} />
-          <TextField
-            {...textProps}
+        <div style={rowStyle}>
+          <Label>{t("Font Family")}</Label>
+          <Input
+            autoComplete="off"
+            style={{ width: 135 }}
             value={theme.font_family ?? ""}
-            onChange={handleChange("font_family")}
+            onChange={(_, data) => handleChange("font_family")(data.value)}
             onKeyDown={(e) => e.key === "Enter" && onSave()}
           />
-        </Item>
-        <Item>
-          <ListItemText primary={t("CSS Injection")} />
+        </div>
+
+        <div style={rowStyle}>
+          <Label>{t("CSS Injection")}</Label>
           <Button
-            startIcon={<EditRounded />}
-            variant="outlined"
+            icon={<EditRounded fontSize="inherit" />}
             onClick={() => {
               setEditorOpen(true);
             }}
@@ -130,28 +129,15 @@ export const ThemeViewer = forwardRef<DialogRef>((props, ref) => {
               initialData={Promise.resolve(theme.css_injection ?? "")}
               language="css"
               onSave={(_prev, curr) => {
-                theme.css_injection = curr;
-                handleChange("css_injection");
+                setTheme((prev) => ({ ...prev, css_injection: curr }));
               }}
               onClose={() => {
                 setEditorOpen(false);
               }}
             />
           )}
-        </Item>
-      </List>
+        </div>
+      </div>
     </BaseDialog>
   );
 });
-
-const Item = styled(ListItem)(() => ({
-  padding: "5px 2px",
-}));
-
-const Round = styled("div")(() => ({
-  width: "24px",
-  height: "24px",
-  borderRadius: "18px",
-  display: "inline-block",
-  marginRight: "8px",
-}));
