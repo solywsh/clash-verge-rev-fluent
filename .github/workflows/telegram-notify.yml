@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to notify (e.g. 2.4.7), defaults to package.json version'
+        description: "Version to notify (e.g. 2.4.7), defaults to package.json version"
         required: false
         type: string
       build_type:
-        description: 'Build type'
+        description: "Build type"
         required: false
-        default: 'release'
+        default: "release"
         type: choice
         options:
           - release
@@ -34,7 +34,7 @@ jobs:
       - name: Install Node
         uses: actions/setup-node@v6
         with:
-          node-version: '24.15.0'
+          node-version: "24.15.0"
 
       - uses: pnpm/action-setup@v6
         name: Install pnpm
@@ -89,8 +89,6 @@ jobs:
           ### FAQ
           - [常见问题](https://clash-verge-rev.github.io/faq/windows.html)
 
-          ### 稳定机场VPN推荐
-          - [狗狗加速](https://verge.dginv.click/#/register?code=oaxsAGo6)
 
           Created at ${{ env.BUILDTIME }}.
           EOF
