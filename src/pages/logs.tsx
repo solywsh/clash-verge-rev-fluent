@@ -113,7 +113,7 @@ const LogPage = () => {
         </BaseStyledSelect> */}
         <Menu>
           <MenuTrigger>
-            <MenuButton>{logLevel}</MenuButton>
+            <MenuButton>{logLevel.toUpperCase()}</MenuButton>
           </MenuTrigger>
           <MenuPopover>
             <MenuList
@@ -128,8 +128,8 @@ const LogPage = () => {
               <MenuItemRadio name="logState" value="info">
                 INFO
               </MenuItemRadio>
-              <MenuItemRadio name="logState" value="warn">
-                WARN
+              <MenuItemRadio name="logState" value="warning">
+                WARNING
               </MenuItemRadio>
               <MenuItemRadio name="logState" value="error">
                 ERROR
