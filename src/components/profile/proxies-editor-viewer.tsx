@@ -15,18 +15,15 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
+import { Box, Button, List, ListItem, TextField, styled } from "@mui/material";
 import {
-  Box,
-  Button,
   Dialog,
   DialogActions,
+  DialogBody,
   DialogContent,
+  DialogSurface,
   DialogTitle,
-  List,
-  ListItem,
-  TextField,
-  styled,
-} from "@mui/material";
+} from "@fluentui/react-components";
 import {
   VerticalAlignTopRounded,
   VerticalAlignBottomRounded,
@@ -220,236 +217,256 @@ export const ProxiesEditorViewer = (props: Props) => {
   });
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth>
-      <DialogTitle>
-        {
-          <Box display="flex" justifyContent="space-between">
-            {t("Edit Proxies")}
-            <Box>
-              <Button
-                variant="contained"
-                size="small"
-                onClick={() => {
-                  setVisualization((prev) => !prev);
-                }}
-              >
-                {visualization ? t("Advanced") : t("Visualization")}
-              </Button>
-            </Box>
-          </Box>
-        }
-      </DialogTitle>
-
-      <DialogContent
-        sx={{ display: "flex", width: "auto", height: "calc(100vh - 185px)" }}
+    <Dialog
+      open={open}
+      onOpenChange={(_, data) => {
+        if (!data.open) onClose();
+      }}
+    >
+      <DialogSurface
+        style={{ maxWidth: "90vw", width: "90vw", maxHeight: "92vh" }}
       >
-        {visualization ? (
-          <>
-            <List
-              sx={{
-                width: "50%",
-                padding: "0 10px",
-              }}
-            >
-              <Box
-                sx={{
-                  height: "calc(100% - 80px)",
-                  overflowY: "auto",
-                }}
-              >
-                <Item>
-                  <TextField
-                    autoComplete="new-password"
-                    placeholder={t("Use newlines for multiple uri")}
-                    fullWidth
-                    rows={9}
-                    multiline
+        <DialogBody style={{ maxHeight: "none" }}>
+          <DialogTitle>
+            {
+              <Box display="flex" justifyContent="space-between">
+                {t("Edit Proxies")}
+                <Box>
+                  <Button
+                    variant="contained"
                     size="small"
-                    onChange={(e) => setProxyUri(e.target.value)}
-                  />
-                </Item>
+                    onClick={() => {
+                      setVisualization((prev) => !prev);
+                    }}
+                  >
+                    {visualization ? t("Advanced") : t("Visualization")}
+                  </Button>
+                </Box>
               </Box>
-              <Item>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={<VerticalAlignTopRounded />}
-                  onClick={() => {
-                    let proxies = handleParse();
-                    setPrependSeq([...proxies, ...prependSeq]);
-                  }}
-                >
-                  {t("Prepend Proxy")}
-                </Button>
-              </Item>
-              <Item>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={<VerticalAlignBottomRounded />}
-                  onClick={() => {
-                    let proxies = handleParse();
-                    setAppendSeq([...appendSeq, ...proxies]);
-                  }}
-                >
-                  {t("Append Proxy")}
-                </Button>
-              </Item>
-            </List>
+            }
+          </DialogTitle>
 
-            <List
-              sx={{
-                width: "50%",
-                padding: "0 10px",
-              }}
-            >
-              <BaseSearchBox onSearch={(match) => setMatch(() => match)} />
-              <Virtuoso
-                style={{ height: "calc(100% - 24px)", marginTop: "8px" }}
-                totalCount={
-                  filteredProxyList.length +
-                  (filteredPrependSeq.length > 0 ? 1 : 0) +
-                  (filteredAppendSeq.length > 0 ? 1 : 0)
-                }
-                increaseViewportBy={256}
-                itemContent={(index) => {
-                  let shift = filteredPrependSeq.length > 0 ? 1 : 0;
-                  if (filteredPrependSeq.length > 0 && index === 0) {
-                    return (
-                      <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={onPrependDragEnd}
-                      >
-                        <SortableContext
-                          items={filteredPrependSeq.map((x) => {
-                            return x.name;
-                          })}
-                        >
-                          {filteredPrependSeq.map((item, index) => {
-                            return (
-                              <ProxyItem
-                                key={`${item.name}-${index}`}
-                                type="prepend"
-                                proxy={item}
-                                onDelete={() => {
-                                  setPrependSeq(
-                                    prependSeq.filter(
-                                      (v) => v.name !== item.name,
-                                    ),
-                                  );
-                                }}
-                              />
-                            );
-                          })}
-                        </SortableContext>
-                      </DndContext>
-                    );
-                  } else if (index < filteredProxyList.length + shift) {
-                    let newIndex = index - shift;
-                    return (
-                      <ProxyItem
-                        key={`${filteredProxyList[newIndex].name}-${index}`}
-                        type={
-                          deleteSeq.includes(filteredProxyList[newIndex].name)
-                            ? "delete"
-                            : "original"
-                        }
-                        proxy={filteredProxyList[newIndex]}
-                        onDelete={() => {
-                          if (
-                            deleteSeq.includes(filteredProxyList[newIndex].name)
-                          ) {
-                            setDeleteSeq(
-                              deleteSeq.filter(
-                                (v) => v !== filteredProxyList[newIndex].name,
-                              ),
-                            );
-                          } else {
-                            setDeleteSeq((prev) => [
-                              ...prev,
-                              filteredProxyList[newIndex].name,
-                            ]);
-                          }
-                        }}
-                      />
-                    );
-                  } else {
-                    return (
-                      <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={onAppendDragEnd}
-                      >
-                        <SortableContext
-                          items={filteredAppendSeq.map((x) => {
-                            return x.name;
-                          })}
-                        >
-                          {filteredAppendSeq.map((item, index) => {
-                            return (
-                              <ProxyItem
-                                key={`${item.name}-${index}`}
-                                type="append"
-                                proxy={item}
-                                onDelete={() => {
-                                  setAppendSeq(
-                                    appendSeq.filter(
-                                      (v) => v.name !== item.name,
-                                    ),
-                                  );
-                                }}
-                              />
-                            );
-                          })}
-                        </SortableContext>
-                      </DndContext>
-                    );
-                  }
-                }}
-              />
-            </List>
-          </>
-        ) : (
-          <MonacoEditor
-            height="100%"
-            language="yaml"
-            value={currData}
-            theme={themeMode === "light" ? "vs" : "vs-dark"}
-            options={{
-              tabSize: 2, // 根据语言类型设置缩进大小
-              minimap: {
-                enabled: document.documentElement.clientWidth >= 1500, // 超过一定宽度显示minimap滚动条
-              },
-              mouseWheelZoom: true, // 按住Ctrl滚轮调节缩放比例
-              quickSuggestions: {
-                strings: true, // 字符串类型的建议
-                comments: true, // 注释类型的建议
-                other: true, // 其他类型的建议
-              },
-              padding: {
-                top: 33, // 顶部padding防止遮挡snippets
-              },
-              fontFamily: `Fira Code, JetBrains Mono, Roboto Mono, "Source Code Pro", Consolas, Menlo, Monaco, monospace, "Courier New", "Apple Color Emoji"${
-                getSystem() === "windows" ? ", twemoji mozilla" : ""
-              }`,
-              fontLigatures: true, // 连字符
-              smoothScrolling: true, // 平滑滚动
+          <DialogContent
+            style={{
+              display: "flex",
+              width: "auto",
+              height: "calc(100vh - 185px)",
             }}
-            onChange={(value) => setCurrData(value)}
-          />
-        )}
-      </DialogContent>
+          >
+            {visualization ? (
+              <>
+                <List
+                  sx={{
+                    width: "50%",
+                    padding: "0 10px",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      height: "calc(100% - 80px)",
+                      overflowY: "auto",
+                    }}
+                  >
+                    <Item>
+                      <TextField
+                        autoComplete="new-password"
+                        placeholder={t("Use newlines for multiple uri")}
+                        fullWidth
+                        rows={9}
+                        multiline
+                        size="small"
+                        onChange={(e) => setProxyUri(e.target.value)}
+                      />
+                    </Item>
+                  </Box>
+                  <Item>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      startIcon={<VerticalAlignTopRounded />}
+                      onClick={() => {
+                        let proxies = handleParse();
+                        setPrependSeq([...proxies, ...prependSeq]);
+                      }}
+                    >
+                      {t("Prepend Proxy")}
+                    </Button>
+                  </Item>
+                  <Item>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      startIcon={<VerticalAlignBottomRounded />}
+                      onClick={() => {
+                        let proxies = handleParse();
+                        setAppendSeq([...appendSeq, ...proxies]);
+                      }}
+                    >
+                      {t("Append Proxy")}
+                    </Button>
+                  </Item>
+                </List>
 
-      <DialogActions>
-        <Button onClick={onClose} variant="outlined">
-          {t("Cancel")}
-        </Button>
+                <List
+                  sx={{
+                    width: "50%",
+                    padding: "0 10px",
+                  }}
+                >
+                  <BaseSearchBox onSearch={(match) => setMatch(() => match)} />
+                  <Virtuoso
+                    style={{ height: "calc(100% - 24px)", marginTop: "8px" }}
+                    totalCount={
+                      filteredProxyList.length +
+                      (filteredPrependSeq.length > 0 ? 1 : 0) +
+                      (filteredAppendSeq.length > 0 ? 1 : 0)
+                    }
+                    increaseViewportBy={256}
+                    itemContent={(index) => {
+                      let shift = filteredPrependSeq.length > 0 ? 1 : 0;
+                      if (filteredPrependSeq.length > 0 && index === 0) {
+                        return (
+                          <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={onPrependDragEnd}
+                          >
+                            <SortableContext
+                              items={filteredPrependSeq.map((x) => {
+                                return x.name;
+                              })}
+                            >
+                              {filteredPrependSeq.map((item, index) => {
+                                return (
+                                  <ProxyItem
+                                    key={`${item.name}-${index}`}
+                                    type="prepend"
+                                    proxy={item}
+                                    onDelete={() => {
+                                      setPrependSeq(
+                                        prependSeq.filter(
+                                          (v) => v.name !== item.name,
+                                        ),
+                                      );
+                                    }}
+                                  />
+                                );
+                              })}
+                            </SortableContext>
+                          </DndContext>
+                        );
+                      } else if (index < filteredProxyList.length + shift) {
+                        let newIndex = index - shift;
+                        return (
+                          <ProxyItem
+                            key={`${filteredProxyList[newIndex].name}-${index}`}
+                            type={
+                              deleteSeq.includes(
+                                filteredProxyList[newIndex].name,
+                              )
+                                ? "delete"
+                                : "original"
+                            }
+                            proxy={filteredProxyList[newIndex]}
+                            onDelete={() => {
+                              if (
+                                deleteSeq.includes(
+                                  filteredProxyList[newIndex].name,
+                                )
+                              ) {
+                                setDeleteSeq(
+                                  deleteSeq.filter(
+                                    (v) =>
+                                      v !== filteredProxyList[newIndex].name,
+                                  ),
+                                );
+                              } else {
+                                setDeleteSeq((prev) => [
+                                  ...prev,
+                                  filteredProxyList[newIndex].name,
+                                ]);
+                              }
+                            }}
+                          />
+                        );
+                      } else {
+                        return (
+                          <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={onAppendDragEnd}
+                          >
+                            <SortableContext
+                              items={filteredAppendSeq.map((x) => {
+                                return x.name;
+                              })}
+                            >
+                              {filteredAppendSeq.map((item, index) => {
+                                return (
+                                  <ProxyItem
+                                    key={`${item.name}-${index}`}
+                                    type="append"
+                                    proxy={item}
+                                    onDelete={() => {
+                                      setAppendSeq(
+                                        appendSeq.filter(
+                                          (v) => v.name !== item.name,
+                                        ),
+                                      );
+                                    }}
+                                  />
+                                );
+                              })}
+                            </SortableContext>
+                          </DndContext>
+                        );
+                      }
+                    }}
+                  />
+                </List>
+              </>
+            ) : (
+              <MonacoEditor
+                height="100%"
+                language="yaml"
+                value={currData}
+                theme={themeMode === "light" ? "vs" : "vs-dark"}
+                options={{
+                  tabSize: 2, // 根据语言类型设置缩进大小
+                  minimap: {
+                    enabled: document.documentElement.clientWidth >= 1500, // 超过一定宽度显示minimap滚动条
+                  },
+                  mouseWheelZoom: true, // 按住Ctrl滚轮调节缩放比例
+                  quickSuggestions: {
+                    strings: true, // 字符串类型的建议
+                    comments: true, // 注释类型的建议
+                    other: true, // 其他类型的建议
+                  },
+                  padding: {
+                    top: 33, // 顶部padding防止遮挡snippets
+                  },
+                  fontFamily: `Fira Code, JetBrains Mono, Roboto Mono, "Source Code Pro", Consolas, Menlo, Monaco, monospace, "Courier New", "Apple Color Emoji"${
+                    getSystem() === "windows" ? ", twemoji mozilla" : ""
+                  }`,
+                  fontLigatures: true, // 连字符
+                  smoothScrolling: true, // 平滑滚动
+                }}
+                onChange={(value) => setCurrData(value)}
+              />
+            )}
+          </DialogContent>
 
-        <Button onClick={handleSave} variant="contained">
-          {t("Save")}
-        </Button>
-      </DialogActions>
+          <DialogActions>
+            <Button onClick={onClose} variant="outlined">
+              {t("Cancel")}
+            </Button>
+
+            <Button onClick={handleSave} variant="contained">
+              {t("Save")}
+            </Button>
+          </DialogActions>
+        </DialogBody>
+      </DialogSurface>
     </Dialog>
   );
 };

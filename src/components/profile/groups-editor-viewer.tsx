@@ -19,10 +19,6 @@ import {
   Autocomplete,
   Box,
   Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   InputAdornment,
   List,
   ListItem,
@@ -30,6 +26,14 @@ import {
   TextField,
   styled,
 } from "@mui/material";
+import {
+  Dialog,
+  DialogActions,
+  DialogBody,
+  DialogContent,
+  DialogSurface,
+  DialogTitle,
+} from "@fluentui/react-components";
 import {
   VerticalAlignTopRounded,
   VerticalAlignBottomRounded,
@@ -293,622 +297,650 @@ export const GroupsEditorViewer = (props: Props) => {
   });
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth>
-      <DialogTitle>
-        {
-          <Box display="flex" justifyContent="space-between">
-            {t("Edit Groups")}
-            <Box>
-              <Button
-                variant="contained"
-                size="small"
-                onClick={() => {
-                  setVisualization((prev) => !prev);
-                }}
-              >
-                {visualization ? t("Advanced") : t("Visualization")}
-              </Button>
-            </Box>
-          </Box>
-        }
-      </DialogTitle>
-
-      <DialogContent
-        sx={{ display: "flex", width: "auto", height: "calc(100vh - 185px)" }}
+    <Dialog
+      open={open}
+      onOpenChange={(_, data) => {
+        if (!data.open) onClose();
+      }}
+    >
+      <DialogSurface
+        style={{ maxWidth: "90vw", width: "90vw", maxHeight: "92vh" }}
       >
-        {visualization ? (
-          <>
-            <List
-              sx={{
-                width: "50%",
-                padding: "0 10px",
-              }}
-            >
-              <Box
-                sx={{
-                  height: "calc(100% - 80px)",
-                  overflowY: "auto",
-                }}
-              >
-                <Controller
-                  name="type"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Group Type")} />
-                      <Autocomplete
-                        size="small"
-                        sx={{ width: "calc(100% - 150px)" }}
-                        options={[
-                          "select",
-                          "url-test",
-                          "fallback",
-                          "load-balance",
-                          "relay",
-                        ]}
-                        value={field.value}
-                        renderOption={(props, option) => (
-                          <li {...props} title={t(option)}>
-                            {option}
-                          </li>
-                        )}
-                        onChange={(_, value) => value && field.onChange(value)}
-                        renderInput={(params) => <TextField {...params} />}
-                      />
-                    </Item>
-                  )}
-                />
-                <Controller
-                  name="name"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Group Name")} />
-                      <TextField
-                        autoComplete="new-password"
-                        size="small"
-                        sx={{ width: "calc(100% - 150px)" }}
-                        {...field}
-                        error={field.value === ""}
-                        required={true}
-                      />
-                    </Item>
-                  )}
-                />
-                <Controller
-                  name="icon"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Proxy Group Icon")} />
-                      <TextField
-                        autoComplete="new-password"
-                        size="small"
-                        sx={{ width: "calc(100% - 150px)" }}
-                        {...field}
-                      />
-                    </Item>
-                  )}
-                />
-                <Controller
-                  name="proxies"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Use Proxies")} />
-                      <Autocomplete
-                        size="small"
-                        sx={{
-                          width: "calc(100% - 150px)",
-                        }}
-                        multiple
-                        options={proxyPolicyList}
-                        disableCloseOnSelect
-                        onChange={(_, value) => value && field.onChange(value)}
-                        renderInput={(params) => <TextField {...params} />}
-                        renderOption={(props, option) => (
-                          <li {...props} title={t(option)}>
-                            {option}
-                          </li>
-                        )}
-                      />
-                    </Item>
-                  )}
-                />
-                <Controller
-                  name="use"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Use Provider")} />
-                      <Autocomplete
-                        size="small"
-                        sx={{ width: "calc(100% - 150px)" }}
-                        multiple
-                        options={proxyProviderList}
-                        disableCloseOnSelect
-                        onChange={(_, value) => value && field.onChange(value)}
-                        renderInput={(params) => <TextField {...params} />}
-                      />
-                    </Item>
-                  )}
-                />
-                <Controller
-                  name="url"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Health Check Url")} />
-                      <TextField
-                        autoComplete="new-password"
-                        placeholder="https://www.gstatic.com/generate_204"
-                        size="small"
-                        sx={{ width: "calc(100% - 150px)" }}
-                        {...field}
-                      />
-                    </Item>
-                  )}
-                />
-                <Controller
-                  name="expected-status"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Expected Status")} />
-                      <TextField
-                        autoComplete="new-password"
-                        placeholder="*"
-                        size="small"
-                        sx={{ width: "calc(100% - 150px)" }}
-                        onChange={(e) => {
-                          field.onChange(parseInt(e.target.value));
-                        }}
-                      />
-                    </Item>
-                  )}
-                />
-                <Controller
-                  name="interval"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Interval")} />
-                      <TextField
-                        autoComplete="new-password"
-                        placeholder="300"
-                        type="number"
-                        size="small"
-                        sx={{ width: "calc(100% - 150px)" }}
-                        onChange={(e) => {
-                          field.onChange(parseInt(e.target.value));
-                        }}
-                        InputProps={{
-                          endAdornment: (
-                            <InputAdornment position="end">
-                              {t("seconds")}
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                    </Item>
-                  )}
-                />
-                <Controller
-                  name="timeout"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Timeout")} />
-                      <TextField
-                        autoComplete="new-password"
-                        placeholder="5000"
-                        type="number"
-                        size="small"
-                        sx={{ width: "calc(100% - 150px)" }}
-                        onChange={(e) => {
-                          field.onChange(parseInt(e.target.value));
-                        }}
-                        InputProps={{
-                          endAdornment: (
-                            <InputAdornment position="end">
-                              {t("millis")}
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                    </Item>
-                  )}
-                />
-                <Controller
-                  name="max-failed-times"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Max Failed Times")} />
-                      <TextField
-                        autoComplete="new-password"
-                        placeholder="5"
-                        type="number"
-                        size="small"
-                        sx={{ width: "calc(100% - 150px)" }}
-                        onChange={(e) => {
-                          field.onChange(parseInt(e.target.value));
-                        }}
-                      />
-                    </Item>
-                  )}
-                />
-                <Controller
-                  name="interface-name"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Interface Name")} />
-                      <Autocomplete
-                        size="small"
-                        sx={{ width: "calc(100% - 150px)" }}
-                        options={interfaceNameList}
-                        value={field.value}
-                        onChange={(_, value) => value && field.onChange(value)}
-                        renderInput={(params) => <TextField {...params} />}
-                      />
-                    </Item>
-                  )}
-                />
-                <Controller
-                  name="routing-mark"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Routing Mark")} />
-                      <TextField
-                        autoComplete="new-password"
-                        type="number"
-                        size="small"
-                        sx={{ width: "calc(100% - 150px)" }}
-                        onChange={(e) => {
-                          field.onChange(parseInt(e.target.value));
-                        }}
-                      />
-                    </Item>
-                  )}
-                />
-                <Controller
-                  name="filter"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Filter")} />
-                      <TextField
-                        autoComplete="new-password"
-                        size="small"
-                        sx={{ width: "calc(100% - 150px)" }}
-                        {...field}
-                      />
-                    </Item>
-                  )}
-                />
-                <Controller
-                  name="exclude-filter"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Exclude Filter")} />
-                      <TextField
-                        autoComplete="new-password"
-                        size="small"
-                        sx={{ width: "calc(100% - 150px)" }}
-                        {...field}
-                      />
-                    </Item>
-                  )}
-                />
-                <Controller
-                  name="exclude-type"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Exclude Type")} />
-                      <Autocomplete
-                        multiple
-                        options={[
-                          "Direct",
-                          "Reject",
-                          "RejectDrop",
-                          "Compatible",
-                          "Pass",
-                          "Dns",
-                          "Shadowsocks",
-                          "ShadowsocksR",
-                          "Snell",
-                          "Socks5",
-                          "Http",
-                          "Vmess",
-                          "Vless",
-                          "Trojan",
-                          "Hysteria",
-                          "Hysteria2",
-                          "WireGuard",
-                          "Tuic",
-                          "Relay",
-                          "Selector",
-                          "Fallback",
-                          "URLTest",
-                          "LoadBalance",
-                          "Ssh",
-                        ]}
-                        size="small"
-                        disableCloseOnSelect
-                        sx={{ width: "calc(100% - 150px)" }}
-                        value={field.value?.split("|")}
-                        onChange={(_, value) => {
-                          field.onChange(value.join("|"));
-                        }}
-                        renderInput={(params) => <TextField {...params} />}
-                      />
-                    </Item>
-                  )}
-                />
-                <Controller
-                  name="include-all"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Include All")} />
-                      <Switch checked={field.value} {...field} />
-                    </Item>
-                  )}
-                />
-                <Controller
-                  name="include-all-proxies"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Include All Proxies")} />
-                      <Switch checked={field.value} {...field} />
-                    </Item>
-                  )}
-                />
-                <Controller
-                  name="include-all-providers"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Include All Providers")} />
-                      <Switch checked={field.value} {...field} />
-                    </Item>
-                  )}
-                />
-                <Controller
-                  name="lazy"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Lazy")} />
-                      <Switch checked={field.value} {...field} />
-                    </Item>
-                  )}
-                />
-                <Controller
-                  name="disable-udp"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Disable UDP")} />
-                      <Switch checked={field.value} {...field} />
-                    </Item>
-                  )}
-                />
-                <Controller
-                  name="hidden"
-                  control={control}
-                  render={({ field }) => (
-                    <Item>
-                      <ListItemText primary={t("Hidden")} />
-                      <Switch checked={field.value} {...field} />
-                    </Item>
-                  )}
-                />
+        <DialogBody style={{ maxHeight: "none" }}>
+          <DialogTitle>
+            {
+              <Box display="flex" justifyContent="space-between">
+                {t("Edit Groups")}
+                <Box>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => {
+                      setVisualization((prev) => !prev);
+                    }}
+                  >
+                    {visualization ? t("Advanced") : t("Visualization")}
+                  </Button>
+                </Box>
               </Box>
-              <Item>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={<VerticalAlignTopRounded />}
-                  onClick={() => {
-                    try {
-                      validateGroup();
-                      for (const item of [...prependSeq, ...groupList]) {
-                        if (item.name === formIns.getValues().name) {
-                          throw new Error(t("Group Name Already Exists"));
-                        }
-                      }
-                      setPrependSeq([formIns.getValues(), ...prependSeq]);
-                    } catch (err: any) {
-                      Notice.error(err.message || err.toString());
-                    }
-                  }}
-                >
-                  {t("Prepend Group")}
-                </Button>
-              </Item>
-              <Item>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={<VerticalAlignBottomRounded />}
-                  onClick={() => {
-                    try {
-                      validateGroup();
-                      for (const item of [...appendSeq, ...groupList]) {
-                        if (item.name === formIns.getValues().name) {
-                          throw new Error(t("Group Name Already Exists"));
-                        }
-                      }
-                      setAppendSeq([...appendSeq, formIns.getValues()]);
-                    } catch (err: any) {
-                      Notice.error(err.message || err.toString());
-                    }
-                  }}
-                >
-                  {t("Append Group")}
-                </Button>
-              </Item>
-            </List>
+            }
+          </DialogTitle>
 
-            <List
-              sx={{
-                width: "50%",
-                padding: "0 10px",
-              }}
-            >
-              <BaseSearchBox onSearch={(match) => setMatch(() => match)} />
-              <Virtuoso
-                style={{ height: "calc(100% - 24px)", marginTop: "8px" }}
-                totalCount={
-                  filteredGroupList.length +
-                  (filteredPrependSeq.length > 0 ? 1 : 0) +
-                  (filteredAppendSeq.length > 0 ? 1 : 0)
-                }
-                increaseViewportBy={256}
-                itemContent={(index) => {
-                  let shift = filteredPrependSeq.length > 0 ? 1 : 0;
-                  if (filteredPrependSeq.length > 0 && index === 0) {
-                    return (
-                      <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={onPrependDragEnd}
-                      >
-                        <SortableContext
-                          items={filteredPrependSeq.map((x) => {
-                            return x.name;
-                          })}
-                        >
-                          {filteredPrependSeq.map((item, index) => {
-                            return (
-                              <GroupItem
-                                key={`${item.name}-${index}`}
-                                type="prepend"
-                                group={item}
-                                onDelete={() => {
-                                  setPrependSeq(
-                                    prependSeq.filter(
-                                      (v) => v.name !== item.name,
-                                    ),
-                                  );
-                                }}
-                              />
-                            );
-                          })}
-                        </SortableContext>
-                      </DndContext>
-                    );
-                  } else if (index < filteredGroupList.length + shift) {
-                    let newIndex = index - shift;
-                    return (
-                      <GroupItem
-                        key={`${filteredGroupList[newIndex].name}-${index}`}
-                        type={
-                          deleteSeq.includes(filteredGroupList[newIndex].name)
-                            ? "delete"
-                            : "original"
-                        }
-                        group={filteredGroupList[newIndex]}
-                        onDelete={() => {
-                          if (
-                            deleteSeq.includes(filteredGroupList[newIndex].name)
-                          ) {
-                            setDeleteSeq(
-                              deleteSeq.filter(
-                                (v) => v !== filteredGroupList[newIndex].name,
-                              ),
-                            );
-                          } else {
-                            setDeleteSeq((prev) => [
-                              ...prev,
-                              filteredGroupList[newIndex].name,
-                            ]);
-                          }
-                        }}
-                      />
-                    );
-                  } else {
-                    return (
-                      <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={onAppendDragEnd}
-                      >
-                        <SortableContext
-                          items={filteredAppendSeq.map((x) => {
-                            return x.name;
-                          })}
-                        >
-                          {filteredAppendSeq.map((item, index) => {
-                            return (
-                              <GroupItem
-                                key={`${item.name}-${index}`}
-                                type="append"
-                                group={item}
-                                onDelete={() => {
-                                  setAppendSeq(
-                                    appendSeq.filter(
-                                      (v) => v.name !== item.name,
-                                    ),
-                                  );
-                                }}
-                              />
-                            );
-                          })}
-                        </SortableContext>
-                      </DndContext>
-                    );
-                  }
-                }}
-              />
-            </List>
-          </>
-        ) : (
-          <MonacoEditor
-            height="100%"
-            language="yaml"
-            value={currData}
-            theme={themeMode === "light" ? "vs" : "vs-dark"}
-            options={{
-              tabSize: 2, // 根据语言类型设置缩进大小
-              minimap: {
-                enabled: document.documentElement.clientWidth >= 1500, // 超过一定宽度显示minimap滚动条
-              },
-              mouseWheelZoom: true, // 按住Ctrl滚轮调节缩放比例
-              quickSuggestions: {
-                strings: true, // 字符串类型的建议
-                comments: true, // 注释类型的建议
-                other: true, // 其他类型的建议
-              },
-              padding: {
-                top: 33, // 顶部padding防止遮挡snippets
-              },
-              fontFamily: `Fira Code, JetBrains Mono, Roboto Mono, "Source Code Pro", Consolas, Menlo, Monaco, monospace, "Courier New", "Apple Color Emoji"${
-                getSystem() === "windows" ? ", twemoji mozilla" : ""
-              }`,
-              fontLigatures: true, // 连字符
-              smoothScrolling: true, // 平滑滚动
+          <DialogContent
+            style={{
+              display: "flex",
+              width: "auto",
+              height: "calc(100vh - 185px)",
             }}
-            onChange={(value) => setCurrData(value)}
-          />
-        )}
-      </DialogContent>
+          >
+            {visualization ? (
+              <>
+                <List
+                  sx={{
+                    width: "50%",
+                    padding: "0 10px",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      height: "calc(100% - 80px)",
+                      overflowY: "auto",
+                    }}
+                  >
+                    <Controller
+                      name="type"
+                      control={control}
+                      render={({ field }) => (
+                        <Item>
+                          <ListItemText primary={t("Group Type")} />
+                          <Autocomplete
+                            size="small"
+                            sx={{ width: "calc(100% - 150px)" }}
+                            options={[
+                              "select",
+                              "url-test",
+                              "fallback",
+                              "load-balance",
+                              "relay",
+                            ]}
+                            value={field.value}
+                            renderOption={(props, option) => (
+                              <li {...props} title={t(option)}>
+                                {option}
+                              </li>
+                            )}
+                            onChange={(_, value) =>
+                              value && field.onChange(value)
+                            }
+                            renderInput={(params) => <TextField {...params} />}
+                          />
+                        </Item>
+                      )}
+                    />
+                    <Controller
+                      name="name"
+                      control={control}
+                      render={({ field }) => (
+                        <Item>
+                          <ListItemText primary={t("Group Name")} />
+                          <TextField
+                            autoComplete="new-password"
+                            size="small"
+                            sx={{ width: "calc(100% - 150px)" }}
+                            {...field}
+                            error={field.value === ""}
+                            required={true}
+                          />
+                        </Item>
+                      )}
+                    />
+                    <Controller
+                      name="icon"
+                      control={control}
+                      render={({ field }) => (
+                        <Item>
+                          <ListItemText primary={t("Proxy Group Icon")} />
+                          <TextField
+                            autoComplete="new-password"
+                            size="small"
+                            sx={{ width: "calc(100% - 150px)" }}
+                            {...field}
+                          />
+                        </Item>
+                      )}
+                    />
+                    <Controller
+                      name="proxies"
+                      control={control}
+                      render={({ field }) => (
+                        <Item>
+                          <ListItemText primary={t("Use Proxies")} />
+                          <Autocomplete
+                            size="small"
+                            sx={{
+                              width: "calc(100% - 150px)",
+                            }}
+                            multiple
+                            options={proxyPolicyList}
+                            disableCloseOnSelect
+                            onChange={(_, value) =>
+                              value && field.onChange(value)
+                            }
+                            renderInput={(params) => <TextField {...params} />}
+                            renderOption={(props, option) => (
+                              <li {...props} title={t(option)}>
+                                {option}
+                              </li>
+                            )}
+                          />
+                        </Item>
+                      )}
+                    />
+                    <Controller
+                      name="use"
+                      control={control}
+                      render={({ field }) => (
+                        <Item>
+                          <ListItemText primary={t("Use Provider")} />
+                          <Autocomplete
+                            size="small"
+                            sx={{ width: "calc(100% - 150px)" }}
+                            multiple
+                            options={proxyProviderList}
+                            disableCloseOnSelect
+                            onChange={(_, value) =>
+                              value && field.onChange(value)
+                            }
+                            renderInput={(params) => <TextField {...params} />}
+                          />
+                        </Item>
+                      )}
+                    />
+                    <Controller
+                      name="url"
+                      control={control}
+                      render={({ field }) => (
+                        <Item>
+                          <ListItemText primary={t("Health Check Url")} />
+                          <TextField
+                            autoComplete="new-password"
+                            placeholder="https://www.gstatic.com/generate_204"
+                            size="small"
+                            sx={{ width: "calc(100% - 150px)" }}
+                            {...field}
+                          />
+                        </Item>
+                      )}
+                    />
+                    <Controller
+                      name="expected-status"
+                      control={control}
+                      render={({ field }) => (
+                        <Item>
+                          <ListItemText primary={t("Expected Status")} />
+                          <TextField
+                            autoComplete="new-password"
+                            placeholder="*"
+                            size="small"
+                            sx={{ width: "calc(100% - 150px)" }}
+                            onChange={(e) => {
+                              field.onChange(parseInt(e.target.value));
+                            }}
+                          />
+                        </Item>
+                      )}
+                    />
+                    <Controller
+                      name="interval"
+                      control={control}
+                      render={({ field }) => (
+                        <Item>
+                          <ListItemText primary={t("Interval")} />
+                          <TextField
+                            autoComplete="new-password"
+                            placeholder="300"
+                            type="number"
+                            size="small"
+                            sx={{ width: "calc(100% - 150px)" }}
+                            onChange={(e) => {
+                              field.onChange(parseInt(e.target.value));
+                            }}
+                            InputProps={{
+                              endAdornment: (
+                                <InputAdornment position="end">
+                                  {t("seconds")}
+                                </InputAdornment>
+                              ),
+                            }}
+                          />
+                        </Item>
+                      )}
+                    />
+                    <Controller
+                      name="timeout"
+                      control={control}
+                      render={({ field }) => (
+                        <Item>
+                          <ListItemText primary={t("Timeout")} />
+                          <TextField
+                            autoComplete="new-password"
+                            placeholder="5000"
+                            type="number"
+                            size="small"
+                            sx={{ width: "calc(100% - 150px)" }}
+                            onChange={(e) => {
+                              field.onChange(parseInt(e.target.value));
+                            }}
+                            InputProps={{
+                              endAdornment: (
+                                <InputAdornment position="end">
+                                  {t("millis")}
+                                </InputAdornment>
+                              ),
+                            }}
+                          />
+                        </Item>
+                      )}
+                    />
+                    <Controller
+                      name="max-failed-times"
+                      control={control}
+                      render={({ field }) => (
+                        <Item>
+                          <ListItemText primary={t("Max Failed Times")} />
+                          <TextField
+                            autoComplete="new-password"
+                            placeholder="5"
+                            type="number"
+                            size="small"
+                            sx={{ width: "calc(100% - 150px)" }}
+                            onChange={(e) => {
+                              field.onChange(parseInt(e.target.value));
+                            }}
+                          />
+                        </Item>
+                      )}
+                    />
+                    <Controller
+                      name="interface-name"
+                      control={control}
+                      render={({ field }) => (
+                        <Item>
+                          <ListItemText primary={t("Interface Name")} />
+                          <Autocomplete
+                            size="small"
+                            sx={{ width: "calc(100% - 150px)" }}
+                            options={interfaceNameList}
+                            value={field.value}
+                            onChange={(_, value) =>
+                              value && field.onChange(value)
+                            }
+                            renderInput={(params) => <TextField {...params} />}
+                          />
+                        </Item>
+                      )}
+                    />
+                    <Controller
+                      name="routing-mark"
+                      control={control}
+                      render={({ field }) => (
+                        <Item>
+                          <ListItemText primary={t("Routing Mark")} />
+                          <TextField
+                            autoComplete="new-password"
+                            type="number"
+                            size="small"
+                            sx={{ width: "calc(100% - 150px)" }}
+                            onChange={(e) => {
+                              field.onChange(parseInt(e.target.value));
+                            }}
+                          />
+                        </Item>
+                      )}
+                    />
+                    <Controller
+                      name="filter"
+                      control={control}
+                      render={({ field }) => (
+                        <Item>
+                          <ListItemText primary={t("Filter")} />
+                          <TextField
+                            autoComplete="new-password"
+                            size="small"
+                            sx={{ width: "calc(100% - 150px)" }}
+                            {...field}
+                          />
+                        </Item>
+                      )}
+                    />
+                    <Controller
+                      name="exclude-filter"
+                      control={control}
+                      render={({ field }) => (
+                        <Item>
+                          <ListItemText primary={t("Exclude Filter")} />
+                          <TextField
+                            autoComplete="new-password"
+                            size="small"
+                            sx={{ width: "calc(100% - 150px)" }}
+                            {...field}
+                          />
+                        </Item>
+                      )}
+                    />
+                    <Controller
+                      name="exclude-type"
+                      control={control}
+                      render={({ field }) => (
+                        <Item>
+                          <ListItemText primary={t("Exclude Type")} />
+                          <Autocomplete
+                            multiple
+                            options={[
+                              "Direct",
+                              "Reject",
+                              "RejectDrop",
+                              "Compatible",
+                              "Pass",
+                              "Dns",
+                              "Shadowsocks",
+                              "ShadowsocksR",
+                              "Snell",
+                              "Socks5",
+                              "Http",
+                              "Vmess",
+                              "Vless",
+                              "Trojan",
+                              "Hysteria",
+                              "Hysteria2",
+                              "WireGuard",
+                              "Tuic",
+                              "Relay",
+                              "Selector",
+                              "Fallback",
+                              "URLTest",
+                              "LoadBalance",
+                              "Ssh",
+                            ]}
+                            size="small"
+                            disableCloseOnSelect
+                            sx={{ width: "calc(100% - 150px)" }}
+                            value={field.value?.split("|")}
+                            onChange={(_, value) => {
+                              field.onChange(value.join("|"));
+                            }}
+                            renderInput={(params) => <TextField {...params} />}
+                          />
+                        </Item>
+                      )}
+                    />
+                    <Controller
+                      name="include-all"
+                      control={control}
+                      render={({ field }) => (
+                        <Item>
+                          <ListItemText primary={t("Include All")} />
+                          <Switch checked={field.value} {...field} />
+                        </Item>
+                      )}
+                    />
+                    <Controller
+                      name="include-all-proxies"
+                      control={control}
+                      render={({ field }) => (
+                        <Item>
+                          <ListItemText primary={t("Include All Proxies")} />
+                          <Switch checked={field.value} {...field} />
+                        </Item>
+                      )}
+                    />
+                    <Controller
+                      name="include-all-providers"
+                      control={control}
+                      render={({ field }) => (
+                        <Item>
+                          <ListItemText primary={t("Include All Providers")} />
+                          <Switch checked={field.value} {...field} />
+                        </Item>
+                      )}
+                    />
+                    <Controller
+                      name="lazy"
+                      control={control}
+                      render={({ field }) => (
+                        <Item>
+                          <ListItemText primary={t("Lazy")} />
+                          <Switch checked={field.value} {...field} />
+                        </Item>
+                      )}
+                    />
+                    <Controller
+                      name="disable-udp"
+                      control={control}
+                      render={({ field }) => (
+                        <Item>
+                          <ListItemText primary={t("Disable UDP")} />
+                          <Switch checked={field.value} {...field} />
+                        </Item>
+                      )}
+                    />
+                    <Controller
+                      name="hidden"
+                      control={control}
+                      render={({ field }) => (
+                        <Item>
+                          <ListItemText primary={t("Hidden")} />
+                          <Switch checked={field.value} {...field} />
+                        </Item>
+                      )}
+                    />
+                  </Box>
+                  <Item>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      startIcon={<VerticalAlignTopRounded />}
+                      onClick={() => {
+                        try {
+                          validateGroup();
+                          for (const item of [...prependSeq, ...groupList]) {
+                            if (item.name === formIns.getValues().name) {
+                              throw new Error(t("Group Name Already Exists"));
+                            }
+                          }
+                          setPrependSeq([formIns.getValues(), ...prependSeq]);
+                        } catch (err: any) {
+                          Notice.error(err.message || err.toString());
+                        }
+                      }}
+                    >
+                      {t("Prepend Group")}
+                    </Button>
+                  </Item>
+                  <Item>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      startIcon={<VerticalAlignBottomRounded />}
+                      onClick={() => {
+                        try {
+                          validateGroup();
+                          for (const item of [...appendSeq, ...groupList]) {
+                            if (item.name === formIns.getValues().name) {
+                              throw new Error(t("Group Name Already Exists"));
+                            }
+                          }
+                          setAppendSeq([...appendSeq, formIns.getValues()]);
+                        } catch (err: any) {
+                          Notice.error(err.message || err.toString());
+                        }
+                      }}
+                    >
+                      {t("Append Group")}
+                    </Button>
+                  </Item>
+                </List>
 
-      <DialogActions>
-        <Button onClick={onClose} variant="outlined">
-          {t("Cancel")}
-        </Button>
+                <List
+                  sx={{
+                    width: "50%",
+                    padding: "0 10px",
+                  }}
+                >
+                  <BaseSearchBox onSearch={(match) => setMatch(() => match)} />
+                  <Virtuoso
+                    style={{ height: "calc(100% - 24px)", marginTop: "8px" }}
+                    totalCount={
+                      filteredGroupList.length +
+                      (filteredPrependSeq.length > 0 ? 1 : 0) +
+                      (filteredAppendSeq.length > 0 ? 1 : 0)
+                    }
+                    increaseViewportBy={256}
+                    itemContent={(index) => {
+                      let shift = filteredPrependSeq.length > 0 ? 1 : 0;
+                      if (filteredPrependSeq.length > 0 && index === 0) {
+                        return (
+                          <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={onPrependDragEnd}
+                          >
+                            <SortableContext
+                              items={filteredPrependSeq.map((x) => {
+                                return x.name;
+                              })}
+                            >
+                              {filteredPrependSeq.map((item, index) => {
+                                return (
+                                  <GroupItem
+                                    key={`${item.name}-${index}`}
+                                    type="prepend"
+                                    group={item}
+                                    onDelete={() => {
+                                      setPrependSeq(
+                                        prependSeq.filter(
+                                          (v) => v.name !== item.name,
+                                        ),
+                                      );
+                                    }}
+                                  />
+                                );
+                              })}
+                            </SortableContext>
+                          </DndContext>
+                        );
+                      } else if (index < filteredGroupList.length + shift) {
+                        let newIndex = index - shift;
+                        return (
+                          <GroupItem
+                            key={`${filteredGroupList[newIndex].name}-${index}`}
+                            type={
+                              deleteSeq.includes(
+                                filteredGroupList[newIndex].name,
+                              )
+                                ? "delete"
+                                : "original"
+                            }
+                            group={filteredGroupList[newIndex]}
+                            onDelete={() => {
+                              if (
+                                deleteSeq.includes(
+                                  filteredGroupList[newIndex].name,
+                                )
+                              ) {
+                                setDeleteSeq(
+                                  deleteSeq.filter(
+                                    (v) =>
+                                      v !== filteredGroupList[newIndex].name,
+                                  ),
+                                );
+                              } else {
+                                setDeleteSeq((prev) => [
+                                  ...prev,
+                                  filteredGroupList[newIndex].name,
+                                ]);
+                              }
+                            }}
+                          />
+                        );
+                      } else {
+                        return (
+                          <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={onAppendDragEnd}
+                          >
+                            <SortableContext
+                              items={filteredAppendSeq.map((x) => {
+                                return x.name;
+                              })}
+                            >
+                              {filteredAppendSeq.map((item, index) => {
+                                return (
+                                  <GroupItem
+                                    key={`${item.name}-${index}`}
+                                    type="append"
+                                    group={item}
+                                    onDelete={() => {
+                                      setAppendSeq(
+                                        appendSeq.filter(
+                                          (v) => v.name !== item.name,
+                                        ),
+                                      );
+                                    }}
+                                  />
+                                );
+                              })}
+                            </SortableContext>
+                          </DndContext>
+                        );
+                      }
+                    }}
+                  />
+                </List>
+              </>
+            ) : (
+              <MonacoEditor
+                height="100%"
+                language="yaml"
+                value={currData}
+                theme={themeMode === "light" ? "vs" : "vs-dark"}
+                options={{
+                  tabSize: 2, // 根据语言类型设置缩进大小
+                  minimap: {
+                    enabled: document.documentElement.clientWidth >= 1500, // 超过一定宽度显示minimap滚动条
+                  },
+                  mouseWheelZoom: true, // 按住Ctrl滚轮调节缩放比例
+                  quickSuggestions: {
+                    strings: true, // 字符串类型的建议
+                    comments: true, // 注释类型的建议
+                    other: true, // 其他类型的建议
+                  },
+                  padding: {
+                    top: 33, // 顶部padding防止遮挡snippets
+                  },
+                  fontFamily: `Fira Code, JetBrains Mono, Roboto Mono, "Source Code Pro", Consolas, Menlo, Monaco, monospace, "Courier New", "Apple Color Emoji"${
+                    getSystem() === "windows" ? ", twemoji mozilla" : ""
+                  }`,
+                  fontLigatures: true, // 连字符
+                  smoothScrolling: true, // 平滑滚动
+                }}
+                onChange={(value) => setCurrData(value)}
+              />
+            )}
+          </DialogContent>
 
-        <Button onClick={handleSave} variant="contained">
-          {t("Save")}
-        </Button>
-      </DialogActions>
+          <DialogActions>
+            <Button onClick={onClose} variant="outlined">
+              {t("Cancel")}
+            </Button>
+
+            <Button onClick={handleSave} variant="contained">
+              {t("Save")}
+            </Button>
+          </DialogActions>
+        </DialogBody>
+      </DialogSurface>
     </Dialog>
   );
 };
