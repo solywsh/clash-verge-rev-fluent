@@ -42,6 +42,18 @@ interface IConfigData {
     "strict-route": boolean;
     mtu: number;
   };
+  dns?: {
+    enable?: boolean;
+    [key: string]: any;
+  };
+  tunnels?: ITunnelItem[];
+}
+
+interface ITunnelItem {
+  network: string[];
+  address: string;
+  target: string;
+  proxy?: string;
 }
 
 interface IRuleItem {
@@ -654,7 +666,8 @@ interface IProxySnellConfig extends IProxyBaseConfig {
   "obfs-opts"?: {};
 }
 interface IProxyConfig
-  extends IProxyBaseConfig,
+  extends
+    IProxyBaseConfig,
     IProxyDirectConfig,
     IProxyDnsConfig,
     IProxyHttpConfig,
@@ -747,6 +760,8 @@ interface IVergeConfig {
   default_latency_test?: string;
   default_latency_timeout?: number;
   enable_builtin_enhanced?: boolean;
+  enable_auto_light_weight_mode?: boolean;
+  auto_light_weight_minutes?: number;
   auto_log_clean?: 0 | 1 | 2 | 3;
   proxy_layout_column?: number;
   test_list?: IVergeTestItem[];

@@ -13,6 +13,7 @@ import {
 import { GuardState } from "./mods/guard-state";
 import { SysproxyViewer } from "./mods/sysproxy-viewer";
 import { TunViewer } from "./mods/tun-viewer";
+import { LiteModeViewer } from "./mods/lite-mode-viewer";
 import {
   FluentTooltipIcon,
   TooltipIcon,
@@ -53,6 +54,7 @@ const SettingSystem = ({ onError }: Props) => {
 
   const sysproxyRef = useRef<DialogRef>(null);
   const tunRef = useRef<DialogRef>(null);
+  const liteModeRef = useRef<DialogRef>(null);
 
   const {
     enable_tun_mode,
@@ -156,6 +158,13 @@ const SettingSystem = ({ onError }: Props) => {
           <FluentSwitch />
         </GuardState>
       </FluentSettingItem>
+
+      <FluentSettingItem
+        label={t("LightWeight Mode")}
+        extra={<FluentTooltipIcon title={t("LightWeight Mode Info")} />}
+        canExpand
+        content={<LiteModeViewer ref={liteModeRef} />}
+      />
     </FluentSettingList>
   );
 };

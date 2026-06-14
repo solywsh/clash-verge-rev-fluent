@@ -242,3 +242,44 @@ export async function listWebDavBackup() {
   });
   return list;
 }
+
+// 配置校验结果（DNS 等）
+export interface IValidationOutcome {
+  status: "valid" | "invalid" | "skipped";
+  message?: string;
+}
+
+// ===== Lightweight (轻量) 模式 =====
+export async function entryLightweightMode() {
+  return invoke<void>("entry_lightweight_mode");
+}
+
+export async function exitLightweightMode() {
+  return invoke<void>("exit_lightweight_mode");
+}
+
+// ===== 端口占用检测 =====
+export async function isPortInUse(port: number) {
+  return invoke<boolean>("is_port_in_use", { port });
+}
+
+// ===== DNS 设置 =====
+export async function checkDnsConfigExists() {
+  return invoke<boolean>("check_dns_config_exists");
+}
+
+export async function getDnsConfigContent() {
+  return invoke<string>("get_dns_config_content");
+}
+
+export async function saveDnsConfig(dnsConfig: Record<string, any>) {
+  return invoke<void>("save_dns_config", { dnsConfig });
+}
+
+export async function validateDnsConfig() {
+  return invoke<IValidationOutcome>("validate_dns_config");
+}
+
+export async function applyDnsConfig(apply: boolean) {
+  return invoke<void>("apply_dns_config", { apply });
+}

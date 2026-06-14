@@ -45,6 +45,8 @@ import {
   FluentTooltipIcon,
 } from "@/components/base/base-tooltip-icon";
 import { NetworkInterfaceViewer } from "./mods/network-interface-viewer";
+import { DnsViewer } from "./mods/dns-viewer";
+import { TunnelsViewer } from "./mods/tunnels-viewer";
 
 const useStyles = makeStyles({
   expander: {
@@ -78,6 +80,8 @@ const SettingClash = ({ onError }: Props) => {
   const ctrlRef = useRef<DialogRef>(null);
   const coreRef = useRef<DialogRef>(null);
   const networkRef = useRef<DialogRef>(null);
+  const dnsRef = useRef<DialogRef>(null);
+  const tunnelRef = useRef<DialogRef>(null);
 
   const onSwitchFormat = (_e: any, data: { checked: boolean }) => data.checked;
   const onChangeData = (patch: Partial<IConfigData>) => {
@@ -278,6 +282,18 @@ const SettingClash = ({ onError }: Props) => {
       <FluentSettingItem
         onClick={() => ctrlRef.current?.open()}
         label={t("External")}
+      />
+
+      <FluentSettingItem
+        label={t("DNS Overwrite")}
+        canExpand
+        content={<DnsViewer ref={dnsRef} />}
+      />
+
+      <FluentSettingItem
+        label={t("Tunnels")}
+        canExpand
+        content={<TunnelsViewer ref={tunnelRef} />}
       />
 
       <FluentSettingItem
