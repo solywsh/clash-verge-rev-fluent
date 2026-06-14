@@ -1,9 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-if ! command -v "cargo-make" >/dev/null 2>&1; then
-  echo "❌ cargo-make is required for pre-push checks."
-  cargo install --force cargo-make
-fi
-
-cargo make pre-push
+# This fork uses `tsc --noEmit` for type checking (see `pnpm web:build`), not the
+# upstream cargo-make / `pnpm typecheck` pipeline (which doesn't exist here).
+# Run a fast type check before pushing.
+pnpm exec tsc --noEmit
