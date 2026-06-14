@@ -287,9 +287,9 @@ const resolveUnSetDnsScript = () =>
  * download the file to the resources dir
  */
 async function resolveResource(binInfo) {
-  const { file, downloadURL, localPath } = binInfo;
+  const { file, downloadURL, localPath, dir, executable } = binInfo;
 
-  const resDir = path.join(cwd, "src-tauri/resources");
+  const resDir = path.join(cwd, dir || "src-tauri/resources");
   const targetPath = path.join(resDir, file);
 
   if (!FORCE && fs.existsSync(targetPath)) return;
@@ -308,6 +308,10 @@ async function resolveResource(binInfo) {
       }
     });
     log_debug(`copy file finished: "${localPath}"`);
+  }
+
+  if (executable && platform !== "win32" && fs.existsSync(targetPath)) {
+    execSync(`chmod 755 "${targetPath}"`);
   }
 
   log_success(`${file} finished`);
@@ -424,30 +428,55 @@ async function resolveLocales() {
  */
 const SERVICE_URL = `https://github.com/clash-verge-rev/clash-verge-service/releases/download/${SIDECAR_HOST}`;
 
+// On Linux the service binaries are Tauri sidecars (externalBin in
+// tauri.linux.conf.json): they must live in src-tauri/sidecar/ named
+// `<bin>-<target-triple>` and be executable, so Tauri places them next to the
+// app binary at runtime (where service.rs looks them up via current_exe()).
+// On Windows/macOS they ride in src-tauri/resources/ instead.
 const resolveService = () => {
   let ext = platform === "win32" ? ".exe" : "";
-  let suffix = platform === "linux" ? "-" + SIDECAR_HOST : "";
+  if (platform === "linux") {
+    return resolveResource({
+      file: `clash-verge-service-${SIDECAR_HOST}`,
+      downloadURL: `${SERVICE_URL}/clash-verge-service`,
+      dir: "src-tauri/sidecar",
+      executable: true,
+    });
+  }
   resolveResource({
-    file: "clash-verge-service" + suffix + ext,
+    file: "clash-verge-service" + ext,
     downloadURL: `${SERVICE_URL}/clash-verge-service${ext}`,
   });
 };
 
 const resolveInstall = () => {
   let ext = platform === "win32" ? ".exe" : "";
-  let suffix = platform === "linux" ? "-" + SIDECAR_HOST : "";
+  if (platform === "linux") {
+    return resolveResource({
+      file: `clash-verge-service-install-${SIDECAR_HOST}`,
+      downloadURL: `${SERVICE_URL}/install-service`,
+      dir: "src-tauri/sidecar",
+      executable: true,
+    });
+  }
   resolveResource({
-    file: "install-service" + suffix + ext,
+    file: "install-service" + ext,
     downloadURL: `${SERVICE_URL}/install-service${ext}`,
   });
 };
 
 const resolveUninstall = () => {
   let ext = platform === "win32" ? ".exe" : "";
-  let suffix = platform === "linux" ? "-" + SIDECAR_HOST : "";
-
+  if (platform === "linux") {
+    return resolveResource({
+      file: `clash-verge-service-uninstall-${SIDECAR_HOST}`,
+      downloadURL: `${SERVICE_URL}/uninstall-service`,
+      dir: "src-tauri/sidecar",
+      executable: true,
+    });
+  }
   resolveResource({
-    file: "uninstall-service" + suffix + ext,
+    file: "uninstall-service" + ext,
     downloadURL: `${SERVICE_URL}/uninstall-service${ext}`,
   });
 };
