@@ -93,12 +93,17 @@ pub async fn build_new_window() -> Result<WebviewWindow, String> {
     // WebView2 flags enabling draggable regions and Fluent-style overlay scrollbars.
     #[cfg(windows)]
     {
+        let mut browser_args = String::from(
+            "--disable-features=OverscrollHistoryNavigation,msSmartScreenProtection \
+             --enable-features=msWebView2EnableDraggableRegions,OverlayScrollbar,\
+             msOverlayScrollbarWinStyle,msOverlayScrollbarWinStyleAnimation,msEdgeFluentOverlayScrollbar",
+        );
+        // Debug-only: expose a CDP endpoint (http://localhost:9222) for remote
+        // inspection of the WebView2. Never compiled into release builds.
+        #[cfg(debug_assertions)]
+        browser_args.push_str(" --remote-debugging-port=9222");
         builder = builder
-            .additional_browser_args(
-                "--disable-features=OverscrollHistoryNavigation,msSmartScreenProtection \
-                 --enable-features=msWebView2EnableDraggableRegions,OverlayScrollbar,\
-                 msOverlayScrollbarWinStyle,msOverlayScrollbarWinStyleAnimation,msEdgeFluentOverlayScrollbar",
-            )
+            .additional_browser_args(&browser_args)
             .transparent(true)
             .effects(WindowEffectsConfig {
                 effects: vec![Effect::Mica],
