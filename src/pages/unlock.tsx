@@ -7,23 +7,20 @@ import {
   RefreshRounded,
 } from "@mui/icons-material";
 import {
-  Box,
+  Badge,
   Button,
-  Card,
-  Chip,
-  CircularProgress,
-  Divider,
+  Caption1,
+  Spinner,
+  Subtitle2,
   Tooltip,
-  Typography,
-  alpha,
-  useTheme,
-} from "@mui/material";
+  makeStyles,
+} from "@fluentui/react-components";
+import { tokens } from "@/pages/_fluent_theme";
 import { useLockFn } from "ahooks";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { BaseEmpty, BasePage } from "@/components/base";
-import { Notice } from "@/components/base";
+import { BaseEmpty, BasePage, Notice } from "@/components/base";
 import { getUnlockItems, checkMediaUnlock } from "@/services/cmds";
 
 const UNLOCK_RESULTS_STORAGE_KEY = "clash_verge_unlock_results";
@@ -61,10 +58,38 @@ const dedupeUnlockItems = (items: IUnlockItem[]) => {
   return Array.from(map.values());
 };
 
+const useStyles = makeStyles({
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+    gap: "12px",
+    padding: "8px",
+  },
+  empty: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    height: "50%",
+  },
+  card: {
+    ":hover": { backgroundColor: tokens.colorNeutralBackground1Hover },
+  },
+  spin: {
+    animationName: {
+      "0%": { transform: "rotate(0deg)" },
+      "100%": { transform: "rotate(360deg)" },
+    },
+    animationDuration: "1s",
+    animationIterationCount: "infinite",
+    animationTimingFunction: "linear",
+  },
+});
+
+type BadgeColor = Parameters<typeof Badge>[0]["color"];
+
 const UnlockPage = () => {
   const { t } = useTranslation();
-  const theme = useTheme();
-  const isDark = theme.palette.mode === "dark";
+  const classes = useStyles();
 
   const [unlockItems, setUnlockItems] = useState<IUnlockItem[]>([]);
   const [isCheckingAll, setIsCheckingAll] = useState(false);
@@ -210,199 +235,151 @@ const UnlockPage = () => {
     }
   });
 
-  const getStatusColor = (status: string): any => {
+  const getStatusColor = (status: string): BadgeColor => {
     if (status === "Yes") return "success";
-    if (status === "No") return "error";
+    if (status === "No") return "danger";
     if (status === "Soon") return "warning";
-    if (status.includes("Failed")) return "error";
-    if (status === "Completed") return "info";
+    if (status.includes("Failed")) return "danger";
+    if (status === "Completed") return "informative";
     if (
       status === "Disallowed ISP" ||
       status === "Blocked" ||
       status === "Unsupported Country/Region"
     )
-      return "error";
-    return "default";
+      return "danger";
+    return "subtle";
   };
 
   const getStatusIcon = (status: string) => {
-    if (status === "Pending") return <PendingOutlined />;
-    if (status === "Yes") return <CheckCircleOutlined />;
-    if (status === "No") return <CancelOutlined />;
-    if (status === "Soon") return <AccessTimeOutlined />;
-    return <HelpOutlined />;
+    if (status === "Pending") return <PendingOutlined fontSize="inherit" />;
+    if (status === "Yes") return <CheckCircleOutlined fontSize="inherit" />;
+    if (status === "No") return <CancelOutlined fontSize="inherit" />;
+    if (status === "Soon") return <AccessTimeOutlined fontSize="inherit" />;
+    return <HelpOutlined fontSize="inherit" />;
   };
 
   const getStatusBorderColor = (status: string) => {
-    if (status === "Yes") return theme.palette.success.main;
-    if (status === "No") return theme.palette.error.main;
-    if (status === "Soon") return theme.palette.warning.main;
-    if (status.includes("Failed")) return theme.palette.error.main;
-    if (status === "Completed") return theme.palette.info.main;
-    return theme.palette.divider;
+    if (status === "Yes") return tokens.colorStatusSuccessForeground1;
+    if (status === "No") return tokens.colorStatusDangerForeground1;
+    if (status === "Soon") return tokens.colorStatusWarningForeground1;
+    if (status.includes("Failed")) return tokens.colorStatusDangerForeground1;
+    if (status === "Completed") return tokens.colorBrandForeground1;
+    return tokens.colorNeutralStroke1;
   };
 
   return (
     <BasePage
       title={t("Unlock Test")}
       header={
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Button
-            variant="contained"
-            size="small"
-            disabled={isCheckingAll}
-            onClick={checkAllMedia}
-            startIcon={
-              isCheckingAll ? (
-                <CircularProgress size={16} color="inherit" />
-              ) : (
-                <RefreshRounded />
-              )
-            }
-          >
-            {isCheckingAll ? t("Testing") : t("Test All")}
-          </Button>
-        </Box>
+        <Button
+          appearance="primary"
+          size="small"
+          disabled={isCheckingAll}
+          onClick={checkAllMedia}
+          icon={isCheckingAll ? <Spinner size="tiny" /> : <RefreshRounded />}
+        >
+          {isCheckingAll ? t("Testing") : t("Test All")}
+        </Button>
       }
     >
       {unlockItems.length === 0 ? (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "50%",
-          }}
-        >
+        <div className={classes.empty}>
           <BaseEmpty />
-        </Box>
+        </div>
       ) : (
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-            gap: 1.5,
-            p: 1,
-          }}
-        >
+        <div className={classes.grid}>
           {unlockItems.map((item) => (
-            <Card
+            <div
               key={item.name}
-              variant="outlined"
-              sx={{
-                height: "100%",
-                borderRadius: 2,
-                borderLeft: `4px solid ${getStatusBorderColor(item.status)}`,
-                backgroundColor: isDark ? "#282a36" : "#ffffff",
+              className={classes.card}
+              style={{
                 display: "flex",
                 flexDirection: "column",
-                "&:hover": {
-                  backgroundColor: isDark
-                    ? alpha(theme.palette.primary.dark, 0.05)
-                    : alpha(theme.palette.primary.light, 0.05),
-                },
+                height: "100%",
+                borderRadius: tokens.borderRadiusLarge,
+                border: `1px solid ${tokens.colorNeutralStroke2}`,
+                borderLeft: `4px solid ${getStatusBorderColor(item.status)}`,
+                backgroundColor: tokens.colorNeutralBackground1,
+                overflow: "hidden",
               }}
             >
-              <Box sx={{ p: 1.3, flex: 1 }}>
-                <Box
-                  sx={{
+              <div style={{ padding: "10px 12px", flex: 1 }}>
+                <div
+                  style={{
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
+                    gap: 8,
                   }}
                 >
-                  <Typography
-                    variant="subtitle1"
-                    sx={{ fontWeight: 600, fontSize: "1rem" }}
-                  >
-                    {item.name}
-                  </Typography>
-                  <Tooltip title={t("Test")}>
-                    <span>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        color="primary"
-                        disabled={
-                          loadingItems.includes(item.name) || isCheckingAll
-                        }
-                        sx={{
-                          minWidth: "32px",
-                          width: "32px",
-                          height: "32px",
-                          borderRadius: "50%",
-                        }}
-                        onClick={() => checkSingleMedia(item.name)}
-                      >
+                  <Subtitle2>{item.name}</Subtitle2>
+                  <Tooltip content={t("Test")} relationship="label">
+                    <Button
+                      appearance="subtle"
+                      size="small"
+                      shape="circular"
+                      disabled={
+                        loadingItems.includes(item.name) || isCheckingAll
+                      }
+                      icon={
                         <RefreshRounded
-                          sx={{
-                            animation: loadingItems.includes(item.name)
-                              ? "spin 1s linear infinite"
-                              : "none",
-                            "@keyframes spin": {
-                              "0%": { transform: "rotate(0deg)" },
-                              "100%": { transform: "rotate(360deg)" },
-                            },
-                          }}
+                          className={
+                            loadingItems.includes(item.name)
+                              ? classes.spin
+                              : undefined
+                          }
                         />
-                      </Button>
-                    </span>
+                      }
+                      onClick={() => checkSingleMedia(item.name)}
+                    />
                   </Tooltip>
-                </Box>
+                </div>
 
-                <Box
-                  sx={{
+                <div
+                  style={{
                     display: "flex",
                     alignItems: "center",
                     flexWrap: "wrap",
-                    gap: 1,
-                    mt: 0.5,
+                    gap: 6,
+                    marginTop: 6,
                   }}
                 >
-                  <Chip
-                    label={item.status}
+                  <Badge
+                    appearance="tint"
                     color={getStatusColor(item.status)}
-                    size="small"
                     icon={getStatusIcon(item.status)}
-                    sx={{
-                      fontWeight: item.status === "Pending" ? "normal" : "bold",
-                    }}
-                  />
+                  >
+                    {item.status}
+                  </Badge>
                   {item.region && (
-                    <Chip
-                      label={item.region}
-                      size="small"
-                      variant="outlined"
-                      color="info"
-                    />
+                    <Badge appearance="outline" color="informative">
+                      {item.region}
+                    </Badge>
                   )}
-                </Box>
-              </Box>
+                </div>
+              </div>
 
-              <Divider
-                sx={{
-                  borderStyle: "dashed",
-                  borderColor: alpha(theme.palette.divider, 0.2),
-                  mx: 1,
+              <div
+                style={{
+                  borderTop: `1px dashed ${tokens.colorNeutralStroke2}`,
+                  margin: "0 10px",
                 }}
               />
 
-              <Box sx={{ px: 1.5, py: 0.2 }}>
-                <Typography
-                  variant="caption"
-                  sx={{
+              <div style={{ padding: "2px 12px" }}>
+                <Caption1
+                  style={{
                     display: "block",
-                    color: "text.secondary",
-                    fontSize: "0.7rem",
+                    color: tokens.colorNeutralForeground3,
                     textAlign: "right",
                   }}
                 >
                   {item.check_time || "-- --"}
-                </Typography>
-              </Box>
-            </Card>
+                </Caption1>
+              </div>
+            </div>
           ))}
-        </Box>
+        </div>
       )}
     </BasePage>
   );
