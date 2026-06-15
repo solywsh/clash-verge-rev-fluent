@@ -16,23 +16,18 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import {
-  Autocomplete,
-  Box,
   Button,
-  InputAdornment,
-  List,
-  ListItem,
-  ListItemText,
-  TextField,
-  styled,
-} from "@mui/material";
-import {
   Dialog,
   DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
   DialogTitle,
+  Dropdown,
+  Input,
+  Label,
+  Option,
+  Switch as FluentSwitch,
 } from "@fluentui/react-components";
 import {
   VerticalAlignTopRounded,
@@ -44,7 +39,7 @@ import {
   readProfileFile,
   saveProfileFile,
 } from "@/services/cmds";
-import { Notice, Switch } from "@/components/base";
+import { Notice } from "@/components/base";
 import getSystem from "@/utils/get-system";
 import { FluentBaseSearchBox as BaseSearchBox } from "../base/base-search-box";
 import { Virtuoso } from "react-virtuoso";
@@ -308,22 +303,18 @@ export const GroupsEditorViewer = (props: Props) => {
       >
         <DialogBody style={{ maxHeight: "none" }}>
           <DialogTitle>
-            {
-              <Box display="flex" justifyContent="space-between">
-                {t("Edit Groups")}
-                <Box>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={() => {
-                      setVisualization((prev) => !prev);
-                    }}
-                  >
-                    {visualization ? t("Advanced") : t("Visualization")}
-                  </Button>
-                </Box>
-              </Box>
-            }
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              {t("Edit Groups")}
+              <Button
+                appearance="primary"
+                size="small"
+                onClick={() => {
+                  setVisualization((prev) => !prev);
+                }}
+              >
+                {visualization ? t("Advanced") : t("Visualization")}
+              </Button>
+            </div>
           </DialogTitle>
 
           <DialogContent
@@ -335,308 +326,324 @@ export const GroupsEditorViewer = (props: Props) => {
           >
             {visualization ? (
               <>
-                <List
-                  sx={{
+                <div
+                  style={{
                     width: "50%",
                     padding: "0 10px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
                   }}
                 >
-                  <Box
-                    sx={{
+                  <div
+                    style={{
                       height: "calc(100% - 80px)",
                       overflowY: "auto",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
                     }}
                   >
                     <Controller
                       name="type"
                       control={control}
                       render={({ field }) => (
-                        <Item>
-                          <ListItemText primary={t("Group Type")} />
-                          <Autocomplete
-                            size="small"
-                            sx={{ width: "calc(100% - 150px)" }}
-                            options={[
+                        <div style={rowStyle}>
+                          <Label>{t("Group Type")}</Label>
+                          <Dropdown
+                            style={fieldStyle}
+                            selectedOptions={field.value ? [field.value] : []}
+                            value={field.value ?? ""}
+                            onOptionSelect={(_, data) =>
+                              data.optionValue &&
+                              field.onChange(data.optionValue)
+                            }
+                          >
+                            {[
                               "select",
                               "url-test",
                               "fallback",
                               "load-balance",
                               "relay",
-                            ]}
-                            value={field.value}
-                            renderOption={(props, option) => (
-                              <li {...props} title={t(option)}>
+                            ].map((option) => (
+                              <Option key={option} value={option} text={option}>
                                 {option}
-                              </li>
-                            )}
-                            onChange={(_, value) =>
-                              value && field.onChange(value)
-                            }
-                            renderInput={(params) => <TextField {...params} />}
-                          />
-                        </Item>
+                              </Option>
+                            ))}
+                          </Dropdown>
+                        </div>
                       )}
                     />
                     <Controller
                       name="name"
                       control={control}
                       render={({ field }) => (
-                        <Item>
-                          <ListItemText primary={t("Group Name")} />
-                          <TextField
+                        <div style={rowStyle}>
+                          <Label>{t("Group Name")}</Label>
+                          <Input
                             autoComplete="new-password"
-                            size="small"
-                            sx={{ width: "calc(100% - 150px)" }}
-                            {...field}
-                            error={field.value === ""}
-                            required={true}
+                            style={fieldStyle}
+                            value={field.value ?? ""}
+                            name={field.name}
+                            onBlur={field.onBlur}
+                            onChange={(_, data) => field.onChange(data.value)}
+                            required
                           />
-                        </Item>
+                        </div>
                       )}
                     />
                     <Controller
                       name="icon"
                       control={control}
                       render={({ field }) => (
-                        <Item>
-                          <ListItemText primary={t("Proxy Group Icon")} />
-                          <TextField
+                        <div style={rowStyle}>
+                          <Label>{t("Proxy Group Icon")}</Label>
+                          <Input
                             autoComplete="new-password"
-                            size="small"
-                            sx={{ width: "calc(100% - 150px)" }}
-                            {...field}
+                            style={fieldStyle}
+                            value={field.value ?? ""}
+                            name={field.name}
+                            onBlur={field.onBlur}
+                            onChange={(_, data) => field.onChange(data.value)}
                           />
-                        </Item>
+                        </div>
                       )}
                     />
                     <Controller
                       name="proxies"
                       control={control}
                       render={({ field }) => (
-                        <Item>
-                          <ListItemText primary={t("Use Proxies")} />
-                          <Autocomplete
-                            size="small"
-                            sx={{
-                              width: "calc(100% - 150px)",
-                            }}
-                            multiple
-                            options={proxyPolicyList}
-                            disableCloseOnSelect
-                            onChange={(_, value) =>
-                              value && field.onChange(value)
+                        <div style={rowStyle}>
+                          <Label>{t("Use Proxies")}</Label>
+                          <Dropdown
+                            multiselect
+                            style={fieldStyle}
+                            selectedOptions={field.value ?? []}
+                            value={(field.value ?? []).join(", ")}
+                            onOptionSelect={(_, data) =>
+                              field.onChange(data.selectedOptions)
                             }
-                            renderInput={(params) => <TextField {...params} />}
-                            renderOption={(props, option) => (
-                              <li {...props} title={t(option)}>
+                          >
+                            {proxyPolicyList.map((option) => (
+                              <Option key={option} value={option} text={option}>
                                 {option}
-                              </li>
-                            )}
-                          />
-                        </Item>
+                              </Option>
+                            ))}
+                          </Dropdown>
+                        </div>
                       )}
                     />
                     <Controller
                       name="use"
                       control={control}
                       render={({ field }) => (
-                        <Item>
-                          <ListItemText primary={t("Use Provider")} />
-                          <Autocomplete
-                            size="small"
-                            sx={{ width: "calc(100% - 150px)" }}
-                            multiple
-                            options={proxyProviderList}
-                            disableCloseOnSelect
-                            onChange={(_, value) =>
-                              value && field.onChange(value)
+                        <div style={rowStyle}>
+                          <Label>{t("Use Provider")}</Label>
+                          <Dropdown
+                            multiselect
+                            style={fieldStyle}
+                            selectedOptions={field.value ?? []}
+                            value={(field.value ?? []).join(", ")}
+                            onOptionSelect={(_, data) =>
+                              field.onChange(data.selectedOptions)
                             }
-                            renderInput={(params) => <TextField {...params} />}
-                          />
-                        </Item>
+                          >
+                            {proxyProviderList.map((option) => (
+                              <Option key={option} value={option} text={option}>
+                                {option}
+                              </Option>
+                            ))}
+                          </Dropdown>
+                        </div>
                       )}
                     />
                     <Controller
                       name="url"
                       control={control}
                       render={({ field }) => (
-                        <Item>
-                          <ListItemText primary={t("Health Check Url")} />
-                          <TextField
+                        <div style={rowStyle}>
+                          <Label>{t("Health Check Url")}</Label>
+                          <Input
                             autoComplete="new-password"
                             placeholder="https://www.gstatic.com/generate_204"
-                            size="small"
-                            sx={{ width: "calc(100% - 150px)" }}
-                            {...field}
+                            style={fieldStyle}
+                            value={field.value ?? ""}
+                            name={field.name}
+                            onBlur={field.onBlur}
+                            onChange={(_, data) => field.onChange(data.value)}
                           />
-                        </Item>
+                        </div>
                       )}
                     />
                     <Controller
                       name="expected-status"
                       control={control}
                       render={({ field }) => (
-                        <Item>
-                          <ListItemText primary={t("Expected Status")} />
-                          <TextField
+                        <div style={rowStyle}>
+                          <Label>{t("Expected Status")}</Label>
+                          <Input
                             autoComplete="new-password"
                             placeholder="*"
-                            size="small"
-                            sx={{ width: "calc(100% - 150px)" }}
-                            onChange={(e) => {
-                              field.onChange(parseInt(e.target.value));
-                            }}
+                            style={fieldStyle}
+                            onChange={(_, data) =>
+                              field.onChange(parseInt(data.value))
+                            }
                           />
-                        </Item>
+                        </div>
                       )}
                     />
                     <Controller
                       name="interval"
                       control={control}
                       render={({ field }) => (
-                        <Item>
-                          <ListItemText primary={t("Interval")} />
-                          <TextField
+                        <div style={rowStyle}>
+                          <Label>{t("Interval")}</Label>
+                          <Input
                             autoComplete="new-password"
                             placeholder="300"
                             type="number"
-                            size="small"
-                            sx={{ width: "calc(100% - 150px)" }}
-                            onChange={(e) => {
-                              field.onChange(parseInt(e.target.value));
-                            }}
-                            InputProps={{
-                              endAdornment: (
-                                <InputAdornment position="end">
-                                  {t("seconds")}
-                                </InputAdornment>
-                              ),
-                            }}
+                            style={fieldStyle}
+                            contentAfter={t("seconds")}
+                            onChange={(_, data) =>
+                              field.onChange(parseInt(data.value))
+                            }
                           />
-                        </Item>
+                        </div>
                       )}
                     />
                     <Controller
                       name="timeout"
                       control={control}
                       render={({ field }) => (
-                        <Item>
-                          <ListItemText primary={t("Timeout")} />
-                          <TextField
+                        <div style={rowStyle}>
+                          <Label>{t("Timeout")}</Label>
+                          <Input
                             autoComplete="new-password"
                             placeholder="5000"
                             type="number"
-                            size="small"
-                            sx={{ width: "calc(100% - 150px)" }}
-                            onChange={(e) => {
-                              field.onChange(parseInt(e.target.value));
-                            }}
-                            InputProps={{
-                              endAdornment: (
-                                <InputAdornment position="end">
-                                  {t("millis")}
-                                </InputAdornment>
-                              ),
-                            }}
+                            style={fieldStyle}
+                            contentAfter={t("millis")}
+                            onChange={(_, data) =>
+                              field.onChange(parseInt(data.value))
+                            }
                           />
-                        </Item>
+                        </div>
                       )}
                     />
                     <Controller
                       name="max-failed-times"
                       control={control}
                       render={({ field }) => (
-                        <Item>
-                          <ListItemText primary={t("Max Failed Times")} />
-                          <TextField
+                        <div style={rowStyle}>
+                          <Label>{t("Max Failed Times")}</Label>
+                          <Input
                             autoComplete="new-password"
                             placeholder="5"
                             type="number"
-                            size="small"
-                            sx={{ width: "calc(100% - 150px)" }}
-                            onChange={(e) => {
-                              field.onChange(parseInt(e.target.value));
-                            }}
+                            style={fieldStyle}
+                            onChange={(_, data) =>
+                              field.onChange(parseInt(data.value))
+                            }
                           />
-                        </Item>
+                        </div>
                       )}
                     />
                     <Controller
                       name="interface-name"
                       control={control}
                       render={({ field }) => (
-                        <Item>
-                          <ListItemText primary={t("Interface Name")} />
-                          <Autocomplete
-                            size="small"
-                            sx={{ width: "calc(100% - 150px)" }}
-                            options={interfaceNameList}
-                            value={field.value}
-                            onChange={(_, value) =>
-                              value && field.onChange(value)
+                        <div style={rowStyle}>
+                          <Label>{t("Interface Name")}</Label>
+                          <Dropdown
+                            style={fieldStyle}
+                            selectedOptions={field.value ? [field.value] : []}
+                            value={field.value ?? ""}
+                            onOptionSelect={(_, data) =>
+                              data.optionValue &&
+                              field.onChange(data.optionValue)
                             }
-                            renderInput={(params) => <TextField {...params} />}
-                          />
-                        </Item>
+                          >
+                            {interfaceNameList.map((option) => (
+                              <Option key={option} value={option} text={option}>
+                                {option}
+                              </Option>
+                            ))}
+                          </Dropdown>
+                        </div>
                       )}
                     />
                     <Controller
                       name="routing-mark"
                       control={control}
                       render={({ field }) => (
-                        <Item>
-                          <ListItemText primary={t("Routing Mark")} />
-                          <TextField
+                        <div style={rowStyle}>
+                          <Label>{t("Routing Mark")}</Label>
+                          <Input
                             autoComplete="new-password"
                             type="number"
-                            size="small"
-                            sx={{ width: "calc(100% - 150px)" }}
-                            onChange={(e) => {
-                              field.onChange(parseInt(e.target.value));
-                            }}
+                            style={fieldStyle}
+                            onChange={(_, data) =>
+                              field.onChange(parseInt(data.value))
+                            }
                           />
-                        </Item>
+                        </div>
                       )}
                     />
                     <Controller
                       name="filter"
                       control={control}
                       render={({ field }) => (
-                        <Item>
-                          <ListItemText primary={t("Filter")} />
-                          <TextField
+                        <div style={rowStyle}>
+                          <Label>{t("Filter")}</Label>
+                          <Input
                             autoComplete="new-password"
-                            size="small"
-                            sx={{ width: "calc(100% - 150px)" }}
-                            {...field}
+                            style={fieldStyle}
+                            value={field.value ?? ""}
+                            name={field.name}
+                            onBlur={field.onBlur}
+                            onChange={(_, data) => field.onChange(data.value)}
                           />
-                        </Item>
+                        </div>
                       )}
                     />
                     <Controller
                       name="exclude-filter"
                       control={control}
                       render={({ field }) => (
-                        <Item>
-                          <ListItemText primary={t("Exclude Filter")} />
-                          <TextField
+                        <div style={rowStyle}>
+                          <Label>{t("Exclude Filter")}</Label>
+                          <Input
                             autoComplete="new-password"
-                            size="small"
-                            sx={{ width: "calc(100% - 150px)" }}
-                            {...field}
+                            style={fieldStyle}
+                            value={field.value ?? ""}
+                            name={field.name}
+                            onBlur={field.onBlur}
+                            onChange={(_, data) => field.onChange(data.value)}
                           />
-                        </Item>
+                        </div>
                       )}
                     />
                     <Controller
                       name="exclude-type"
                       control={control}
                       render={({ field }) => (
-                        <Item>
-                          <ListItemText primary={t("Exclude Type")} />
-                          <Autocomplete
-                            multiple
-                            options={[
+                        <div style={rowStyle}>
+                          <Label>{t("Exclude Type")}</Label>
+                          <Dropdown
+                            multiselect
+                            style={fieldStyle}
+                            selectedOptions={
+                              field.value ? field.value.split("|") : []
+                            }
+                            value={(field.value
+                              ? field.value.split("|")
+                              : []
+                            ).join(", ")}
+                            onOptionSelect={(_, data) =>
+                              field.onChange(data.selectedOptions.join("|"))
+                            }
+                          >
+                            {[
                               "Direct",
                               "Reject",
                               "RejectDrop",
@@ -661,128 +668,138 @@ export const GroupsEditorViewer = (props: Props) => {
                               "URLTest",
                               "LoadBalance",
                               "Ssh",
-                            ]}
-                            size="small"
-                            disableCloseOnSelect
-                            sx={{ width: "calc(100% - 150px)" }}
-                            value={field.value?.split("|")}
-                            onChange={(_, value) => {
-                              field.onChange(value.join("|"));
-                            }}
-                            renderInput={(params) => <TextField {...params} />}
-                          />
-                        </Item>
+                            ].map((option) => (
+                              <Option key={option} value={option} text={option}>
+                                {option}
+                              </Option>
+                            ))}
+                          </Dropdown>
+                        </div>
                       )}
                     />
                     <Controller
                       name="include-all"
                       control={control}
                       render={({ field }) => (
-                        <Item>
-                          <ListItemText primary={t("Include All")} />
-                          <Switch checked={field.value} {...field} />
-                        </Item>
+                        <div style={rowStyle}>
+                          <Label>{t("Include All")}</Label>
+                          <FluentSwitch
+                            checked={field.value ?? false}
+                            onChange={(_, data) => field.onChange(data.checked)}
+                          />
+                        </div>
                       )}
                     />
                     <Controller
                       name="include-all-proxies"
                       control={control}
                       render={({ field }) => (
-                        <Item>
-                          <ListItemText primary={t("Include All Proxies")} />
-                          <Switch checked={field.value} {...field} />
-                        </Item>
+                        <div style={rowStyle}>
+                          <Label>{t("Include All Proxies")}</Label>
+                          <FluentSwitch
+                            checked={field.value ?? false}
+                            onChange={(_, data) => field.onChange(data.checked)}
+                          />
+                        </div>
                       )}
                     />
                     <Controller
                       name="include-all-providers"
                       control={control}
                       render={({ field }) => (
-                        <Item>
-                          <ListItemText primary={t("Include All Providers")} />
-                          <Switch checked={field.value} {...field} />
-                        </Item>
+                        <div style={rowStyle}>
+                          <Label>{t("Include All Providers")}</Label>
+                          <FluentSwitch
+                            checked={field.value ?? false}
+                            onChange={(_, data) => field.onChange(data.checked)}
+                          />
+                        </div>
                       )}
                     />
                     <Controller
                       name="lazy"
                       control={control}
                       render={({ field }) => (
-                        <Item>
-                          <ListItemText primary={t("Lazy")} />
-                          <Switch checked={field.value} {...field} />
-                        </Item>
+                        <div style={rowStyle}>
+                          <Label>{t("Lazy")}</Label>
+                          <FluentSwitch
+                            checked={field.value ?? false}
+                            onChange={(_, data) => field.onChange(data.checked)}
+                          />
+                        </div>
                       )}
                     />
                     <Controller
                       name="disable-udp"
                       control={control}
                       render={({ field }) => (
-                        <Item>
-                          <ListItemText primary={t("Disable UDP")} />
-                          <Switch checked={field.value} {...field} />
-                        </Item>
+                        <div style={rowStyle}>
+                          <Label>{t("Disable UDP")}</Label>
+                          <FluentSwitch
+                            checked={field.value ?? false}
+                            onChange={(_, data) => field.onChange(data.checked)}
+                          />
+                        </div>
                       )}
                     />
                     <Controller
                       name="hidden"
                       control={control}
                       render={({ field }) => (
-                        <Item>
-                          <ListItemText primary={t("Hidden")} />
-                          <Switch checked={field.value} {...field} />
-                        </Item>
+                        <div style={rowStyle}>
+                          <Label>{t("Hidden")}</Label>
+                          <FluentSwitch
+                            checked={field.value ?? false}
+                            onChange={(_, data) => field.onChange(data.checked)}
+                          />
+                        </div>
                       )}
                     />
-                  </Box>
-                  <Item>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      startIcon={<VerticalAlignTopRounded />}
-                      onClick={() => {
-                        try {
-                          validateGroup();
-                          for (const item of [...prependSeq, ...groupList]) {
-                            if (item.name === formIns.getValues().name) {
-                              throw new Error(t("Group Name Already Exists"));
-                            }
+                  </div>
+                  <Button
+                    style={{ width: "100%" }}
+                    appearance="primary"
+                    icon={<VerticalAlignTopRounded />}
+                    onClick={() => {
+                      try {
+                        validateGroup();
+                        for (const item of [...prependSeq, ...groupList]) {
+                          if (item.name === formIns.getValues().name) {
+                            throw new Error(t("Group Name Already Exists"));
                           }
-                          setPrependSeq([formIns.getValues(), ...prependSeq]);
-                        } catch (err: any) {
-                          Notice.error(err.message || err.toString());
                         }
-                      }}
-                    >
-                      {t("Prepend Group")}
-                    </Button>
-                  </Item>
-                  <Item>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      startIcon={<VerticalAlignBottomRounded />}
-                      onClick={() => {
-                        try {
-                          validateGroup();
-                          for (const item of [...appendSeq, ...groupList]) {
-                            if (item.name === formIns.getValues().name) {
-                              throw new Error(t("Group Name Already Exists"));
-                            }
+                        setPrependSeq([formIns.getValues(), ...prependSeq]);
+                      } catch (err: any) {
+                        Notice.error(err.message || err.toString());
+                      }
+                    }}
+                  >
+                    {t("Prepend Group")}
+                  </Button>
+                  <Button
+                    style={{ width: "100%" }}
+                    appearance="primary"
+                    icon={<VerticalAlignBottomRounded />}
+                    onClick={() => {
+                      try {
+                        validateGroup();
+                        for (const item of [...appendSeq, ...groupList]) {
+                          if (item.name === formIns.getValues().name) {
+                            throw new Error(t("Group Name Already Exists"));
                           }
-                          setAppendSeq([...appendSeq, formIns.getValues()]);
-                        } catch (err: any) {
-                          Notice.error(err.message || err.toString());
                         }
-                      }}
-                    >
-                      {t("Append Group")}
-                    </Button>
-                  </Item>
-                </List>
+                        setAppendSeq([...appendSeq, formIns.getValues()]);
+                      } catch (err: any) {
+                        Notice.error(err.message || err.toString());
+                      }
+                    }}
+                  >
+                    {t("Append Group")}
+                  </Button>
+                </div>
 
-                <List
-                  sx={{
+                <div
+                  style={{
                     width: "50%",
                     padding: "0 10px",
                   }}
@@ -897,7 +914,7 @@ export const GroupsEditorViewer = (props: Props) => {
                       }
                     }}
                   />
-                </List>
+                </div>
               </>
             ) : (
               <MonacoEditor
@@ -931,11 +948,11 @@ export const GroupsEditorViewer = (props: Props) => {
           </DialogContent>
 
           <DialogActions>
-            <Button onClick={onClose} variant="outlined">
+            <Button onClick={onClose} appearance="outline">
               {t("Cancel")}
             </Button>
 
-            <Button onClick={handleSave} variant="contained">
+            <Button onClick={handleSave} appearance="primary">
               {t("Save")}
             </Button>
           </DialogActions>
@@ -945,6 +962,14 @@ export const GroupsEditorViewer = (props: Props) => {
   );
 };
 
-const Item = styled(ListItem)(() => ({
+const rowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 12,
   padding: "5px 2px",
-}));
+};
+
+const fieldStyle: React.CSSProperties = {
+  width: "calc(100% - 150px)",
+};
