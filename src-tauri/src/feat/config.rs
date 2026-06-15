@@ -268,40 +268,37 @@ async fn process_terminated_flags(update_flags: UpdateFlags, patch: &IVerge) -> 
     Ok(())
 }
 
-/// When TUN is being enabled on a non-elevated app without the privileged
-/// service installed, install it (prompts a UAC elevation) so TUN can actually
-/// bring up its virtual adapter. Without this, init_config() force-disables TUN
-/// on the next launch. Best-effort: failures are logged, not fatal.
-async fn ensure_service_available_for_tun() {
-    use crate::core::service::{self, SERVICE_MANAGER, ServiceStatus};
+/// TUN needs the privileged service to bring up its virtual adapter when the
+/// app isn't elevated. Rather than silently auto-installing (which prompts a
+/// UAC elevation and, if cancelled, used to leave TUN stuck "on" without a
+/// working service), block the enable and ask the user to install the service
+/// first via Settings → System → Service Mode.
+async fn ensure_service_available_for_tun() -> Result<()> {
+    use crate::core::service;
     use tauri_plugin_clash_verge_sysinfo::is_current_app_handle_admin;
 
     let app_handle = handle::Handle::app_handle();
     if is_current_app_handle_admin(app_handle) {
-        return;
+        return Ok(());
     }
     if service::is_service_available().await.is_ok() {
-        return;
+        return Ok(());
     }
     logging!(
-        info,
+        warn,
         Type::Service,
-        "TUN enabled but service unavailable — installing service"
+        "TUN enable blocked: privileged service is not installed"
     );
-    if let Err(e) = SERVICE_MANAGER
-        .lock()
-        .await
-        .handle_service_status(&ServiceStatus::InstallRequired)
-        .await
-    {
-        logging!(warn, Type::Service, "Auto-install service for TUN failed: {}", e);
-    }
+    anyhow::bail!(
+        "TUN mode requires the privileged service. Please install it first in Settings - System - Service Mode."
+    );
 }
 
 pub async fn patch_verge(patch: &IVerge, not_save_file: bool) -> Result<()> {
-    // Enabling TUN needs the privileged service when the app isn't elevated.
+    // Enabling TUN needs the privileged service when the app isn't elevated;
+    // reject the patch (so TUN never turns on) instead of auto-installing.
     if patch.enable_tun_mode == Some(true) {
-        ensure_service_available_for_tun().await;
+        ensure_service_available_for_tun().await?;
     }
 
     Config::verge().await.edit_draft(|d| d.patch_config(patch));

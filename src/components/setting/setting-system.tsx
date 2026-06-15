@@ -169,6 +169,11 @@ const SettingSystem = ({ onError }: Props) => {
             onChangeData({ enable_tun_mode: e });
           }}
           onGuard={(e) => {
+            // Block enabling TUN until the privileged service is installed
+            // (no silent auto-install). Rejecting reverts the switch.
+            if (e && !serviceAvailable) {
+              return Promise.reject(new Error(t("Tun Mode Service Required")));
+            }
             return patchVerge({ enable_tun_mode: e });
           }}
         >

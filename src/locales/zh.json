@@ -286,6 +286,7 @@
   "Tun Mode": "TUN（虚拟网卡）模式",
   "Reset to Default": "重置为默认值",
   "Tun Mode Info": "TUN（虚拟网卡）模式接管系统所有流量，启用时无须打开系统代理",
+  "Tun Mode Service Required": "请先安装服务模式，再开启 TUN 模式",
   "Stack": "TUN 模式堆栈",
   "System and Mixed Can Only be Used in Service Mode": "System 和 Mixed 只能在服务模式下使用",
   "Device": "TUN 网卡名称",
