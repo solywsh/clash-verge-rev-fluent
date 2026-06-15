@@ -60,9 +60,14 @@ const useStyle = makeStyles({
   expanded: {},
   icon: {
     flex: "0 0 auto",
-    inlineSize: "16px",
-    blockSize: "16px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    inlineSize: "20px",
+    blockSize: "20px",
+    fontSize: "20px",
     marginInlineEnd: "16px",
+    color: tokens.colorNeutralForeground2,
   },
   expandedHeader: {
     borderEndStartRadius: 0,

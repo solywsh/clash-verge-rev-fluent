@@ -33,7 +33,16 @@ import {
   Switch as FluentSwitch,
   Tooltip,
 } from "@fluentui/react-components";
-import { InfoRegular, SettingsRegular } from "@fluentui/react-icons";
+import {
+  InfoRegular,
+  SettingsRegular,
+  ShieldRegular,
+  GlobeRegular,
+  GlobeArrowForwardRegular,
+  PowerRegular,
+  EyeOffRegular,
+  WeatherMoonRegular,
+} from "@fluentui/react-icons";
 import { tokens } from "../../pages/_fluent_theme";
 
 const useStyle = makeStyles({
@@ -106,8 +115,9 @@ const SettingSystem = ({ onError }: Props) => {
       {/* <TunViewer ref={tunRef} /> */}
 
       <FluentSettingItem
+        icon={<ShieldRegular />}
         label={t("Service Mode")}
-        extra={<FluentTooltipIcon title={t("Service Mode Info")} />}
+        secondary={t("Service Mode Info")}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <Caption1
@@ -149,14 +159,9 @@ const SettingSystem = ({ onError }: Props) => {
       </FluentSettingItem>
 
       <FluentSettingItem
+        icon={<GlobeRegular />}
         label={t("Tun Mode")}
-        // extra={
-        //   <TooltipIcon
-        //     title={t("Tun Mode Info")}
-        //     icon={SettingsRounded}
-        //     onClick={() => tunRef.current?.open()}
-        //   />
-        // }
+        secondary={t("Tun Mode Info")}
         canExpand
         content={<TunViewer ref={tunRef} />}
       >
@@ -181,17 +186,9 @@ const SettingSystem = ({ onError }: Props) => {
         </GuardState>
       </FluentSettingItem>
       <FluentSettingItem
+        icon={<GlobeArrowForwardRegular />}
         label={t("System Proxy")}
-        extra={<FluentTooltipIcon title={t("System Proxy Info")} />}
-        // extra={
-        //   <>
-        //     <TooltipIcon
-        //       title={t("System Proxy Info")}
-        //       icon={SettingsRounded}
-        //       onClick={() => sysproxyRef.current?.open()}
-        //     />
-        //   </>
-        // }
+        secondary={t("System Proxy Info")}
         onClick={() => sysproxyRef.current?.open()}
       >
         <GuardState
@@ -206,7 +203,7 @@ const SettingSystem = ({ onError }: Props) => {
         </GuardState>
       </FluentSettingItem>
 
-      <FluentSettingItem label={t("Auto Launch")}>
+      <FluentSettingItem icon={<PowerRegular />} label={t("Auto Launch")}>
         <GuardState
           value={enable_auto_launch ?? false}
           valueProps="checked"
@@ -220,8 +217,9 @@ const SettingSystem = ({ onError }: Props) => {
       </FluentSettingItem>
 
       <FluentSettingItem
+        icon={<EyeOffRegular />}
         label={t("Silent Start")}
-        extra={<FluentTooltipIcon title={t("Silent Start Info")} />}
+        secondary={t("Silent Start Info")}
       >
         <GuardState
           value={enable_silent_start ?? false}
@@ -236,8 +234,9 @@ const SettingSystem = ({ onError }: Props) => {
       </FluentSettingItem>
 
       <FluentSettingItem
+        icon={<WeatherMoonRegular />}
         label={t("LightWeight Mode")}
-        extra={<FluentTooltipIcon title={t("LightWeight Mode Info")} />}
+        secondary={t("LightWeight Mode Info")}
         canExpand
         content={<LiteModeViewer ref={liteModeRef} />}
       />

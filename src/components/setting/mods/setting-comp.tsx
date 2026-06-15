@@ -9,7 +9,12 @@ import {
 } from "@mui/material";
 import { ChevronRightRounded } from "@mui/icons-material";
 import CircularProgress from "@mui/material/CircularProgress";
-import { Body2, makeStyles, mergeClasses } from "@fluentui/react-components";
+import {
+  Body2,
+  Caption1,
+  makeStyles,
+  mergeClasses,
+} from "@fluentui/react-components";
 import { Expander, ExpanderProps } from "../../fluent/expander";
 import { tokens } from "../../../pages/_fluent_theme";
 import { ChevronRightRegular } from "@fluentui/react-icons";
@@ -118,7 +123,7 @@ export function FluentSettingList({
 
 const useItemStyle = makeStyles({
   header: {
-    paddingBlock: "16px",
+    paddingBlock: "14px",
   },
   canClick: {
     cursor: "pointer",
@@ -130,6 +135,22 @@ const useItemStyle = makeStyles({
       background: tokens.overlay1Pressed,
     },
   },
+  titleBlock: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "1px",
+    minWidth: 0,
+  },
+  titleRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    color: tokens.colorNeutralForeground1,
+  },
+  description: {
+    color: tokens.colorNeutralForeground3,
+    paddingRight: "8px",
+  },
 });
 
 export function FluentSettingItem({
@@ -140,6 +161,7 @@ export function FluentSettingItem({
   onClick,
   canExpand,
   content,
+  icon,
 }: ItemProps & ExpanderProps) {
   const classes = useItemStyle();
   const canClick = !!onClick;
@@ -160,15 +182,23 @@ export function FluentSettingItem({
     </div>
   );
 
+  const left = (
+    <div className={classes.titleBlock}>
+      <div className={classes.titleRow}>
+        <span>{label}</span>
+        {extra}
+      </div>
+      {secondary ? (
+        <Caption1 className={classes.description}>{secondary}</Caption1>
+      ) : null}
+    </div>
+  );
+
   return (
     <Expander
       content={content}
-      left={
-        <>
-          {label}
-          {extra}
-        </>
-      }
+      icon={icon}
+      left={left}
       right={right}
       className={{
         header: mergeClasses(classes.header, canClick && classes.canClick),
