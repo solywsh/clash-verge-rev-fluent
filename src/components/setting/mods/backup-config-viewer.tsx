@@ -5,17 +5,8 @@ import { useVerge } from "@/hooks/use-verge";
 import { Notice } from "@/components/base";
 import { isValidUrl } from "@/utils/helper";
 import { useLockFn } from "ahooks";
-import {
-  TextField,
-  Button,
-  Grid2,
-  Box,
-  Stack,
-  IconButton,
-  InputAdornment,
-} from "@mui/material";
-import Visibility from "@mui/icons-material/Visibility";
-import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import { Button, Field, Input } from "@fluentui/react-components";
+import { EyeRegular, EyeOffRegular } from "@fluentui/react-icons";
 import { saveWebdavConfig, createWebdavBackup } from "@/services/cmds";
 
 export interface BackupConfigViewerProps {
@@ -57,14 +48,6 @@ export const BackupConfigViewer = memo(
       webdav_url !== url ||
       webdav_username !== username ||
       webdav_password !== password;
-
-    console.log(
-      "webdavChanged",
-      webdavChanged,
-      webdav_url,
-      webdav_username,
-      webdav_password,
-    );
 
     const handleClickShowPassword = () => {
       setShowPassword((prev) => !prev);
@@ -136,109 +119,99 @@ export const BackupConfigViewer = memo(
       }
     });
 
+    const textInputProps = {
+      autoCorrect: "off" as const,
+      autoCapitalize: "off" as const,
+      spellCheck: false,
+    };
+
     return (
       <form onSubmit={(e) => e.preventDefault()}>
-        <Grid2 container spacing={2}>
-          <Grid2 size={{ xs: 12, sm: 9 }}>
-            <Grid2 container spacing={2}>
-              <Grid2 size={{ xs: 12 }}>
-                <TextField
-                  fullWidth
-                  label={t("WebDAV Server URL")}
-                  variant="outlined"
-                  size="small"
-                  {...register("url")}
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  spellCheck="false"
-                  inputRef={urlRef}
-                />
-              </Grid2>
-              <Grid2 size={{ xs: 6 }}>
-                <TextField
-                  label={t("Username")}
-                  variant="outlined"
-                  size="small"
+        <div style={{ display: "flex", gap: 16, alignItems: "stretch" }}>
+          <div
+            style={{
+              flex: "1 1 75%",
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+            }}
+          >
+            <Field label={t("WebDAV Server URL")}>
+              <Input
+                {...register("url")}
+                {...textInputProps}
+                input={{ ref: urlRef }}
+              />
+            </Field>
+            <div style={{ display: "flex", gap: 16 }}>
+              <Field label={t("Username")} style={{ flex: 1 }}>
+                <Input
                   {...register("username")}
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  spellCheck="false"
-                  inputRef={usernameRef}
+                  {...textInputProps}
+                  input={{ ref: usernameRef }}
                 />
-              </Grid2>
-              <Grid2 size={{ xs: 6 }}>
-                <TextField
-                  label={t("Password")}
+              </Field>
+              <Field label={t("Password")} style={{ flex: 1 }}>
+                <Input
                   type={showPassword ? "text" : "password"}
-                  variant="outlined"
-                  size="small"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  spellCheck="false"
-                  inputRef={passwordRef}
                   {...register("password")}
-                  slotProps={{
-                    input: {
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            onClick={handleClickShowPassword}
-                            edge="end"
-                          >
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    },
-                  }}
+                  {...textInputProps}
+                  input={{ ref: passwordRef }}
+                  contentAfter={
+                    <Button
+                      appearance="transparent"
+                      size="small"
+                      icon={showPassword ? <EyeOffRegular /> : <EyeRegular />}
+                      onClick={handleClickShowPassword}
+                    />
+                  }
                 />
-              </Grid2>
-            </Grid2>
-          </Grid2>
-          <Grid2 size={{ xs: 12, sm: 3 }}>
-            <Stack
-              direction="column"
-              justifyContent="space-between"
-              alignItems="stretch"
-              sx={{ height: "100%" }}
-            >
-              {webdavChanged ||
-              webdav_url === undefined ||
-              webdav_username === undefined ||
-              webdav_password === undefined ? (
+              </Field>
+            </div>
+          </div>
+          <div
+            style={{
+              flex: "1 1 25%",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              gap: 8,
+            }}
+          >
+            {webdavChanged ||
+            webdav_url === undefined ||
+            webdav_username === undefined ||
+            webdav_password === undefined ? (
+              <Button
+                appearance="primary"
+                style={{ height: "100%" }}
+                type="button"
+                onClick={handleSubmit(save)}
+              >
+                {t("Save")}
+              </Button>
+            ) : (
+              <>
                 <Button
-                  variant="contained"
-                  color={"primary"}
-                  sx={{ height: "100%" }}
+                  appearance="primary"
+                  onClick={handleBackup}
                   type="button"
-                  onClick={handleSubmit(save)}
+                  size="large"
                 >
-                  {t("Save")}
+                  {t("Backup")}
                 </Button>
-              ) : (
-                <>
-                  <Button
-                    variant="contained"
-                    color="success"
-                    onClick={handleBackup}
-                    type="button"
-                    size="large"
-                  >
-                    {t("Backup")}
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    onClick={onRefresh}
-                    type="button"
-                    size="large"
-                  >
-                    {t("Refresh")}
-                  </Button>
-                </>
-              )}
-            </Stack>
-          </Grid2>
-        </Grid2>
+                <Button
+                  appearance="outline"
+                  onClick={onRefresh}
+                  type="button"
+                  size="large"
+                >
+                  {t("Refresh")}
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
       </form>
     );
   },
