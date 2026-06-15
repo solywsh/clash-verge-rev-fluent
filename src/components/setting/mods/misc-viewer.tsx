@@ -2,17 +2,27 @@ import { forwardRef, useImperativeHandle, useState } from "react";
 import { useLockFn } from "ahooks";
 import { useTranslation } from "react-i18next";
 import {
-  List,
-  ListItem,
-  ListItemText,
-  MenuItem,
+  Input,
+  Label,
   Select,
-  TextField,
-  InputAdornment,
-} from "@mui/material";
+  Switch as FluentSwitch,
+} from "@fluentui/react-components";
 import { useVerge } from "@/hooks/use-verge";
-import { BaseDialog, DialogRef, Notice, Switch } from "@/components/base";
-import { TooltipIcon } from "@/components/base/base-tooltip-icon";
+import { BaseDialog, DialogRef, Notice } from "@/components/base";
+import { FluentTooltipIcon } from "@/components/base/base-tooltip-icon";
+
+const rowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 12,
+  padding: "5px 2px",
+};
+
+const labelGroupStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+};
 
 export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
   const { t } = useTranslation();
@@ -76,111 +86,92 @@ export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
       onCancel={() => setOpen(false)}
       onOk={onSave}
     >
-      <List>
-        <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText primary={t("App Log Level")} />
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        <div style={rowStyle}>
+          <Label>{t("App Log Level")}</Label>
           <Select
-            size="small"
-            sx={{ width: 100, "> div": { py: "7.5px" } }}
+            style={{ width: 100 }}
             value={values.appLogLevel}
-            onChange={(e) =>
-              setValues((v) => ({
-                ...v,
-                appLogLevel: e.target.value as string,
-              }))
+            onChange={(_, data) =>
+              setValues((v) => ({ ...v, appLogLevel: data.value }))
             }
           >
             {["trace", "debug", "info", "warn", "error", "silent"].map((i) => (
-              <MenuItem value={i} key={i}>
+              <option value={i} key={i}>
                 {i[0].toUpperCase() + i.slice(1).toLowerCase()}
-              </MenuItem>
+              </option>
             ))}
           </Select>
-        </ListItem>
+        </div>
 
-        <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText
-            primary={t("Auto Close Connections")}
-            sx={{ maxWidth: "fit-content" }}
-          />
-          <TooltipIcon
-            title={t("Auto Close Connections Info")}
-            sx={{ opacity: "0.7" }}
-          />
-          <Switch
-            edge="end"
+        <div style={rowStyle}>
+          <div style={labelGroupStyle}>
+            <Label>{t("Auto Close Connections")}</Label>
+            <FluentTooltipIcon title={t("Auto Close Connections Info")} />
+          </div>
+          <FluentSwitch
             checked={values.autoCloseConnection}
-            onChange={(_, c) =>
-              setValues((v) => ({ ...v, autoCloseConnection: c }))
+            onChange={(_, data) =>
+              setValues((v) => ({ ...v, autoCloseConnection: data.checked }))
             }
-            sx={{ marginLeft: "auto" }}
           />
-        </ListItem>
+        </div>
 
-        <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText primary={t("Auto Check Update")} />
-          <Switch
-            edge="end"
+        <div style={rowStyle}>
+          <Label>{t("Auto Check Update")}</Label>
+          <FluentSwitch
             checked={values.autoCheckUpdate}
-            onChange={(_, c) =>
-              setValues((v) => ({ ...v, autoCheckUpdate: c }))
+            onChange={(_, data) =>
+              setValues((v) => ({ ...v, autoCheckUpdate: data.checked }))
             }
           />
-        </ListItem>
+        </div>
 
-        <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText
-            primary={t("Enable Builtin Enhanced")}
-            sx={{ maxWidth: "fit-content" }}
-          />
-          <TooltipIcon
-            title={t("Enable Builtin Enhanced Info")}
-            sx={{ opacity: "0.7" }}
-          />
-          <Switch
-            edge="end"
+        <div style={rowStyle}>
+          <div style={labelGroupStyle}>
+            <Label>{t("Enable Builtin Enhanced")}</Label>
+            <FluentTooltipIcon title={t("Enable Builtin Enhanced Info")} />
+          </div>
+          <FluentSwitch
             checked={values.enableBuiltinEnhanced}
-            onChange={(_, c) =>
-              setValues((v) => ({ ...v, enableBuiltinEnhanced: c }))
+            onChange={(_, data) =>
+              setValues((v) => ({ ...v, enableBuiltinEnhanced: data.checked }))
             }
-            sx={{ marginLeft: "auto" }}
           />
-        </ListItem>
+        </div>
 
-        <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText primary={t("Proxy Layout Columns")} />
+        <div style={rowStyle}>
+          <Label>{t("Proxy Layout Columns")}</Label>
           <Select
-            size="small"
-            sx={{ width: 135, "> div": { py: "7.5px" } }}
-            value={values.proxyLayoutColumn}
-            onChange={(e) =>
+            style={{ width: 135 }}
+            value={String(values.proxyLayoutColumn)}
+            onChange={(_, data) =>
               setValues((v) => ({
                 ...v,
-                proxyLayoutColumn: e.target.value as number,
+                proxyLayoutColumn: Number(data.value),
               }))
             }
           >
-            <MenuItem value={6} key={6}>
+            <option value={6} key={6}>
               {t("Auto Columns")}
-            </MenuItem>
+            </option>
             {[1, 2, 3, 4, 5].map((i) => (
-              <MenuItem value={i} key={i}>
+              <option value={i} key={i}>
                 {i}
-              </MenuItem>
+              </option>
             ))}
           </Select>
-        </ListItem>
+        </div>
 
-        <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText primary={t("Auto Log Clean")} />
+        <div style={rowStyle}>
+          <Label>{t("Auto Log Clean")}</Label>
           <Select
-            size="small"
-            sx={{ width: 135, "> div": { py: "7.5px" } }}
-            value={values.autoLogClean}
-            onChange={(e) =>
+            style={{ width: 135 }}
+            value={String(values.autoLogClean)}
+            onChange={(_, data) =>
               setValues((v) => ({
                 ...v,
-                autoLogClean: e.target.value as number,
+                autoLogClean: Number(data.value),
               }))
             }
           >
@@ -190,63 +181,53 @@ export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
               { key: t("Retain _n Days", { n: 30 }), value: 2 },
               { key: t("Retain _n Days", { n: 90 }), value: 3 },
             ].map((i) => (
-              <MenuItem key={i.value} value={i.value}>
+              <option key={i.value} value={i.value}>
                 {i.key}
-              </MenuItem>
+              </option>
             ))}
           </Select>
-        </ListItem>
+        </div>
 
-        <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText
-            primary={t("Default Latency Test")}
-            sx={{ maxWidth: "fit-content" }}
-          />
-          <TooltipIcon
-            title={t("Default Latency Test Info")}
-            sx={{ opacity: "0.7" }}
-          />
-          <TextField
+        <div style={rowStyle}>
+          <div style={labelGroupStyle}>
+            <Label>{t("Default Latency Test")}</Label>
+            <FluentTooltipIcon title={t("Default Latency Test Info")} />
+          </div>
+          <Input
             autoComplete="new-password"
-            size="small"
             autoCorrect="off"
             autoCapitalize="off"
-            spellCheck="false"
-            sx={{ width: 250, marginLeft: "auto" }}
+            spellCheck={false}
+            style={{ width: 250 }}
             value={values.defaultLatencyTest}
             placeholder="http://cp.cloudflare.com/generate_204"
-            onChange={(e) =>
-              setValues((v) => ({ ...v, defaultLatencyTest: e.target.value }))
+            onChange={(_, data) =>
+              setValues((v) => ({ ...v, defaultLatencyTest: data.value }))
             }
           />
-        </ListItem>
+        </div>
 
-        <ListItem sx={{ padding: "5px 2px" }}>
-          <ListItemText primary={t("Default Latency Timeout")} />
-          <TextField
+        <div style={rowStyle}>
+          <Label>{t("Default Latency Timeout")}</Label>
+          <Input
             autoComplete="new-password"
-            size="small"
             type="number"
             autoCorrect="off"
             autoCapitalize="off"
-            spellCheck="false"
-            sx={{ width: 250 }}
-            value={values.defaultLatencyTimeout}
+            spellCheck={false}
+            style={{ width: 250 }}
+            value={String(values.defaultLatencyTimeout)}
             placeholder="10000"
-            onChange={(e) =>
+            onChange={(_, data) =>
               setValues((v) => ({
                 ...v,
-                defaultLatencyTimeout: parseInt(e.target.value),
+                defaultLatencyTimeout: parseInt(data.value),
               }))
             }
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">{t("millis")}</InputAdornment>
-              ),
-            }}
+            contentAfter={t("millis")}
           />
-        </ListItem>
-      </List>
+        </div>
+      </div>
     </BaseDialog>
   );
 });
