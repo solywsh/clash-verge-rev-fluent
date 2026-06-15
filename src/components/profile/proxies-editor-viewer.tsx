@@ -15,14 +15,15 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { Box, Button, List, ListItem, TextField, styled } from "@mui/material";
 import {
+  Button,
   Dialog,
   DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
   DialogTitle,
+  Textarea,
 } from "@fluentui/react-components";
 import {
   VerticalAlignTopRounded,
@@ -228,22 +229,18 @@ export const ProxiesEditorViewer = (props: Props) => {
       >
         <DialogBody style={{ maxHeight: "none" }}>
           <DialogTitle>
-            {
-              <Box display="flex" justifyContent="space-between">
-                {t("Edit Proxies")}
-                <Box>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={() => {
-                      setVisualization((prev) => !prev);
-                    }}
-                  >
-                    {visualization ? t("Advanced") : t("Visualization")}
-                  </Button>
-                </Box>
-              </Box>
-            }
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              {t("Edit Proxies")}
+              <Button
+                appearance="primary"
+                size="small"
+                onClick={() => {
+                  setVisualization((prev) => !prev);
+                }}
+              >
+                {visualization ? t("Advanced") : t("Visualization")}
+              </Button>
+            </div>
           </DialogTitle>
 
           <DialogContent
@@ -255,60 +252,55 @@ export const ProxiesEditorViewer = (props: Props) => {
           >
             {visualization ? (
               <>
-                <List
-                  sx={{
+                <div
+                  style={{
                     width: "50%",
                     padding: "0 10px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
                   }}
                 >
-                  <Box
-                    sx={{
+                  <div
+                    style={{
                       height: "calc(100% - 80px)",
                       overflowY: "auto",
                     }}
                   >
-                    <Item>
-                      <TextField
-                        autoComplete="new-password"
-                        placeholder={t("Use newlines for multiple uri")}
-                        fullWidth
-                        rows={9}
-                        multiline
-                        size="small"
-                        onChange={(e) => setProxyUri(e.target.value)}
-                      />
-                    </Item>
-                  </Box>
-                  <Item>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      startIcon={<VerticalAlignTopRounded />}
-                      onClick={() => {
-                        let proxies = handleParse();
-                        setPrependSeq([...proxies, ...prependSeq]);
-                      }}
-                    >
-                      {t("Prepend Proxy")}
-                    </Button>
-                  </Item>
-                  <Item>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      startIcon={<VerticalAlignBottomRounded />}
-                      onClick={() => {
-                        let proxies = handleParse();
-                        setAppendSeq([...appendSeq, ...proxies]);
-                      }}
-                    >
-                      {t("Append Proxy")}
-                    </Button>
-                  </Item>
-                </List>
+                    <Textarea
+                      autoComplete="new-password"
+                      placeholder={t("Use newlines for multiple uri")}
+                      style={{ width: "100%" }}
+                      rows={9}
+                      onChange={(_, data) => setProxyUri(data.value)}
+                    />
+                  </div>
+                  <Button
+                    style={{ width: "100%" }}
+                    appearance="primary"
+                    icon={<VerticalAlignTopRounded />}
+                    onClick={() => {
+                      let proxies = handleParse();
+                      setPrependSeq([...proxies, ...prependSeq]);
+                    }}
+                  >
+                    {t("Prepend Proxy")}
+                  </Button>
+                  <Button
+                    style={{ width: "100%" }}
+                    appearance="primary"
+                    icon={<VerticalAlignBottomRounded />}
+                    onClick={() => {
+                      let proxies = handleParse();
+                      setAppendSeq([...appendSeq, ...proxies]);
+                    }}
+                  >
+                    {t("Append Proxy")}
+                  </Button>
+                </div>
 
-                <List
-                  sx={{
+                <div
+                  style={{
                     width: "50%",
                     padding: "0 10px",
                   }}
@@ -423,7 +415,7 @@ export const ProxiesEditorViewer = (props: Props) => {
                       }
                     }}
                   />
-                </List>
+                </div>
               </>
             ) : (
               <MonacoEditor
@@ -457,11 +449,11 @@ export const ProxiesEditorViewer = (props: Props) => {
           </DialogContent>
 
           <DialogActions>
-            <Button onClick={onClose} variant="outlined">
+            <Button onClick={onClose} appearance="outline">
               {t("Cancel")}
             </Button>
 
-            <Button onClick={handleSave} variant="contained">
+            <Button onClick={handleSave} appearance="primary">
               {t("Save")}
             </Button>
           </DialogActions>
@@ -470,7 +462,3 @@ export const ProxiesEditorViewer = (props: Props) => {
     </Dialog>
   );
 };
-
-const Item = styled(ListItem)(() => ({
-  padding: "5px 2px",
-}));
