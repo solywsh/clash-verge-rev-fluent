@@ -174,7 +174,7 @@ export const BackupConfigViewer = memo(
               flex: "1 1 25%",
               display: "flex",
               flexDirection: "column",
-              justifyContent: "center",
+              justifyContent: "flex-end",
               gap: 8,
             }}
           >
