@@ -1,8 +1,21 @@
 # Settings page — Windows 11 redesign
 
-Status: **Option 1 selected**, implementation in progress on branch
+Status: **Hybrid (Option 3-leaning) — IA skeleton landed** on branch
 `settings-win11-redesign`. This doc records all candidate approaches so the
 decision and the alternatives stay recoverable.
+
+> Update 2026-06-16: after building the icon+description card pass (Option 1's
+> visual layer), the single long scroll was judged the weak point — it does not
+> solve "hard to find". Pivoted to the user's original drill-in instinct: the
+> Settings page is now a **landing grid of 4 category cards** (System / Clash /
+> Appearance / Maintenance) → click into a **detail sub-view** with a Fluent
+> **breadcrumb** back to Settings. Implemented via local `useState` in
+> `settings.tsx` (no router sub-routes), so it is fully self-contained and easy
+> to roll back. `FluentSettingList` title is now optional and each section takes
+> `hideTitle` so the breadcrumb is the only heading. Heavy modal dialogs
+> (Theme / Misc / Web UI / Clash Core / Update / Backup) are **left as modals**
+> for now; promoting the genuinely heavy ones to breadcrumb sub-pages is the
+> next optional step.
 
 ## Goal
 
