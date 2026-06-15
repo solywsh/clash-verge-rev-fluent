@@ -16,29 +16,25 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import {
-  Autocomplete,
-  Box,
   Button,
-  List,
-  ListItem,
-  ListItemText,
-  TextField,
-  styled,
-} from "@mui/material";
-import {
   Dialog,
   DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
   DialogTitle,
+  Dropdown,
+  Input,
+  Label,
+  Option,
+  Switch as FluentSwitch,
 } from "@fluentui/react-components";
 import {
   VerticalAlignTopRounded,
   VerticalAlignBottomRounded,
 } from "@mui/icons-material";
 import { readProfileFile, saveProfileFile } from "@/services/cmds";
-import { Notice, Switch } from "@/components/base";
+import { Notice } from "@/components/base";
 import getSystem from "@/utils/get-system";
 import { RuleItem } from "@/components/profile/rule-item";
 import { FluentBaseSearchBox as BaseSearchBox } from "../base/base-search-box";
@@ -437,22 +433,18 @@ export const RulesEditorViewer = (props: Props) => {
       >
         <DialogBody style={{ maxHeight: "none" }}>
           <DialogTitle>
-            {
-              <Box display="flex" justifyContent="space-between">
-                {t("Edit Rules")}
-                <Box>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={() => {
-                      setVisualization((prev) => !prev);
-                    }}
-                  >
-                    {visualization ? t("Advanced") : t("Visualization")}
-                  </Button>
-                </Box>
-              </Box>
-            }
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              {t("Edit Rules")}
+              <Button
+                appearance="primary"
+                size="small"
+                onClick={() => {
+                  setVisualization((prev) => !prev);
+                }}
+              >
+                {visualization ? t("Advanced") : t("Visualization")}
+              </Button>
+            </div>
           </DialogTitle>
 
           <DialogContent
@@ -464,133 +456,153 @@ export const RulesEditorViewer = (props: Props) => {
           >
             {visualization ? (
               <>
-                <List
-                  sx={{
+                <div
+                  style={{
                     width: "50%",
                     padding: "0 10px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
                   }}
                 >
-                  <Item>
-                    <ListItemText primary={t("Rule Type")} />
-                    <Autocomplete
-                      size="small"
-                      sx={{ minWidth: "240px" }}
-                      renderInput={(params) => <TextField {...params} />}
-                      options={rules}
-                      value={ruleType}
-                      getOptionLabel={(option) => option.name}
-                      renderOption={(props, option) => (
-                        <li {...props} title={t(option.name)}>
+                  <div style={rowStyle}>
+                    <Label>{t("Rule Type")}</Label>
+                    <Dropdown
+                      style={{ minWidth: "240px" }}
+                      selectedOptions={[ruleType.name]}
+                      value={ruleType.name}
+                      onOptionSelect={(_, data) => {
+                        const found = rules.find(
+                          (r) => r.name === data.optionValue,
+                        );
+                        if (found) setRuleType(found);
+                      }}
+                    >
+                      {rules.map((option) => (
+                        <Option
+                          key={option.name}
+                          value={option.name}
+                          text={option.name}
+                        >
                           {option.name}
-                        </li>
-                      )}
-                      onChange={(_, value) => value && setRuleType(value)}
-                    />
-                  </Item>
-                  <Item
-                    sx={{ display: !(ruleType.required ?? true) ? "none" : "" }}
+                        </Option>
+                      ))}
+                    </Dropdown>
+                  </div>
+                  <div
+                    style={{
+                      ...rowStyle,
+                      display: !(ruleType.required ?? true) ? "none" : "flex",
+                    }}
                   >
-                    <ListItemText primary={t("Rule Content")} />
+                    <Label>{t("Rule Content")}</Label>
 
                     {ruleType.name === "RULE-SET" && (
-                      <Autocomplete
-                        size="small"
-                        sx={{ minWidth: "240px" }}
-                        renderInput={(params) => <TextField {...params} />}
-                        options={ruleSetList}
+                      <Dropdown
+                        style={{ minWidth: "240px" }}
+                        selectedOptions={ruleContent ? [ruleContent] : []}
                         value={ruleContent}
-                        onChange={(_, value) => value && setRuleContent(value)}
-                      />
+                        onOptionSelect={(_, data) =>
+                          data.optionValue && setRuleContent(data.optionValue)
+                        }
+                      >
+                        {ruleSetList.map((option) => (
+                          <Option key={option} value={option} text={option}>
+                            {option}
+                          </Option>
+                        ))}
+                      </Dropdown>
                     )}
                     {ruleType.name === "SUB-RULE" && (
-                      <Autocomplete
-                        size="small"
-                        sx={{ minWidth: "240px" }}
-                        renderInput={(params) => <TextField {...params} />}
-                        options={subRuleList}
+                      <Dropdown
+                        style={{ minWidth: "240px" }}
+                        selectedOptions={ruleContent ? [ruleContent] : []}
                         value={ruleContent}
-                        onChange={(_, value) => value && setRuleContent(value)}
-                      />
+                        onOptionSelect={(_, data) =>
+                          data.optionValue && setRuleContent(data.optionValue)
+                        }
+                      >
+                        {subRuleList.map((option) => (
+                          <Option key={option} value={option} text={option}>
+                            {option}
+                          </Option>
+                        ))}
+                      </Dropdown>
                     )}
                     {ruleType.name !== "RULE-SET" &&
                       ruleType.name !== "SUB-RULE" && (
-                        <TextField
+                        <Input
                           autoComplete="new-password"
-                          size="small"
-                          sx={{ minWidth: "240px" }}
+                          style={{ minWidth: "240px" }}
                           value={ruleContent}
                           required={ruleType.required ?? true}
-                          error={(ruleType.required ?? true) && !ruleContent}
                           placeholder={ruleType.example}
-                          onChange={(e) => setRuleContent(e.target.value)}
+                          onChange={(_, data) => setRuleContent(data.value)}
                         />
                       )}
-                  </Item>
-                  <Item>
-                    <ListItemText primary={t("Proxy Policy")} />
-                    <Autocomplete
-                      size="small"
-                      sx={{ minWidth: "240px" }}
-                      renderInput={(params) => <TextField {...params} />}
-                      options={proxyPolicyList}
+                  </div>
+                  <div style={rowStyle}>
+                    <Label>{t("Proxy Policy")}</Label>
+                    <Dropdown
+                      style={{ minWidth: "240px" }}
+                      selectedOptions={[proxyPolicy]}
                       value={proxyPolicy}
-                      renderOption={(props, option) => (
-                        <li {...props} title={t(option)}>
+                      onOptionSelect={(_, data) =>
+                        data.optionValue && setProxyPolicy(data.optionValue)
+                      }
+                    >
+                      {proxyPolicyList.map((option) => (
+                        <Option key={option} value={option} text={option}>
                           {option}
-                        </li>
-                      )}
-                      onChange={(_, value) => value && setProxyPolicy(value)}
-                    />
-                  </Item>
+                        </Option>
+                      ))}
+                    </Dropdown>
+                  </div>
                   {ruleType.noResolve && (
-                    <Item>
-                      <ListItemText primary={t("No Resolve")} />
-                      <Switch
+                    <div style={rowStyle}>
+                      <Label>{t("No Resolve")}</Label>
+                      <FluentSwitch
                         checked={noResolve}
                         onChange={() => setNoResolve(!noResolve)}
                       />
-                    </Item>
+                    </div>
                   )}
-                  <Item>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      startIcon={<VerticalAlignTopRounded />}
-                      onClick={() => {
-                        try {
-                          let raw = validateRule();
-                          if (prependSeq.includes(raw)) return;
-                          setPrependSeq([raw, ...prependSeq]);
-                        } catch (err: any) {
-                          Notice.error(err.message || err.toString());
-                        }
-                      }}
-                    >
-                      {t("Prepend Rule")}
-                    </Button>
-                  </Item>
-                  <Item>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      startIcon={<VerticalAlignBottomRounded />}
-                      onClick={() => {
-                        try {
-                          let raw = validateRule();
-                          if (appendSeq.includes(raw)) return;
-                          setAppendSeq([...appendSeq, raw]);
-                        } catch (err: any) {
-                          Notice.error(err.message || err.toString());
-                        }
-                      }}
-                    >
-                      {t("Append Rule")}
-                    </Button>
-                  </Item>
-                </List>
+                  <Button
+                    style={{ width: "100%" }}
+                    appearance="primary"
+                    icon={<VerticalAlignTopRounded />}
+                    onClick={() => {
+                      try {
+                        let raw = validateRule();
+                        if (prependSeq.includes(raw)) return;
+                        setPrependSeq([raw, ...prependSeq]);
+                      } catch (err: any) {
+                        Notice.error(err.message || err.toString());
+                      }
+                    }}
+                  >
+                    {t("Prepend Rule")}
+                  </Button>
+                  <Button
+                    style={{ width: "100%" }}
+                    appearance="primary"
+                    icon={<VerticalAlignBottomRounded />}
+                    onClick={() => {
+                      try {
+                        let raw = validateRule();
+                        if (appendSeq.includes(raw)) return;
+                        setAppendSeq([...appendSeq, raw]);
+                      } catch (err: any) {
+                        Notice.error(err.message || err.toString());
+                      }
+                    }}
+                  >
+                    {t("Append Rule")}
+                  </Button>
+                </div>
 
-                <List
-                  sx={{
+                <div
+                  style={{
                     width: "50%",
                     padding: "0 10px",
                   }}
@@ -696,7 +708,7 @@ export const RulesEditorViewer = (props: Props) => {
                       }
                     }}
                   />
-                </List>
+                </div>
               </>
             ) : (
               <MonacoEditor
@@ -730,11 +742,11 @@ export const RulesEditorViewer = (props: Props) => {
           </DialogContent>
 
           <DialogActions>
-            <Button onClick={onClose} variant="outlined">
+            <Button onClick={onClose} appearance="outline">
               {t("Cancel")}
             </Button>
 
-            <Button onClick={handleSave} variant="contained">
+            <Button onClick={handleSave} appearance="primary">
               {t("Save")}
             </Button>
           </DialogActions>
@@ -744,6 +756,10 @@ export const RulesEditorViewer = (props: Props) => {
   );
 };
 
-const Item = styled(ListItem)(() => ({
+const rowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 12,
   padding: "5px 2px",
-}));
+};
