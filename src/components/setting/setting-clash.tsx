@@ -75,9 +75,10 @@ const isWIN = getSystem() === "windows";
 
 interface Props {
   onError: (err: Error) => void;
+  hideTitle?: boolean;
 }
 
-const SettingClash = ({ onError }: Props) => {
+const SettingClash = ({ onError, hideTitle }: Props) => {
   const { t } = useTranslation();
 
   const { clash, version, mutateClash, patchClash } = useClash();
@@ -121,7 +122,7 @@ const SettingClash = ({ onError }: Props) => {
   const settingsClasses = useSettingSystemStyle();
 
   return (
-    <FluentSettingList title={t("Clash Setting")}>
+    <FluentSettingList title={hideTitle ? undefined : t("Clash Setting")}>
       <WebUIViewer ref={webRef} />
       {/* <ClashPortViewer ref={portRef} /> */}
       <ControllerViewer ref={ctrlRef} />

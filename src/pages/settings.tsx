@@ -1,5 +1,22 @@
-import { Box, ButtonGroup, Grid } from "@mui/material";
-import { Button } from "@fluentui/react-components";
+import { useState } from "react";
+import { ButtonGroup } from "@mui/material";
+import {
+  Breadcrumb,
+  BreadcrumbButton,
+  BreadcrumbDivider,
+  BreadcrumbItem,
+  Button,
+  Body1Strong,
+  Caption1,
+  makeStyles,
+} from "@fluentui/react-components";
+import {
+  ChevronRightRegular,
+  DesktopRegular,
+  CubeRegular,
+  PaintBrushRegular,
+  WrenchRegular,
+} from "@fluentui/react-icons";
 import { useLockFn } from "ahooks";
 import { useTranslation } from "react-i18next";
 import { BasePage, Notice } from "@/components/base";
@@ -9,10 +26,75 @@ import SettingAppearance from "@/components/setting/setting-appearance";
 import SettingMaintenance from "@/components/setting/setting-maintenance";
 import SettingClash from "@/components/setting/setting-clash";
 import SettingSystem from "@/components/setting/setting-system";
-import { useThemeMode } from "@/services/states";
+import { tokens } from "@/pages/_fluent_theme";
+
+const useStyles = makeStyles({
+  cardGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+    gap: "12px",
+    paddingBottom: "8px",
+  },
+  card: {
+    display: "flex",
+    alignItems: "center",
+    gap: "16px",
+    paddingInline: "20px",
+    paddingBlock: "18px",
+    borderRadius: tokens.borderRadiusLarge,
+    background: tokens.surface1,
+    border: `1px solid ${tokens.itemBorderColor1}`,
+    cursor: "pointer",
+    textAlign: "left",
+    transition: `background-color ${tokens.durationFast} ${tokens.curveEasyEase}`,
+    ":hover": {
+      background: tokens.overlay1Hover,
+    },
+    ":active": {
+      background: tokens.overlay1Pressed,
+    },
+  },
+  cardIcon: {
+    flex: "0 0 auto",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    inlineSize: "40px",
+    blockSize: "40px",
+    fontSize: "24px",
+    borderRadius: tokens.borderRadiusMedium,
+    background: tokens.overlay1Hover,
+    color: tokens.colorBrandForeground1,
+  },
+  cardBody: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "2px",
+    minWidth: 0,
+    flex: 1,
+  },
+  cardTitle: {
+    color: tokens.colorNeutralForeground1,
+  },
+  cardDesc: {
+    color: tokens.colorNeutralForeground3,
+  },
+  cardChevron: {
+    flex: "0 0 auto",
+    fontSize: "18px",
+    color: tokens.colorNeutralForeground3,
+  },
+  breadcrumb: {
+    marginBottom: "12px",
+  },
+});
+
+type CategoryKey = "system" | "clash" | "appearance" | "maintenance";
 
 const SettingPage = () => {
   const { t } = useTranslation();
+  const classes = useStyles();
+  const [active, setActive] = useState<CategoryKey | null>(null);
 
   const onError = (err: any) => {
     Notice.error(err?.message || err.toString());
@@ -22,8 +104,38 @@ const SettingPage = () => {
     return openWebUrl("https://github.com/solywsh/clash-verge-rev-fluent");
   });
 
-  const mode = useThemeMode();
-  const isDark = mode === "light" ? false : true;
+  const categories = [
+    {
+      key: "system" as const,
+      label: t("System Setting"),
+      desc: t("System Setting Desc"),
+      icon: <DesktopRegular />,
+      render: () => <SettingSystem onError={onError} hideTitle />,
+    },
+    {
+      key: "clash" as const,
+      label: t("Clash Setting"),
+      desc: t("Clash Setting Desc"),
+      icon: <CubeRegular />,
+      render: () => <SettingClash onError={onError} hideTitle />,
+    },
+    {
+      key: "appearance" as const,
+      label: t("Appearance & Behavior"),
+      desc: t("Appearance & Behavior Desc"),
+      icon: <PaintBrushRegular />,
+      render: () => <SettingAppearance onError={onError} hideTitle />,
+    },
+    {
+      key: "maintenance" as const,
+      label: t("Maintenance"),
+      desc: t("Maintenance Desc"),
+      icon: <WrenchRegular />,
+      render: () => <SettingMaintenance onError={onError} hideTitle />,
+    },
+  ];
+
+  const current = categories.find((c) => c.key === active);
 
   return (
     <BasePage
@@ -39,46 +151,46 @@ const SettingPage = () => {
         </ButtonGroup>
       }
     >
-      <Grid container columns={1} spacing={{ xs: 1.5, lg: 1.5 }} sx={{ pb: 1 }}>
-        <Grid item xs={12} md={6}>
-          <Box
-            sx={{
-              borderRadius: 2,
-              marginBottom: 1.5,
-              // backgroundColor: isDark ? "#282a36" : "#ffffff",
-            }}
-          >
-            <SettingSystem onError={onError} />
-          </Box>
-          <Box
-            sx={{
-              borderRadius: 2,
-              // backgroundColor: isDark ? "#282a36" : "#ffffff",
-            }}
-          >
-            <SettingClash onError={onError} />
-          </Box>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Box
-            sx={{
-              borderRadius: 2,
-              marginBottom: 1.5,
-              // backgroundColor: isDark ? "#282a36" : "#ffffff",
-            }}
-          >
-            <SettingAppearance onError={onError} />
-          </Box>
-          <Box
-            sx={{
-              borderRadius: 2,
-              // backgroundColor: isDark ? "#282a36" : "#ffffff",
-            }}
-          >
-            <SettingMaintenance onError={onError} />
-          </Box>
-        </Grid>
-      </Grid>
+      {current ? (
+        <div>
+          <Breadcrumb className={classes.breadcrumb} aria-label="settings path">
+            <BreadcrumbItem>
+              <BreadcrumbButton onClick={() => setActive(null)}>
+                {t("Settings")}
+              </BreadcrumbButton>
+            </BreadcrumbItem>
+            <BreadcrumbDivider />
+            <BreadcrumbItem>
+              <BreadcrumbButton current>{current.label}</BreadcrumbButton>
+            </BreadcrumbItem>
+          </Breadcrumb>
+          {current.render()}
+        </div>
+      ) : (
+        <div className={classes.cardGrid}>
+          {categories.map((c) => (
+            <div
+              key={c.key}
+              role="button"
+              tabIndex={0}
+              className={classes.card}
+              onClick={() => setActive(c.key)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") setActive(c.key);
+              }}
+            >
+              <div className={classes.cardIcon}>{c.icon}</div>
+              <div className={classes.cardBody}>
+                <Body1Strong className={classes.cardTitle}>
+                  {c.label}
+                </Body1Strong>
+                <Caption1 className={classes.cardDesc}>{c.desc}</Caption1>
+              </div>
+              <ChevronRightRegular className={classes.cardChevron} />
+            </div>
+          ))}
+        </div>
+      )}
     </BasePage>
   );
 };

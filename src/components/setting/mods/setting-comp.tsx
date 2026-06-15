@@ -110,12 +110,12 @@ export function FluentSettingList({
   title,
 }: {
   children: ReactNode;
-  title: string;
+  title?: string;
 }) {
   const { listContainer, titleWrap } = useStyle();
   return (
     <div>
-      <Body2 className={titleWrap}>{title}</Body2>
+      {title ? <Body2 className={titleWrap}>{title}</Body2> : null}
       <div className={listContainer}>{children}</div>
     </div>
   );

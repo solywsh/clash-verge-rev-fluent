@@ -39,6 +39,7 @@ import {
 
 interface Props {
   onError?: (err: Error) => void;
+  hideTitle?: boolean;
 }
 
 const OS = getSystem();
@@ -56,7 +57,7 @@ const languageOptions = Object.entries(languages).map(([code, _]) => {
   return { code, label: labels[code] };
 });
 
-const SettingAppearance = ({ onError }: Props) => {
+const SettingAppearance = ({ onError, hideTitle }: Props) => {
   const { t } = useTranslation();
 
   const { verge, patchVerge, mutateVerge } = useVerge();
@@ -89,7 +90,9 @@ const SettingAppearance = ({ onError }: Props) => {
   } as const;
 
   return (
-    <FluentSettingList title={t("Appearance & Behavior")}>
+    <FluentSettingList
+      title={hideTitle ? undefined : t("Appearance & Behavior")}
+    >
       <ThemeViewer ref={themeRef} />
       <MiscViewer ref={miscRef} />
       <LayoutViewer ref={layoutRef} />

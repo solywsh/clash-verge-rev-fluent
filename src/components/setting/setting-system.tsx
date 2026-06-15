@@ -60,9 +60,10 @@ export { useStyle as useSettingSystemStyle };
 
 interface Props {
   onError?: (err: Error) => void;
+  hideTitle?: boolean;
 }
 
-const SettingSystem = ({ onError }: Props) => {
+const SettingSystem = ({ onError, hideTitle }: Props) => {
   const { t } = useTranslation();
 
   const { verge, mutateVerge, patchVerge } = useVerge();
@@ -110,7 +111,7 @@ const SettingSystem = ({ onError }: Props) => {
   const classes = useStyle();
 
   return (
-    <FluentSettingList title={t("System Setting")}>
+    <FluentSettingList title={hideTitle ? undefined : t("System Setting")}>
       <SysproxyViewer ref={sysproxyRef} />
       {/* <TunViewer ref={tunRef} /> */}
 

@@ -30,9 +30,10 @@ import {
 
 interface Props {
   onError?: (err: Error) => void;
+  hideTitle?: boolean;
 }
 
-const SettingMaintenance = ({ onError }: Props) => {
+const SettingMaintenance = ({ onError, hideTitle }: Props) => {
   const { t } = useTranslation();
 
   const configRef = useRef<DialogRef>(null);
@@ -55,7 +56,7 @@ const SettingMaintenance = ({ onError }: Props) => {
   };
 
   return (
-    <FluentSettingList title={t("Maintenance")}>
+    <FluentSettingList title={hideTitle ? undefined : t("Maintenance")}>
       <ConfigViewer ref={configRef} />
       <UpdateViewer ref={updateRef} />
       <BackupViewer ref={backupRef} />
