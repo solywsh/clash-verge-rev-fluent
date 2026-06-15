@@ -30,9 +30,9 @@ import { tokens } from "@/pages/_fluent_theme";
 
 const useStyles = makeStyles({
   cardGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-    gap: "12px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
     paddingBottom: "8px",
   },
   card: {

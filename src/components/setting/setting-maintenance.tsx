@@ -73,12 +73,14 @@ const SettingMaintenance = ({ onError, hideTitle }: Props) => {
         onClick={() => backupRef.current?.open()}
         label={t("Backup Setting")}
         secondary={t("Backup Setting Info")}
+        actionLabel={t("Change")}
       />
 
       <FluentSettingItem
         icon={<DocumentBulletListRegular />}
         onClick={() => configRef.current?.open()}
         label={t("Runtime Config")}
+        actionLabel={t("View")}
       />
 
       <FluentSettingItem
@@ -86,29 +88,34 @@ const SettingMaintenance = ({ onError, hideTitle }: Props) => {
         onClick={openAppDir}
         label={t("Open Conf Dir")}
         secondary={t("Open Conf Dir Info")}
+        actionLabel={t("Open")}
       />
 
       <FluentSettingItem
         icon={<FolderRegular />}
         onClick={openCoreDir}
         label={t("Open Core Dir")}
+        actionLabel={t("Open")}
       />
 
       <FluentSettingItem
         icon={<FolderRegular />}
         onClick={openLogsDir}
         label={t("Open Logs Dir")}
+        actionLabel={t("Open")}
       />
 
       <FluentSettingItem
         icon={<ArrowSyncRegular />}
         onClick={onCheckUpdate}
         label={t("Check for Updates")}
+        actionLabel={t("Check")}
       />
 
       <FluentSettingItem
         icon={<BugRegular />}
         label={t("Export Diagnostic Info")}
+        actionLabel={t("Export")}
         onClick={async () => {
           try {
             await exportDiagnosticInfo();
@@ -123,6 +130,7 @@ const SettingMaintenance = ({ onError, hideTitle }: Props) => {
         icon={<WindowDevToolsRegular />}
         onClick={openDevTools}
         label={t("Open Dev Tools")}
+        actionLabel={t("Open")}
       />
 
       <FluentSettingItem
@@ -131,6 +139,7 @@ const SettingMaintenance = ({ onError, hideTitle }: Props) => {
           exitApp();
         }}
         label={t("Exit")}
+        actionLabel={t("Exit")}
       />
 
       <div

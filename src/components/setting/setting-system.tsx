@@ -191,6 +191,7 @@ const SettingSystem = ({ onError, hideTitle }: Props) => {
         label={t("System Proxy")}
         secondary={t("System Proxy Info")}
         onClick={() => sysproxyRef.current?.open()}
+        actionLabel={t("Change")}
       >
         <GuardState
           value={enable_system_proxy ?? false}

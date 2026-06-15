@@ -294,6 +294,7 @@ const SettingClash = ({ onError, hideTitle }: Props) => {
         icon={<ServerRegular />}
         onClick={() => ctrlRef.current?.open()}
         label={t("External")}
+        actionLabel={t("Change")}
       />
 
       <FluentSettingItem
@@ -321,6 +322,7 @@ const SettingClash = ({ onError, hideTitle }: Props) => {
         icon={<WindowRegular />}
         onClick={() => webRef.current?.open()}
         label={t("Web UI")}
+        actionLabel={t("Change")}
       />
 
       <FluentSettingItem
@@ -333,6 +335,7 @@ const SettingClash = ({ onError, hideTitle }: Props) => {
         //   />
         // }
         onClick={() => coreRef.current?.open()}
+        actionLabel={t("Change")}
       >
         {/* <Typography sx={{ py: "7px", pr: 1 }}>{version}</Typography> */}
         <Body2>{version}</Body2>
@@ -344,6 +347,7 @@ const SettingClash = ({ onError, hideTitle }: Props) => {
           onClick={invoke_uwp_tool}
           label={t("Open UWP tool")}
           secondary={t("Open UWP tool Info")}
+          actionLabel={t("Open")}
         />
       )}
 
@@ -351,6 +355,7 @@ const SettingClash = ({ onError, hideTitle }: Props) => {
         icon={<MapRegular />}
         onClick={onUpdateGeo}
         label={t("Update GeoData")}
+        actionLabel={t("Update")}
       />
     </FluentSettingList>
   );

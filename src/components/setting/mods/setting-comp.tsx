@@ -11,6 +11,7 @@ import { ChevronRightRounded } from "@mui/icons-material";
 import CircularProgress from "@mui/material/CircularProgress";
 import {
   Body2,
+  Button,
   Caption1,
   makeStyles,
   mergeClasses,
@@ -26,6 +27,11 @@ interface ItemProps {
   children?: ReactNode;
   secondary?: ReactNode;
   onClick?: () => void | Promise<any>;
+  // When set, the onClick is surfaced as an explicit action button with this
+  // label (e.g. "更改" for a dialog, "打开" for an action) instead of a `>`
+  // chevron. The `>` chevron is reserved for true page navigation only.
+  actionLabel?: ReactNode;
+  actionAppearance?: "primary" | "secondary" | "subtle" | "outline";
 }
 
 export const SettingItem: React.FC<ItemProps> = (props) => {
@@ -162,23 +168,36 @@ export function FluentSettingItem({
   canExpand,
   content,
   icon,
+  actionLabel,
+  actionAppearance,
 }: ItemProps & ExpanderProps) {
   const classes = useItemStyle();
-  const canClick = !!onClick;
+  // Three interaction shapes:
+  //  - canExpand → inline expander (down chevron, handled by Expander)
+  //  - onClick + actionLabel → explicit action button (dialog / side-effect)
+  //  - onClick alone → legacy whole-row navigation with a `>` chevron
+  const hasAction = !!onClick && !!actionLabel && !canExpand;
+  const canClick = !!onClick && !actionLabel && !canExpand;
 
-  const right = canClick ? (
-    <div style={{ display: "flex", alignItems: "center" }}>
-      <div onClick={(e) => e.stopPropagation()}>{children}</div>
-      <ChevronRightRegular
-        style={{ fontSize: 20, marginRight: 5, marginLeft: 12 }}
-      />
-    </div>
-  ) : (
-    <div
-      style={{ display: "flex", alignItems: "center" }}
-      onClick={(e) => e.stopPropagation()}
-    >
-      {children}
+  const right = (
+    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <div
+        style={{ display: "flex", alignItems: "center", gap: "8px" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {children}
+        {hasAction ? (
+          <Button
+            appearance={actionAppearance ?? "secondary"}
+            onClick={() => onClick?.()}
+          >
+            {actionLabel}
+          </Button>
+        ) : null}
+      </div>
+      {canClick ? (
+        <ChevronRightRegular style={{ fontSize: 20, marginLeft: 4 }} />
+      ) : null}
     </div>
   );
 
@@ -204,7 +223,7 @@ export function FluentSettingItem({
         header: mergeClasses(classes.header, canClick && classes.canClick),
       }}
       canExpand={canExpand}
-      onClick={onClick}
+      onClick={canClick ? onClick : undefined}
     />
   );
 }

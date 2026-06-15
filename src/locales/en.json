@@ -1,4 +1,9 @@
 {
+  "Change": "Change",
+  "Open": "Open",
+  "View": "View",
+  "Check": "Check",
+  "DNS Overwrite Quick": "DNS Overwrite",
   "Label-Home": "Home",
   "Traffic": "Traffic",
   "Upload": "Upload",

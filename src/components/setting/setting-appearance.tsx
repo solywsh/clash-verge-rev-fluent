@@ -166,12 +166,14 @@ const SettingAppearance = ({ onError, hideTitle }: Props) => {
         icon={<PaintBrushRegular />}
         onClick={() => themeRef.current?.open()}
         label={t("Theme Setting")}
+        actionLabel={t("Change")}
       />
 
       <FluentSettingItem
         icon={<LayoutColumnTwoRegular />}
         onClick={() => layoutRef.current?.open()}
         label={t("Layout Setting")}
+        actionLabel={t("Change")}
       />
 
       {OS !== "linux" && (
@@ -349,12 +351,14 @@ const SettingAppearance = ({ onError, hideTitle }: Props) => {
         icon={<KeyboardRegular />}
         onClick={() => hotkeyRef.current?.open()}
         label={t("Hotkey Setting")}
+        actionLabel={t("Change")}
       />
 
       <FluentSettingItem
         icon={<OptionsRegular />}
         onClick={() => miscRef.current?.open()}
         label={t("Miscellaneous")}
+        actionLabel={t("Change")}
       />
     </FluentSettingList>
   );
