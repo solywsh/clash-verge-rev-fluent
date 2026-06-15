@@ -16,6 +16,7 @@ import {
   CloseFullscreenRounded,
 } from "@mui/icons-material";
 import { useThemeMode } from "@/services/states";
+import { tokens } from "@/pages/_fluent_theme";
 import { Notice } from "@/components/base";
 import { nanoid } from "nanoid";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
@@ -230,6 +231,10 @@ export const EditorViewer = <T extends Language>(props: Props<T>) => {
                 bottom: "8px",
                 display: "flex",
                 gap: "4px",
+                padding: "2px",
+                borderRadius: tokens.borderRadiusMedium,
+                background: tokens.colorNeutralBackground1,
+                boxShadow: tokens.shadow4,
               }}
             >
               {!readOnly && (

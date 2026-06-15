@@ -174,7 +174,7 @@ export const BackupConfigViewer = memo(
               flex: "1 1 25%",
               display: "flex",
               flexDirection: "column",
-              justifyContent: "space-between",
+              justifyContent: "center",
               gap: 8,
             }}
           >
@@ -184,7 +184,7 @@ export const BackupConfigViewer = memo(
             webdav_password === undefined ? (
               <Button
                 appearance="primary"
-                style={{ height: "100%" }}
+                style={{ width: "100%" }}
                 type="button"
                 onClick={handleSubmit(save)}
               >
@@ -194,17 +194,17 @@ export const BackupConfigViewer = memo(
               <>
                 <Button
                   appearance="primary"
+                  style={{ width: "100%" }}
                   onClick={handleBackup}
                   type="button"
-                  size="large"
                 >
                   {t("Backup")}
                 </Button>
                 <Button
                   appearance="outline"
+                  style={{ width: "100%" }}
                   onClick={onRefresh}
                   type="button"
-                  size="large"
                 >
                   {t("Refresh")}
                 </Button>

@@ -56,7 +56,13 @@ export const BaseDialog: React.FC<Props> = (props) => {
         if (!data.open) props.onClose?.();
       }}
     >
-      <DialogSurface>
+      <DialogSurface
+        style={{
+          width: "fit-content",
+          minWidth: 360,
+          maxWidth: "min(92vw, 680px)",
+        }}
+      >
         <DialogBody>
           <DialogTitle>{title}</DialogTitle>
 
