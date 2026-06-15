@@ -1,17 +1,13 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  List,
   Button,
+  Label,
   Select,
-  MenuItem,
-  styled,
-  ListItem,
-  ListItemText,
-  Box,
-} from "@mui/material";
+  Switch as FluentSwitch,
+} from "@fluentui/react-components";
 import { useVerge } from "@/hooks/use-verge";
-import { BaseDialog, DialogRef, Notice, Switch } from "@/components/base";
+import { BaseDialog, DialogRef, Notice } from "@/components/base";
 import { GuardState } from "./guard-state";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { convertFileSrc } from "@tauri-apps/api/core";
@@ -66,7 +62,7 @@ export const LayoutViewer = forwardRef<DialogRef>((props, ref) => {
     close: () => setOpen(false),
   }));
 
-  const onSwitchFormat = (_e: any, value: boolean) => value;
+  const onSwitchFormat = (_e: any, data: { checked: boolean }) => data.checked;
   const onError = (err: any) => {
     Notice.error(err.message || err.toString());
   };
@@ -84,9 +80,9 @@ export const LayoutViewer = forwardRef<DialogRef>((props, ref) => {
       onClose={() => setOpen(false)}
       onCancel={() => setOpen(false)}
     >
-      <List>
-        <Item>
-          <ListItemText primary={t("Traffic Graph")} />
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        <div style={rowStyle}>
+          <Label>{t("Traffic Graph")}</Label>
           <GuardState
             value={verge?.traffic_graph ?? true}
             valueProps="checked"
@@ -95,12 +91,12 @@ export const LayoutViewer = forwardRef<DialogRef>((props, ref) => {
             onChange={(e) => onChangeData({ traffic_graph: e })}
             onGuard={(e) => patchVerge({ traffic_graph: e })}
           >
-            <Switch edge="end" />
+            <FluentSwitch />
           </GuardState>
-        </Item>
+        </div>
 
-        <Item>
-          <ListItemText primary={t("Memory Usage")} />
+        <div style={rowStyle}>
+          <Label>{t("Memory Usage")}</Label>
           <GuardState
             value={verge?.enable_memory_usage ?? true}
             valueProps="checked"
@@ -109,12 +105,12 @@ export const LayoutViewer = forwardRef<DialogRef>((props, ref) => {
             onChange={(e) => onChangeData({ enable_memory_usage: e })}
             onGuard={(e) => patchVerge({ enable_memory_usage: e })}
           >
-            <Switch edge="end" />
+            <FluentSwitch />
           </GuardState>
-        </Item>
+        </div>
 
-        <Item>
-          <ListItemText primary={t("Proxy Group Icon")} />
+        <div style={rowStyle}>
+          <Label>{t("Proxy Group Icon")}</Label>
           <GuardState
             value={verge?.enable_group_icon ?? true}
             valueProps="checked"
@@ -123,50 +119,47 @@ export const LayoutViewer = forwardRef<DialogRef>((props, ref) => {
             onChange={(e) => onChangeData({ enable_group_icon: e })}
             onGuard={(e) => patchVerge({ enable_group_icon: e })}
           >
-            <Switch edge="end" />
+            <FluentSwitch />
           </GuardState>
-        </Item>
+        </div>
 
-        <Item>
-          <ListItemText primary={t("Nav Icon")} />
+        <div style={rowStyle}>
+          <Label>{t("Nav Icon")}</Label>
           <GuardState
             value={verge?.menu_icon ?? "monochrome"}
             onCatch={onError}
-            onFormat={(e: any) => e.target.value}
+            onFormat={(_e: any, data: any) => data.value}
             onChange={(e) => onChangeData({ menu_icon: e })}
             onGuard={(e) => patchVerge({ menu_icon: e })}
           >
-            <Select size="small" sx={{ width: 140, "> div": { py: "7.5px" } }}>
-              <MenuItem value="monochrome">{t("Monochrome")}</MenuItem>
-              <MenuItem value="colorful">{t("Colorful")}</MenuItem>
-              <MenuItem value="disable">{t("Disable")}</MenuItem>
+            <Select style={{ width: 140 }}>
+              <option value="monochrome">{t("Monochrome")}</option>
+              <option value="colorful">{t("Colorful")}</option>
+              <option value="disable">{t("Disable")}</option>
             </Select>
           </GuardState>
-        </Item>
+        </div>
 
         {OS === "macos" && (
-          <Item>
-            <ListItemText primary={t("Tray Icon")} />
+          <div style={rowStyle}>
+            <Label>{t("Tray Icon")}</Label>
             <GuardState
               value={verge?.tray_icon ?? "monochrome"}
               onCatch={onError}
-              onFormat={(e: any) => e.target.value}
+              onFormat={(_e: any, data: any) => data.value}
               onChange={(e) => onChangeData({ tray_icon: e })}
               onGuard={(e) => patchVerge({ tray_icon: e })}
             >
-              <Select
-                size="small"
-                sx={{ width: 140, "> div": { py: "7.5px" } }}
-              >
-                <MenuItem value="monochrome">{t("Monochrome")}</MenuItem>
-                <MenuItem value="colorful">{t("Colorful")}</MenuItem>
+              <Select style={{ width: 140 }}>
+                <option value="monochrome">{t("Monochrome")}</option>
+                <option value="colorful">{t("Colorful")}</option>
               </Select>
             </GuardState>
-          </Item>
+          </div>
         )}
         {OS === "macos" && (
-          <Item>
-            <ListItemText primary={t("Enable Tray Speed")} />
+          <div style={rowStyle}>
+            <Label>{t("Enable Tray Speed")}</Label>
             <GuardState
               value={verge?.enable_tray_speed ?? true}
               valueProps="checked"
@@ -175,151 +168,130 @@ export const LayoutViewer = forwardRef<DialogRef>((props, ref) => {
               onChange={(e) => onChangeData({ enable_tray_speed: e })}
               onGuard={(e) => patchVerge({ enable_tray_speed: e })}
             >
-              <Switch edge="end" />
+              <FluentSwitch />
             </GuardState>
-          </Item>
+          </div>
         )}
 
-        <Item>
-          <ListItemText primary={t("Common Tray Icon")} />
-          <GuardState
-            value={verge?.common_tray_icon}
-            onCatch={onError}
-            onChange={(e) => onChangeData({ common_tray_icon: e })}
-            onGuard={(e) => patchVerge({ common_tray_icon: e })}
-          >
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={
-                verge?.common_tray_icon &&
-                commonIcon && (
-                  <img height="20px" src={convertFileSrc(commonIcon)} />
-                )
-              }
-              onClick={async () => {
-                if (verge?.common_tray_icon) {
-                  onChangeData({ common_tray_icon: false });
-                  patchVerge({ common_tray_icon: false });
-                } else {
-                  const selected = await openDialog({
-                    directory: false,
-                    multiple: false,
-                    filters: [
-                      {
-                        name: "Tray Icon Image",
-                        extensions: ["png", "ico"],
-                      },
-                    ],
-                  });
-                  if (selected) {
-                    await copyIconFile(`${selected}`, "common");
-                    await initIconPath();
-                    onChangeData({ common_tray_icon: true });
-                    patchVerge({ common_tray_icon: true });
-                  }
+        <div style={rowStyle}>
+          <Label>{t("Common Tray Icon")}</Label>
+          <Button
+            appearance="outline"
+            icon={
+              verge?.common_tray_icon && commonIcon ? (
+                <img height="20px" src={convertFileSrc(commonIcon)} />
+              ) : undefined
+            }
+            onClick={async () => {
+              if (verge?.common_tray_icon) {
+                onChangeData({ common_tray_icon: false });
+                patchVerge({ common_tray_icon: false });
+              } else {
+                const selected = await openDialog({
+                  directory: false,
+                  multiple: false,
+                  filters: [
+                    {
+                      name: "Tray Icon Image",
+                      extensions: ["png", "ico"],
+                    },
+                  ],
+                });
+                if (selected) {
+                  await copyIconFile(`${selected}`, "common");
+                  await initIconPath();
+                  onChangeData({ common_tray_icon: true });
+                  patchVerge({ common_tray_icon: true });
                 }
-              }}
-            >
-              {verge?.common_tray_icon ? t("Clear") : t("Browse")}
-            </Button>
-          </GuardState>
-        </Item>
+              }
+            }}
+          >
+            {verge?.common_tray_icon ? t("Clear") : t("Browse")}
+          </Button>
+        </div>
 
-        <Item>
-          <ListItemText primary={t("System Proxy Tray Icon")} />
-          <GuardState
-            value={verge?.sysproxy_tray_icon}
-            onCatch={onError}
-            onChange={(e) => onChangeData({ sysproxy_tray_icon: e })}
-            onGuard={(e) => patchVerge({ sysproxy_tray_icon: e })}
-          >
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={
-                verge?.sysproxy_tray_icon &&
-                sysproxyIcon && (
-                  <img height="20px" src={convertFileSrc(sysproxyIcon)} />
-                )
-              }
-              onClick={async () => {
-                if (verge?.sysproxy_tray_icon) {
-                  onChangeData({ sysproxy_tray_icon: false });
-                  patchVerge({ sysproxy_tray_icon: false });
-                } else {
-                  const selected = await openDialog({
-                    directory: false,
-                    multiple: false,
-                    filters: [
-                      {
-                        name: "Tray Icon Image",
-                        extensions: ["png", "ico"],
-                      },
-                    ],
-                  });
-                  if (selected) {
-                    await copyIconFile(`${selected}`, "sysproxy");
-                    await initIconPath();
-                    onChangeData({ sysproxy_tray_icon: true });
-                    patchVerge({ sysproxy_tray_icon: true });
-                  }
+        <div style={rowStyle}>
+          <Label>{t("System Proxy Tray Icon")}</Label>
+          <Button
+            appearance="outline"
+            icon={
+              verge?.sysproxy_tray_icon && sysproxyIcon ? (
+                <img height="20px" src={convertFileSrc(sysproxyIcon)} />
+              ) : undefined
+            }
+            onClick={async () => {
+              if (verge?.sysproxy_tray_icon) {
+                onChangeData({ sysproxy_tray_icon: false });
+                patchVerge({ sysproxy_tray_icon: false });
+              } else {
+                const selected = await openDialog({
+                  directory: false,
+                  multiple: false,
+                  filters: [
+                    {
+                      name: "Tray Icon Image",
+                      extensions: ["png", "ico"],
+                    },
+                  ],
+                });
+                if (selected) {
+                  await copyIconFile(`${selected}`, "sysproxy");
+                  await initIconPath();
+                  onChangeData({ sysproxy_tray_icon: true });
+                  patchVerge({ sysproxy_tray_icon: true });
                 }
-              }}
-            >
-              {verge?.sysproxy_tray_icon ? t("Clear") : t("Browse")}
-            </Button>
-          </GuardState>
-        </Item>
+              }
+            }}
+          >
+            {verge?.sysproxy_tray_icon ? t("Clear") : t("Browse")}
+          </Button>
+        </div>
 
-        <Item>
-          <ListItemText primary={t("Tun Tray Icon")} />
-          <GuardState
-            value={verge?.tun_tray_icon}
-            onCatch={onError}
-            onChange={(e) => onChangeData({ tun_tray_icon: e })}
-            onGuard={(e) => patchVerge({ tun_tray_icon: e })}
-          >
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={
-                verge?.tun_tray_icon &&
-                tunIcon && <img height="20px" src={convertFileSrc(tunIcon)} />
-              }
-              onClick={async () => {
-                if (verge?.tun_tray_icon) {
-                  onChangeData({ tun_tray_icon: false });
-                  patchVerge({ tun_tray_icon: false });
-                } else {
-                  const selected = await openDialog({
-                    directory: false,
-                    multiple: false,
-                    filters: [
-                      {
-                        name: "Tun Icon Image",
-                        extensions: ["png", "ico"],
-                      },
-                    ],
-                  });
-                  if (selected) {
-                    await copyIconFile(`${selected}`, "tun");
-                    await initIconPath();
-                    onChangeData({ tun_tray_icon: true });
-                    patchVerge({ tun_tray_icon: true });
-                  }
+        <div style={rowStyle}>
+          <Label>{t("Tun Tray Icon")}</Label>
+          <Button
+            appearance="outline"
+            icon={
+              verge?.tun_tray_icon && tunIcon ? (
+                <img height="20px" src={convertFileSrc(tunIcon)} />
+              ) : undefined
+            }
+            onClick={async () => {
+              if (verge?.tun_tray_icon) {
+                onChangeData({ tun_tray_icon: false });
+                patchVerge({ tun_tray_icon: false });
+              } else {
+                const selected = await openDialog({
+                  directory: false,
+                  multiple: false,
+                  filters: [
+                    {
+                      name: "Tun Icon Image",
+                      extensions: ["png", "ico"],
+                    },
+                  ],
+                });
+                if (selected) {
+                  await copyIconFile(`${selected}`, "tun");
+                  await initIconPath();
+                  onChangeData({ tun_tray_icon: true });
+                  patchVerge({ tun_tray_icon: true });
                 }
-              }}
-            >
-              {verge?.tun_tray_icon ? t("Clear") : t("Browse")}
-            </Button>
-          </GuardState>
-        </Item>
-      </List>
+              }
+            }}
+          >
+            {verge?.tun_tray_icon ? t("Clear") : t("Browse")}
+          </Button>
+        </div>
+      </div>
     </BaseDialog>
   );
 });
 
-const Item = styled(ListItem)(() => ({
+const rowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 12,
   padding: "5px 2px",
-}));
+};
