@@ -240,6 +240,14 @@ const valuesFromConfig = (config: any): DnsValues => {
   };
 };
 
+// A complete default DNS config payload, used to seed the DNS config file the
+// first time the quick "DNS Overwrite" switch is turned on (before the user
+// has ever opened the DNS editor). Kept here next to DEFAULT_DNS_CONFIG so the
+// quick switch and the editor stay in sync.
+export const buildDefaultDnsConfig = (enable: boolean) => ({
+  dns: { ...DEFAULT_DNS_CONFIG, enable },
+});
+
 export const DnsViewer = forwardRef<DialogRef>((props, ref) => {
   const { t } = useTranslation();
   const { clash, mutateClash } = useClash();

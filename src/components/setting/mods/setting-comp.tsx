@@ -127,6 +127,38 @@ export function FluentSettingList({
   );
 }
 
+const useGroupStyle = makeStyles({
+  groupHeader: {
+    marginTop: "18px",
+    marginBottom: "2px",
+    paddingInlineStart: "4px",
+    color: tokens.colorNeutralForeground2,
+    fontWeight: tokens.fontWeightSemibold,
+  },
+  first: {
+    marginTop: "2px",
+  },
+});
+
+// A small section subheading used inside a settings detail page to group
+// related items (Windows 11 style), staying on the same scrolling page.
+export function FluentSettingGroup({
+  title,
+  first,
+}: {
+  title: ReactNode;
+  first?: boolean;
+}) {
+  const classes = useGroupStyle();
+  return (
+    <Body2
+      className={mergeClasses(classes.groupHeader, first && classes.first)}
+    >
+      {title}
+    </Body2>
+  );
+}
+
 const useItemStyle = makeStyles({
   header: {
     paddingBlock: "14px",

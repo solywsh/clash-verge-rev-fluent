@@ -5,7 +5,11 @@ import { Input } from "@mui/material";
 import { copyClashEnv } from "@/services/cmds";
 import { useVerge } from "@/hooks/use-verge";
 import { DialogRef, Notice } from "@/components/base";
-import { FluentSettingList, FluentSettingItem } from "./mods/setting-comp";
+import {
+  FluentSettingList,
+  FluentSettingItem,
+  FluentSettingGroup,
+} from "./mods/setting-comp";
 import { HotkeyViewer } from "./mods/hotkey-viewer";
 import { MiscViewer } from "./mods/misc-viewer";
 import { ThemeViewer } from "./mods/theme-viewer";
@@ -98,6 +102,8 @@ const SettingAppearance = ({ onError, hideTitle }: Props) => {
       <LayoutViewer ref={layoutRef} />
       <HotkeyViewer ref={hotkeyRef} />
 
+      <FluentSettingGroup title={t("group.appearance")} first />
+
       <FluentSettingItem icon={<LocalLanguageRegular />} label={t("Language")}>
         <GuardState
           value={{ language: language ?? "en" }}
@@ -175,6 +181,8 @@ const SettingAppearance = ({ onError, hideTitle }: Props) => {
         label={t("Layout Setting")}
         actionLabel={t("Change")}
       />
+
+      <FluentSettingGroup title={t("group.behavior")} />
 
       {OS !== "linux" && (
         <FluentSettingItem
@@ -346,6 +354,8 @@ const SettingAppearance = ({ onError, hideTitle }: Props) => {
           ></Input>
         </GuardState>
       </FluentSettingItem>
+
+      <FluentSettingGroup title={t("group.advanced")} />
 
       <FluentSettingItem
         icon={<KeyboardRegular />}

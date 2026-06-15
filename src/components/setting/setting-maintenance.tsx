@@ -10,7 +10,11 @@ import {
 } from "@/services/cmds";
 import { version } from "@root/package.json";
 import { DialogRef, Notice } from "@/components/base";
-import { FluentSettingList, FluentSettingItem } from "./mods/setting-comp";
+import {
+  FluentSettingList,
+  FluentSettingItem,
+  FluentSettingGroup,
+} from "./mods/setting-comp";
 import { ConfigViewer } from "./mods/config-viewer";
 import { UpdateViewer } from "./mods/update-viewer";
 import { BackupViewer } from "./mods/backup-viewer";
@@ -61,6 +65,8 @@ const SettingMaintenance = ({ onError, hideTitle }: Props) => {
       <UpdateViewer ref={updateRef} />
       <BackupViewer ref={backupRef} />
 
+      <FluentSettingGroup title={t("group.backup_config")} first />
+
       <FluentSettingItem
         icon={<SaveRegular />}
         label={t("Local Backup")}
@@ -83,6 +89,8 @@ const SettingMaintenance = ({ onError, hideTitle }: Props) => {
         actionLabel={t("View")}
       />
 
+      <FluentSettingGroup title={t("group.directories")} />
+
       <FluentSettingItem
         icon={<FolderRegular />}
         onClick={openAppDir}
@@ -104,6 +112,8 @@ const SettingMaintenance = ({ onError, hideTitle }: Props) => {
         label={t("Open Logs Dir")}
         actionLabel={t("Open")}
       />
+
+      <FluentSettingGroup title={t("group.updates_diag")} />
 
       <FluentSettingItem
         icon={<ArrowSyncRegular />}

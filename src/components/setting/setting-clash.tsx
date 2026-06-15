@@ -1,4 +1,5 @@
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
+import { useLockFn } from "ahooks";
 import { useTranslation } from "react-i18next";
 import { TextField, Select, MenuItem, Typography } from "@mui/material";
 import {
@@ -20,9 +21,10 @@ import {
   Button,
   Caption1,
   Body2,
+  Input,
 } from "@fluentui/react-components";
 import { DialogRef, Notice, Switch } from "@/components/base";
-import { useClash } from "@/hooks/use-clash";
+import { useClash, useClashInfo } from "@/hooks/use-clash";
 import { GuardState } from "./mods/guard-state";
 import { WebUIViewer } from "./mods/web-ui-viewer";
 import { ClashPortViewer } from "./mods/clash-port-viewer";
@@ -32,6 +34,7 @@ import {
   SettingItem,
   FluentSettingItem,
   FluentSettingList,
+  FluentSettingGroup,
 } from "./mods/setting-comp";
 import { useSettingSystemStyle } from "./setting-system";
 import {
@@ -61,7 +64,12 @@ import {
   FluentTooltipIcon,
 } from "@/components/base/base-tooltip-icon";
 import { NetworkInterfaceViewer } from "./mods/network-interface-viewer";
-import { DnsViewer } from "./mods/dns-viewer";
+import { DnsViewer, buildDefaultDnsConfig } from "./mods/dns-viewer";
+import {
+  checkDnsConfigExists,
+  saveDnsConfig,
+  applyDnsConfig,
+} from "@/services/cmds";
 import { TunnelsViewer } from "./mods/tunnels-viewer";
 import { HeaderConfiguration } from "./mods/external-controller-cors";
 
@@ -83,6 +91,7 @@ const SettingClash = ({ onError, hideTitle }: Props) => {
 
   const { clash, version, mutateClash, patchClash } = useClash();
   const { verge, mutateVerge, patchVerge } = useVerge();
+  const { clashInfo, patchInfo } = useClashInfo();
 
   const {
     ipv6,
@@ -92,6 +101,45 @@ const SettingClash = ({ onError, hideTitle }: Props) => {
   } = clash ?? {};
 
   const { enable_random_port = false, verge_mixed_port } = verge ?? {};
+
+  // Quick mixed-port editor surfaced next to the Port Config expander arrow,
+  // so the most common port can be changed without opening the expander.
+  const [mixedPort, setMixedPort] = useState(
+    verge_mixed_port ?? clashInfo?.mixed_port ?? 7897,
+  );
+  useEffect(() => {
+    if (verge_mixed_port) setMixedPort(verge_mixed_port);
+  }, [verge_mixed_port]);
+
+  // Quick "DNS Overwrite" master switch surfaced next to the expander arrow.
+  // Self-contained (does not depend on the DnsViewer being mounted/expanded):
+  // seeds a default DNS config file on first enable, flips the master
+  // `enable_dns_settings` flag, and applies/reverts immediately.
+  const toggleDnsOverwrite = async (enable: boolean) => {
+    if (enable) {
+      const exists = await checkDnsConfigExists();
+      if (!exists) await saveDnsConfig(buildDefaultDnsConfig(true));
+    }
+    await patchVerge({ enable_dns_settings: enable });
+    await applyDnsConfig(enable);
+    mutateClash();
+  };
+
+  const saveMixedPort = useLockFn(async () => {
+    if (mixedPort === (verge_mixed_port ?? clashInfo?.mixed_port)) return;
+    if (mixedPort < 1 || mixedPort > 65535) {
+      Notice.error(t("Port Conflict"), 3000);
+      setMixedPort(verge_mixed_port ?? clashInfo?.mixed_port ?? 7897);
+      return;
+    }
+    try {
+      await patchInfo({ "mixed-port": mixedPort });
+      await patchVerge({ verge_mixed_port: mixedPort });
+      Notice.success(t("Clash Port Modified"), 1000);
+    } catch (err: any) {
+      Notice.error(err.message || err.toString(), 4000);
+    }
+  });
 
   const webRef = useRef<DialogRef>(null);
   const portRef = useRef<DialogRef>(null);
@@ -154,6 +202,8 @@ const SettingClash = ({ onError, hideTitle }: Props) => {
         </GuardState>
       </SettingItem> */}
 
+      <FluentSettingGroup title={t("group.ports_network")} first />
+
       <FluentSettingItem icon={<WifiSettingsRegular />} label={t("Allow Lan")}>
         <Button
           icon={<ConnectedRegular />}
@@ -187,6 +237,78 @@ const SettingClash = ({ onError, hideTitle }: Props) => {
       </FluentSettingItem>
 
       <FluentSettingItem
+        icon={<PlugConnectedRegular />}
+        label={t("Port Config")}
+        canExpand
+        content={<ClashPortViewer ref={portRef} />}
+      >
+        <Input
+          autoComplete="new-password"
+          style={{ width: 110 }}
+          value={String(mixedPort)}
+          disabled={enable_random_port}
+          title={t("Mixed Port")}
+          onChange={(_, data) =>
+            setMixedPort(+data.value.replace(/\D+/g, "").slice(0, 5))
+          }
+          onBlur={saveMixedPort}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+          }}
+        />
+      </FluentSettingItem>
+
+      <FluentSettingItem
+        icon={<GlobeSearchRegular />}
+        label={t("DNS Overwrite")}
+        canExpand
+        content={<DnsViewer ref={dnsRef} />}
+      >
+        <GuardState
+          value={verge?.enable_dns_settings ?? false}
+          valueProps="checked"
+          onCatch={onError}
+          onFormat={onSwitchFormat}
+          onChange={(e) => onChangeVerge({ enable_dns_settings: e })}
+          onGuard={(e) => toggleDnsOverwrite(e)}
+        >
+          <FluentSwitch />
+        </GuardState>
+      </FluentSettingItem>
+
+      <FluentSettingItem
+        icon={<FlowRegular />}
+        label={t("Tunnels")}
+        canExpand
+        content={<TunnelsViewer ref={tunnelRef} />}
+      />
+
+      <FluentSettingGroup title={t("group.external_control")} />
+
+      <FluentSettingItem
+        icon={<ServerRegular />}
+        onClick={() => ctrlRef.current?.open()}
+        label={t("External")}
+        actionLabel={t("Change")}
+      />
+
+      <FluentSettingItem
+        icon={<GlobeShieldRegular />}
+        label={t("External Controller CORS")}
+        canExpand
+        content={<HeaderConfiguration ref={corsRef} />}
+      />
+
+      <FluentSettingItem
+        icon={<WindowRegular />}
+        onClick={() => webRef.current?.open()}
+        label={t("Web UI")}
+        actionLabel={t("Change")}
+      />
+
+      <FluentSettingGroup title={t("group.core_data")} />
+
+      <FluentSettingItem
         icon={<TopSpeedRegular />}
         label={t("Unified Delay")}
         secondary={t("Unified Delay Info")}
@@ -209,26 +331,16 @@ const SettingClash = ({ onError, hideTitle }: Props) => {
         secondary={t("Log Level Info")}
       >
         <GuardState
-          // clash premium 2022.08.26 值为warn
-          // value={logLevel === "warn" ? "warning" : (logLevel ?? "info")}
           value={{
             level: [logLevel === "warn" ? "warning" : (logLevel ?? "info")],
           }}
           onCatch={onError}
-          // onFormat={(e: any) => e.target.value}
           onFormat={(_, data) => data.checkedItems[0]}
           onChange={(e) => onChangeData({ "log-level": e })}
           onGuard={(e) => patchClash({ "log-level": e })}
           onChangeProps="onCheckedValueChange"
           valueProps="checkedValues"
         >
-          {/* <Select size="small" sx={{ width: 100, "> div": { py: "7.5px" } }}>
-            <MenuItem value="debug">Debug</MenuItem>
-            <MenuItem value="info">Info</MenuItem>
-            <MenuItem value="warning">Warn</MenuItem>
-            <MenuItem value="error">Error</MenuItem>
-            <MenuItem value="silent">Silent</MenuItem>
-          </Select> */}
           <Menu>
             <MenuTrigger>
               <MenuButton>{logLevel}</MenuButton>
@@ -257,87 +369,11 @@ const SettingClash = ({ onError, hideTitle }: Props) => {
       </FluentSettingItem>
 
       <FluentSettingItem
-        icon={<PlugConnectedRegular />}
-        label={t("Port Config")}
-        canExpand
-        // extra={
-        //   <TooltipIcon
-        //     title={t("Random Port")}
-        //     color={enable_random_port ? "primary" : "inherit"}
-        //     icon={ShuffleRounded}
-        //     onClick={() => {
-        //       Notice.success(
-        //         t("Restart Application to Apply Modifications"),
-        //         1000,
-        //       );
-        //       onChangeVerge({ enable_random_port: !enable_random_port });
-        //       patchVerge({ enable_random_port: !enable_random_port });
-        //     }}
-        //   />
-        // }
-        content={<ClashPortViewer ref={portRef} />}
-      >
-        {/* <TextField
-          autoComplete="new-password"
-          disabled={enable_random_port}
-          size="small"
-          value={verge_mixed_port ?? 7897}
-          sx={{ width: 100, input: { py: "7.5px", cursor: "pointer" } }}
-          onClick={(e) => {
-            portRef.current?.open();
-            (e.target as any).blur();
-          }}
-        /> */}
-      </FluentSettingItem>
-
-      <FluentSettingItem
-        icon={<ServerRegular />}
-        onClick={() => ctrlRef.current?.open()}
-        label={t("External")}
-        actionLabel={t("Change")}
-      />
-
-      <FluentSettingItem
-        icon={<GlobeSearchRegular />}
-        label={t("DNS Overwrite")}
-        canExpand
-        content={<DnsViewer ref={dnsRef} />}
-      />
-
-      <FluentSettingItem
-        icon={<FlowRegular />}
-        label={t("Tunnels")}
-        canExpand
-        content={<TunnelsViewer ref={tunnelRef} />}
-      />
-
-      <FluentSettingItem
-        icon={<GlobeShieldRegular />}
-        label={t("External Controller CORS")}
-        canExpand
-        content={<HeaderConfiguration ref={corsRef} />}
-      />
-
-      <FluentSettingItem
-        icon={<WindowRegular />}
-        onClick={() => webRef.current?.open()}
-        label={t("Web UI")}
-        actionLabel={t("Change")}
-      />
-
-      <FluentSettingItem
         icon={<CubeRegular />}
         label={t("Clash Core")}
-        // extra={
-        //   <FluentTooltipIcon
-        //     icon={SettingsRounded}
-        //     onClick={() => coreRef.current?.open()}
-        //   />
-        // }
         onClick={() => coreRef.current?.open()}
         actionLabel={t("Change")}
       >
-        {/* <Typography sx={{ py: "7px", pr: 1 }}>{version}</Typography> */}
         <Body2>{version}</Body2>
       </FluentSettingItem>
 

@@ -15,6 +15,7 @@ import {
   SettingItem,
   FluentSettingItem,
   FluentSettingList,
+  FluentSettingGroup,
 } from "./mods/setting-comp";
 import { GuardState } from "./mods/guard-state";
 import { SysproxyViewer } from "./mods/sysproxy-viewer";
@@ -115,6 +116,8 @@ const SettingSystem = ({ onError, hideTitle }: Props) => {
       <SysproxyViewer ref={sysproxyRef} />
       {/* <TunViewer ref={tunRef} /> */}
 
+      <FluentSettingGroup title={t("group.proxy_service")} first />
+
       <FluentSettingItem
         icon={<ShieldRegular />}
         label={t("Service Mode")}
@@ -204,6 +207,8 @@ const SettingSystem = ({ onError, hideTitle }: Props) => {
           <FluentSwitch />
         </GuardState>
       </FluentSettingItem>
+
+      <FluentSettingGroup title={t("group.startup")} />
 
       <FluentSettingItem icon={<PowerRegular />} label={t("Auto Launch")}>
         <GuardState
