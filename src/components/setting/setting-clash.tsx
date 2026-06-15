@@ -34,7 +34,23 @@ import {
   FluentSettingList,
 } from "./mods/setting-comp";
 import { useSettingSystemStyle } from "./setting-system";
-import { ConnectedRegular, SettingsRegular } from "@fluentui/react-icons";
+import {
+  ConnectedRegular,
+  SettingsRegular,
+  WifiSettingsRegular,
+  NumberSymbolRegular,
+  TopSpeedRegular,
+  TextBulletListLtrRegular,
+  PlugConnectedRegular,
+  ServerRegular,
+  GlobeSearchRegular,
+  FlowRegular,
+  GlobeShieldRegular,
+  WindowRegular,
+  CubeRegular,
+  WrenchRegular,
+  MapRegular,
+} from "@fluentui/react-icons";
 import { ClashCoreViewer } from "./mods/clash-core-viewer";
 import { invoke_uwp_tool } from "@/services/cmds";
 import getSystem from "@/utils/get-system";
@@ -137,7 +153,7 @@ const SettingClash = ({ onError }: Props) => {
         </GuardState>
       </SettingItem> */}
 
-      <FluentSettingItem label={t("Allow Lan")}>
+      <FluentSettingItem icon={<WifiSettingsRegular />} label={t("Allow Lan")}>
         <Button
           icon={<ConnectedRegular />}
           appearance="subtle"
@@ -156,7 +172,7 @@ const SettingClash = ({ onError }: Props) => {
         </GuardState>
       </FluentSettingItem>
 
-      <FluentSettingItem label={t("IPv6")}>
+      <FluentSettingItem icon={<NumberSymbolRegular />} label={t("IPv6")}>
         <GuardState
           value={ipv6 ?? false}
           valueProps="checked"
@@ -170,14 +186,9 @@ const SettingClash = ({ onError }: Props) => {
       </FluentSettingItem>
 
       <FluentSettingItem
+        icon={<TopSpeedRegular />}
         label={t("Unified Delay")}
-        extra={<FluentTooltipIcon title={t("Unified Delay Info")} />}
-        // extra={
-        //   <TooltipIcon
-        //     title={t("Unified Delay Info")}
-        //     sx={{ opacity: "0.7" }}
-        //   />
-        // }
+        secondary={t("Unified Delay Info")}
       >
         <GuardState
           value={unifiedDelay ?? false}
@@ -192,13 +203,9 @@ const SettingClash = ({ onError }: Props) => {
       </FluentSettingItem>
 
       <FluentSettingItem
+        icon={<TextBulletListLtrRegular />}
         label={t("Log Level")}
-        extra={
-          <FluentTooltipIcon
-            title={t("Log Level Info")}
-            sx={{ opacity: "0.7" }}
-          />
-        }
+        secondary={t("Log Level Info")}
       >
         <GuardState
           // clash premium 2022.08.26 值为warn
@@ -249,6 +256,7 @@ const SettingClash = ({ onError }: Props) => {
       </FluentSettingItem>
 
       <FluentSettingItem
+        icon={<PlugConnectedRegular />}
         label={t("Port Config")}
         canExpand
         // extra={
@@ -282,34 +290,40 @@ const SettingClash = ({ onError }: Props) => {
       </FluentSettingItem>
 
       <FluentSettingItem
+        icon={<ServerRegular />}
         onClick={() => ctrlRef.current?.open()}
         label={t("External")}
       />
 
       <FluentSettingItem
+        icon={<GlobeSearchRegular />}
         label={t("DNS Overwrite")}
         canExpand
         content={<DnsViewer ref={dnsRef} />}
       />
 
       <FluentSettingItem
+        icon={<FlowRegular />}
         label={t("Tunnels")}
         canExpand
         content={<TunnelsViewer ref={tunnelRef} />}
       />
 
       <FluentSettingItem
+        icon={<GlobeShieldRegular />}
         label={t("External Controller CORS")}
         canExpand
         content={<HeaderConfiguration ref={corsRef} />}
       />
 
       <FluentSettingItem
+        icon={<WindowRegular />}
         onClick={() => webRef.current?.open()}
         label={t("Web UI")}
       />
 
       <FluentSettingItem
+        icon={<CubeRegular />}
         label={t("Clash Core")}
         // extra={
         //   <FluentTooltipIcon
@@ -325,18 +339,18 @@ const SettingClash = ({ onError }: Props) => {
 
       {isWIN && (
         <FluentSettingItem
+          icon={<WrenchRegular />}
           onClick={invoke_uwp_tool}
           label={t("Open UWP tool")}
-          extra={
-            <FluentTooltipIcon
-              title={t("Open UWP tool Info")}
-              sx={{ opacity: "0.7" }}
-            />
-          }
+          secondary={t("Open UWP tool Info")}
         />
       )}
 
-      <FluentSettingItem onClick={onUpdateGeo} label={t("Update GeoData")} />
+      <FluentSettingItem
+        icon={<MapRegular />}
+        onClick={onUpdateGeo}
+        label={t("Update GeoData")}
+      />
     </FluentSettingList>
   );
 };

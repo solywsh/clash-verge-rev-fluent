@@ -23,7 +23,19 @@ import {
   MenuPopover,
   MenuTrigger,
 } from "@fluentui/react-components";
-import { CopyRegular } from "@fluentui/react-icons";
+import {
+  CopyRegular,
+  LocalLanguageRegular,
+  DarkThemeRegular,
+  PaintBrushRegular,
+  LayoutColumnTwoRegular,
+  CursorClickRegular,
+  CodeRegular,
+  HomeRegular,
+  DocumentRegular,
+  KeyboardRegular,
+  OptionsRegular,
+} from "@fluentui/react-icons";
 
 interface Props {
   onError?: (err: Error) => void;
@@ -83,7 +95,7 @@ const SettingAppearance = ({ onError }: Props) => {
       <LayoutViewer ref={layoutRef} />
       <HotkeyViewer ref={hotkeyRef} />
 
-      <FluentSettingItem label={t("Language")}>
+      <FluentSettingItem icon={<LocalLanguageRegular />} label={t("Language")}>
         <GuardState
           value={{ language: language ?? "en" }}
           onCatch={onError}
@@ -110,7 +122,7 @@ const SettingAppearance = ({ onError }: Props) => {
         </GuardState>
       </FluentSettingItem>
 
-      <FluentSettingItem label={t("Theme Mode")}>
+      <FluentSettingItem icon={<DarkThemeRegular />} label={t("Theme Mode")}>
         <GuardState
           value={{ theme: theme_mode ?? "system" }}
           onCatch={onError}
@@ -148,17 +160,22 @@ const SettingAppearance = ({ onError }: Props) => {
       </FluentSettingItem>
 
       <FluentSettingItem
+        icon={<PaintBrushRegular />}
         onClick={() => themeRef.current?.open()}
         label={t("Theme Setting")}
       />
 
       <FluentSettingItem
+        icon={<LayoutColumnTwoRegular />}
         onClick={() => layoutRef.current?.open()}
         label={t("Layout Setting")}
       />
 
       {OS !== "linux" && (
-        <FluentSettingItem label={t("Tray Click Event")}>
+        <FluentSettingItem
+          icon={<CursorClickRegular />}
+          label={t("Tray Click Event")}
+        >
           <GuardState
             value={{ tray: tray_event ?? "main_window" }}
             onCatch={onError}
@@ -200,7 +217,7 @@ const SettingAppearance = ({ onError }: Props) => {
         </FluentSettingItem>
       )}
 
-      <FluentSettingItem label={t("Copy Env Type")}>
+      <FluentSettingItem icon={<CodeRegular />} label={t("Copy Env Type")}>
         <GuardState
           value={{
             env_type: env_type ?? (OS === "windows" ? "powershell" : "bash"),
@@ -237,7 +254,7 @@ const SettingAppearance = ({ onError }: Props) => {
         ></FluentButton>
       </FluentSettingItem>
 
-      <FluentSettingItem label={t("Start Page")}>
+      <FluentSettingItem icon={<HomeRegular />} label={t("Start Page")}>
         <GuardState
           value={{ start_page: start_page ?? "/" }}
           onCatch={onError}
@@ -273,7 +290,7 @@ const SettingAppearance = ({ onError }: Props) => {
         </GuardState>
       </FluentSettingItem>
 
-      <FluentSettingItem label={t("Startup Script")}>
+      <FluentSettingItem icon={<DocumentRegular />} label={t("Startup Script")}>
         <GuardState
           value={startup_script ?? ""}
           onCatch={onError}
@@ -326,11 +343,13 @@ const SettingAppearance = ({ onError }: Props) => {
       </FluentSettingItem>
 
       <FluentSettingItem
+        icon={<KeyboardRegular />}
         onClick={() => hotkeyRef.current?.open()}
         label={t("Hotkey Setting")}
       />
 
       <FluentSettingItem
+        icon={<OptionsRegular />}
         onClick={() => miscRef.current?.open()}
         label={t("Miscellaneous")}
       />

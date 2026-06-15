@@ -17,6 +17,16 @@ import { BackupViewer } from "./mods/backup-viewer";
 import { LocalBackupViewer } from "./mods/local-backup-viewer";
 import { FluentTooltipIcon } from "@/components/base/base-tooltip-icon";
 import { Body2 } from "@fluentui/react-components";
+import {
+  SaveRegular,
+  CloudArrowUpRegular,
+  DocumentBulletListRegular,
+  FolderRegular,
+  ArrowSyncRegular,
+  BugRegular,
+  WindowDevToolsRegular,
+  SignOutRegular,
+} from "@fluentui/react-icons";
 
 interface Props {
   onError?: (err: Error) => void;
@@ -51,48 +61,52 @@ const SettingMaintenance = ({ onError }: Props) => {
       <BackupViewer ref={backupRef} />
 
       <FluentSettingItem
+        icon={<SaveRegular />}
         label={t("Local Backup")}
         canExpand
         content={<LocalBackupViewer ref={localBackupRef} />}
       />
 
       <FluentSettingItem
+        icon={<CloudArrowUpRegular />}
         onClick={() => backupRef.current?.open()}
         label={t("Backup Setting")}
-        extra={
-          <FluentTooltipIcon
-            title={t("Backup Setting Info")}
-            sx={{ opacity: "0.7" }}
-          />
-        }
+        secondary={t("Backup Setting Info")}
       />
 
       <FluentSettingItem
+        icon={<DocumentBulletListRegular />}
         onClick={() => configRef.current?.open()}
         label={t("Runtime Config")}
       />
 
       <FluentSettingItem
+        icon={<FolderRegular />}
         onClick={openAppDir}
         label={t("Open Conf Dir")}
-        extra={
-          <FluentTooltipIcon
-            title={t("Open Conf Dir Info")}
-            sx={{ opacity: "0.7" }}
-          />
-        }
+        secondary={t("Open Conf Dir Info")}
       />
 
-      <FluentSettingItem onClick={openCoreDir} label={t("Open Core Dir")} />
-
-      <FluentSettingItem onClick={openLogsDir} label={t("Open Logs Dir")} />
+      <FluentSettingItem
+        icon={<FolderRegular />}
+        onClick={openCoreDir}
+        label={t("Open Core Dir")}
+      />
 
       <FluentSettingItem
+        icon={<FolderRegular />}
+        onClick={openLogsDir}
+        label={t("Open Logs Dir")}
+      />
+
+      <FluentSettingItem
+        icon={<ArrowSyncRegular />}
         onClick={onCheckUpdate}
         label={t("Check for Updates")}
       />
 
       <FluentSettingItem
+        icon={<BugRegular />}
         label={t("Export Diagnostic Info")}
         onClick={async () => {
           try {
@@ -104,9 +118,14 @@ const SettingMaintenance = ({ onError }: Props) => {
         }}
       />
 
-      <FluentSettingItem onClick={openDevTools} label={t("Open Dev Tools")} />
+      <FluentSettingItem
+        icon={<WindowDevToolsRegular />}
+        onClick={openDevTools}
+        label={t("Open Dev Tools")}
+      />
 
       <FluentSettingItem
+        icon={<SignOutRegular />}
         onClick={() => {
           exitApp();
         }}
