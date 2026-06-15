@@ -33,7 +33,10 @@ const useStyles = makeStyles({
     display: "flex",
     flexDirection: "column",
     gap: "10px",
-    paddingBottom: "8px",
+    paddingBottom: "48px",
+  },
+  detail: {
+    paddingBottom: "48px",
   },
   card: {
     display: "flex",
@@ -152,7 +155,7 @@ const SettingPage = () => {
       }
     >
       {current ? (
-        <div>
+        <div className={classes.detail}>
           <Breadcrumb className={classes.breadcrumb} aria-label="settings path">
             <BreadcrumbItem>
               <BreadcrumbButton onClick={() => setActive(null)}>
