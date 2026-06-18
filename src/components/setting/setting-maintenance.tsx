@@ -9,6 +9,7 @@ import {
   exportDiagnosticInfo,
 } from "@/services/cmds";
 import { version } from "@root/package.json";
+import { check as checkUpdate } from "@tauri-apps/plugin-updater";
 import { DialogRef, Notice } from "@/components/base";
 import {
   FluentSettingList,
@@ -47,8 +48,7 @@ const SettingMaintenance = ({ onError, hideTitle }: Props) => {
 
   const onCheckUpdate = async () => {
     try {
-      // const info = await checkUpdate();
-      const info = null as any;
+      const info = await checkUpdate();
       if (!info?.available) {
         Notice.success(t("Currently on the Latest Version"));
       } else {
