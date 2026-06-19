@@ -73,6 +73,15 @@ const useStyles = makeStyles({
   available: {
     color: tokens.colorBrandForeground1,
   },
+  spin: {
+    animationName: {
+      from: { transform: "rotate(0deg)" },
+      to: { transform: "rotate(360deg)" },
+    },
+    animationDuration: "1s",
+    animationIterationCount: "infinite",
+    animationTimingFunction: "linear",
+  },
 });
 
 export const SettingLandingHeader = () => {
@@ -168,7 +177,11 @@ export const SettingLandingHeader = () => {
           </Button>
         ) : (
           <Button
-            icon={<ArrowSyncRegular />}
+            icon={
+              <ArrowSyncRegular
+                className={checking ? classes.spin : undefined}
+              />
+            }
             disabled={checking}
             onClick={onCheckUpdate}
           >
