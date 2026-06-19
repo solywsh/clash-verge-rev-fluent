@@ -2,7 +2,7 @@ import useSWR from "swr";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useLockFn } from "ahooks";
 import { useTranslation } from "react-i18next";
-import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
+import { Virtuoso } from "react-virtuoso";
 import { Box, Typography } from "@mui/material";
 import {
   Button,
@@ -46,7 +46,6 @@ import {
   dumpRuleSeq,
 } from "@/services/rule-source";
 import { tokens } from "./_fluent_theme";
-import { ScrollTopButton } from "@/components/layout/scroll-top-button";
 
 type SortKey = "index" | "type" | "payload" | "proxy" | "usage";
 type SortDir = "asc" | "desc";
@@ -65,8 +64,6 @@ const RulesPage = () => {
   const { data = [], mutate: mutateRules } = useSWR("getRules", getRules);
   const { current } = useProfiles();
   const [match, setMatch] = useState(() => (_: string) => true);
-  const virtuosoRef = useRef<VirtuosoHandle>(null);
-  const [showScrollTop, setShowScrollTop] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("usage");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -218,14 +215,6 @@ const RulesPage = () => {
       scheduleSave(next);
       return next;
     });
-  };
-
-  const scrollToTop = () => {
-    virtuosoRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleScroll = (e: any) => {
-    setShowScrollTop(e.target.scrollTop > 100);
   };
 
   const onSort = (key: SortKey) => {
@@ -401,29 +390,22 @@ const RulesPage = () => {
 
         <Box sx={{ flex: 1, position: "relative", minHeight: 0 }}>
           {rules.length > 0 ? (
-            <>
-              <Virtuoso
-                ref={virtuosoRef}
-                style={{ height: "100%" }}
-                data={rules}
-                itemContent={(_, row) => (
-                  <RuleItem
-                    index={row.runtime ? row.no : "—"}
-                    value={row.item}
-                    usage={getRuleHitCount(row.item.type, row.item.payload)}
-                    enabled={row.enabled}
-                    toggleable={!!row.raw}
-                    toggleHint={t("Cannot Toggle This Rule")}
-                    onToggle={() => onToggleRule(row)}
-                  />
-                )}
-                followOutput={"smooth"}
-                scrollerRef={(ref) => {
-                  if (ref) ref.addEventListener("scroll", handleScroll);
-                }}
-              />
-              <ScrollTopButton onClick={scrollToTop} show={showScrollTop} />
-            </>
+            <Virtuoso
+              style={{ height: "100%" }}
+              data={rules}
+              itemContent={(_, row) => (
+                <RuleItem
+                  index={row.runtime ? row.no : "—"}
+                  value={row.item}
+                  usage={getRuleHitCount(row.item.type, row.item.payload)}
+                  enabled={row.enabled}
+                  toggleable={!!row.raw}
+                  toggleHint={t("Cannot Toggle This Rule")}
+                  onToggle={() => onToggleRule(row)}
+                />
+              )}
+              followOutput={"smooth"}
+            />
           ) : (
             <BaseEmpty />
           )}
