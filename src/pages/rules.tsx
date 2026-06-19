@@ -152,9 +152,20 @@ const RulesPage = () => {
       contentStyle={{ height: "100%" }}
       header={
         <Box display="flex" alignItems="center" gap={1.5} sx={{ minWidth: 0 }}>
-          {/* Shrinkable so it can never overflow onto the buttons on narrow
-              windows; the buttons themselves keep their intrinsic size. */}
-          <Box sx={{ display: "flex", flex: "0 1 220px", minWidth: 96 }}>
+          {/* The Fluent Input's min content width (text field + 3 icon
+              buttons) is ~260px and it won't shrink below that on its own, so
+              it used to overflow a narrower wrapper and collide with the
+              buttons. Force min-width:0 on the input internals so it actually
+              shrinks to the wrapper's flex basis. */}
+          <Box
+            sx={{
+              display: "flex",
+              flex: "0 1 260px",
+              minWidth: 96,
+              "& .fui-Input": { minWidth: 0, width: "100%" },
+              "& .fui-Input input": { minWidth: 0 },
+            }}
+          >
             <BaseSearchBox onSearch={(match) => setMatch(() => match)} />
           </Box>
           <Box sx={{ flexShrink: 0 }}>
