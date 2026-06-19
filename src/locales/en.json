@@ -176,6 +176,7 @@
   "Add Rule": "Add Rule",
   "Clear Usage Count": "Clear usage count",
   "Usage Count Cleared": "Usage count cleared",
+  "Cannot Toggle This Rule": "This rule can't be toggled here (it comes from a rule-set, merge or built-in, or is a logic rule)",
   "No Profile Selected For Rule": "No active profile to add a rule to",
   "Rule Content": "Rule Content",
   "Proxy Policy": "Proxy Policy",
