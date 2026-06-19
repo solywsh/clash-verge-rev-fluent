@@ -4,7 +4,7 @@ import { useLockFn } from "ahooks";
 import { Box, LinearProgress, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { relaunch } from "@tauri-apps/plugin-process";
-import { check as checkUpdate } from "@tauri-apps/plugin-updater";
+import { checkUpdateThrottled } from "@/services/update-check";
 import { BaseDialog, DialogRef, Notice } from "@/components/base";
 import { useUpdateState, useSetUpdateState } from "@/services/states";
 import { Event, UnlistenFn } from "@tauri-apps/api/event";
@@ -24,11 +24,15 @@ export const UpdateViewer = forwardRef<DialogRef>((props, ref) => {
   const setUpdateState = useSetUpdateState();
   const { addListener } = useListen();
 
-  const { data: updateInfo } = useSWR("checkUpdate", checkUpdate, {
-    errorRetryCount: 2,
-    revalidateIfStale: false,
-    focusThrottleInterval: 36e5, // 1 hour
-  });
+  const { data: updateInfo } = useSWR(
+    "checkUpdate",
+    () => checkUpdateThrottled(),
+    {
+      errorRetryCount: 2,
+      revalidateIfStale: false,
+      focusThrottleInterval: 36e5, // 1 hour
+    },
+  );
 
   const [downloaded, setDownloaded] = useState(0);
   const [buffer, setBuffer] = useState(0);

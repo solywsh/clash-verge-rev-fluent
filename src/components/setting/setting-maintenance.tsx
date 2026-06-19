@@ -9,7 +9,7 @@ import {
   exportDiagnosticInfo,
 } from "@/services/cmds";
 import { version } from "@root/package.json";
-import { check as checkUpdate } from "@tauri-apps/plugin-updater";
+import { checkUpdateThrottled } from "@/services/update-check";
 import { DialogRef, Notice } from "@/components/base";
 import {
   FluentSettingList,
@@ -48,7 +48,7 @@ const SettingMaintenance = ({ onError, hideTitle }: Props) => {
 
   const onCheckUpdate = async () => {
     try {
-      const info = await checkUpdate();
+      const info = await checkUpdateThrottled(true);
       if (!info?.available) {
         Notice.success(t("Currently on the Latest Version"));
       } else {

@@ -14,7 +14,7 @@ import {
   CheckmarkCircleFilled,
   ArrowDownloadRegular,
 } from "@fluentui/react-icons";
-import { check as checkUpdate } from "@tauri-apps/plugin-updater";
+import { checkUpdateThrottled } from "@/services/update-check";
 import { version as appVersion } from "@root/package.json";
 import { getSystemInfo, getRunningMode, appIsAdmin } from "@/services/cmds";
 import { DialogRef, Notice } from "@/components/base";
@@ -90,7 +90,7 @@ export const SettingLandingHeader = () => {
     data: updateInfo,
     isValidating: checking,
     mutate: recheckUpdate,
-  } = useSWR("checkUpdate", checkUpdate, {
+  } = useSWR("checkUpdate", () => checkUpdateThrottled(), {
     errorRetryCount: 2,
     revalidateIfStale: false,
     focusThrottleInterval: 36e5, // 1 hour
@@ -112,7 +112,11 @@ export const SettingLandingHeader = () => {
 
   const onCheckUpdate = useLockFn(async () => {
     try {
-      const info = await recheckUpdate();
+      // Manual check bypasses the cooldown and writes the result back into the
+      // shared SWR cache (without an extra revalidation).
+      const info = await recheckUpdate(checkUpdateThrottled(true), {
+        revalidate: false,
+      });
       if (info?.available) {
         updateRef.current?.open();
       } else {
