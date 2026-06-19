@@ -1,12 +1,6 @@
 import { forwardRef, useImperativeHandle, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Badge,
-  Body1Strong,
-  Button,
-  Caption1,
-  Tag,
-} from "@fluentui/react-components";
+import { Badge, Body1Strong, Button, Tag } from "@fluentui/react-components";
 import { EditRegular, DocumentBulletListRegular } from "@fluentui/react-icons";
 import { readProfileFile, saveProfileFile } from "@/services/cmds";
 import { BaseDialog, DialogRef } from "@/components/base";
@@ -105,10 +99,6 @@ export const GlobalEnhanceViewer = forwardRef<DialogRef, Props>(
               </Button>
             </div>
           </div>
-
-          <Caption1 style={{ color: tokens.colorNeutralForeground3 }}>
-            {t("Global Merge")} / {t("Global Script")}
-          </Caption1>
         </BaseDialog>
 
         {mergeOpen && (
