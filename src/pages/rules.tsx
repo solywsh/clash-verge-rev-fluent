@@ -35,8 +35,8 @@ const RulesPage = () => {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
-  const [sortKey, setSortKey] = useState<SortKey>("index");
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [sortKey, setSortKey] = useState<SortKey>("usage");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   // Re-render (and re-sort, when sorting by usage) as hit counts accumulate.
   const hitVersion = useRuleHitVersion();
@@ -151,8 +151,10 @@ const RulesPage = () => {
       title={t("Rules")}
       contentStyle={{ height: "100%" }}
       header={
-        <Box display="flex" alignItems="center" gap={1}>
-          <Box sx={{ width: 240, display: "flex", flexShrink: 0 }}>
+        <Box display="flex" alignItems="center" gap={1.5} sx={{ minWidth: 0 }}>
+          {/* Shrinkable so it can never overflow onto the buttons on narrow
+              windows; the buttons themselves keep their intrinsic size. */}
+          <Box sx={{ display: "flex", flex: "0 1 220px", minWidth: 96 }}>
             <BaseSearchBox onSearch={(match) => setMatch(() => match)} />
           </Box>
           <Box sx={{ flexShrink: 0 }}>
@@ -162,7 +164,7 @@ const RulesPage = () => {
             appearance="primary"
             icon={<AddRegular />}
             onClick={onAddRule}
-            style={{ flexShrink: 0 }}
+            style={{ flexShrink: 0, whiteSpace: "nowrap" }}
           >
             {t("Add Rule")}
           </Button>
