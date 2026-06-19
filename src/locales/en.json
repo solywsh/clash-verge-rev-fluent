@@ -155,6 +155,8 @@
   "Remote": "Remote",
   "Local": "Local",
   "Auto Update": "Auto Update",
+  "Retry With System Proxy": "Retrying with system proxy…",
+  "Retry With Clash Proxy": "Retrying with Clash proxy…",
   "Global Enhancement": "Global Enhancement",
   "Import": "Import",
   "From": "From",

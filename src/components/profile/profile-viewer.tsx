@@ -22,6 +22,7 @@ import {
   Textarea,
 } from "@fluentui/react-components";
 import { createProfile, patchProfile } from "@/services/cmds";
+import { tokens } from "@/pages/_fluent_theme";
 import { BaseDialog, Notice } from "@/components/base";
 import { version } from "@root/package.json";
 import { FileInput } from "./file-input";
@@ -126,7 +127,41 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
 
           // 创建
           if (openType === "new") {
-            await createProfile(item, fileDataRef.current);
+            const userChoseProxy =
+              !!item.option?.with_proxy || !!item.option?.self_proxy;
+            try {
+              await createProfile(item, fileDataRef.current);
+            } catch (createErr) {
+              // 远程拉取失败(如 403 / 无法请求),且用户未手动指定代理时,
+              // 自动用系统代理 → 内核代理各重试一次。
+              if (item.type !== "remote" || userChoseProxy) throw createErr;
+              const withProxyOpt = (patch: Partial<IProfileOption>) => ({
+                ...item,
+                option: {
+                  ...item.option,
+                  with_proxy: false,
+                  self_proxy: false,
+                  ...patch,
+                },
+              });
+              try {
+                Notice.info(t("Retry With System Proxy"), 1500);
+                await createProfile(
+                  withProxyOpt({ with_proxy: true }),
+                  fileDataRef.current,
+                );
+              } catch {
+                try {
+                  Notice.info(t("Retry With Clash Proxy"), 1500);
+                  await createProfile(
+                    withProxyOpt({ self_proxy: true }),
+                    fileDataRef.current,
+                  );
+                } catch {
+                  throw createErr; // 都失败,抛出原始错误以保留最清晰的信息
+                }
+              }
+            }
           }
           // 编辑
           else {
@@ -181,6 +216,11 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
               <TabList
                 selectedValue={field.value ?? "remote"}
                 onTabSelect={(_, data) => field.onChange(data.value)}
+                // Tabs carry their own horizontal padding; cancel it so the
+                // first tab's text lines up with the form fields below.
+                style={{
+                  marginLeft: `calc(0px - ${tokens.spacingHorizontalMNudge})`,
+                }}
               >
                 {(openType === "new" || field.value === "remote") && (
                   <Tab value="remote" disabled={openType === "edit"}>

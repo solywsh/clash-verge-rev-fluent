@@ -155,6 +155,8 @@
   "Remote": "远程",
   "Local": "本地",
   "Auto Update": "自动更新",
+  "Retry With System Proxy": "正在用系统代理重试…",
+  "Retry With Clash Proxy": "正在用内核代理重试…",
   "Global Enhancement": "全局增强",
   "Import": "导入",
   "From": "来自",
