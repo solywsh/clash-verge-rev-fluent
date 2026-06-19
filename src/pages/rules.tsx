@@ -1,13 +1,22 @@
 import useSWR from "swr";
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { Box, Typography } from "@mui/material";
-import { Button } from "@fluentui/react-components";
+import {
+  Button,
+  Menu,
+  MenuTrigger,
+  MenuPopover,
+  MenuList,
+  MenuItem,
+} from "@fluentui/react-components";
 import {
   AddRegular,
   ArrowSortUpRegular,
   ArrowSortDownRegular,
+  MoreHorizontalRegular,
+  DeleteRegular,
 } from "@fluentui/react-icons";
 import { getRules } from "@/services/api";
 import { enhanceProfiles } from "@/services/cmds";
@@ -20,6 +29,9 @@ import { FluentBaseSearchBox as BaseSearchBox } from "@/components/base/base-sea
 import {
   getRuleHitCount,
   useRuleHitVersion,
+  ruleHitKey,
+  pruneRuleHitCounts,
+  clearRuleHitCounts,
 } from "@/services/rule-hit-counter";
 import { tokens } from "./_fluent_theme";
 import { ScrollTopButton } from "@/components/layout/scroll-top-button";
@@ -49,8 +61,20 @@ const RulesPage = () => {
     [data],
   );
 
+  // Drop counts for rules that no longer exist so localStorage stays bounded.
+  useEffect(() => {
+    if (data.length) {
+      pruneRuleHitCounts(
+        new Set(data.map((item) => ruleHitKey(item.type, item.payload))),
+      );
+    }
+  }, [data]);
+
   const rules = useMemo(() => {
-    const filtered = indexed.filter(({ item }) => match(item.payload));
+    const filtered = indexed.filter(
+      ({ item }) =>
+        match(item.payload) || match(item.type) || match(item.proxy),
+    );
     const dir = sortDir === "asc" ? 1 : -1;
     return [...filtered].sort((a, b) => {
       let r = 0;
@@ -179,6 +203,29 @@ const RulesPage = () => {
           >
             {t("Add Rule")}
           </Button>
+          <Menu>
+            <MenuTrigger disableButtonEnhancement>
+              <Button
+                appearance="subtle"
+                icon={<MoreHorizontalRegular />}
+                aria-label={t("More")}
+                style={{ flexShrink: 0 }}
+              />
+            </MenuTrigger>
+            <MenuPopover>
+              <MenuList>
+                <MenuItem
+                  icon={<DeleteRegular />}
+                  onClick={() => {
+                    clearRuleHitCounts();
+                    Notice.success(t("Usage Count Cleared"), 1000);
+                  }}
+                >
+                  {t("Clear Usage Count")}
+                </MenuItem>
+              </MenuList>
+            </MenuPopover>
+          </Menu>
         </Box>
       }
     >

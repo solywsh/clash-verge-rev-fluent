@@ -174,6 +174,8 @@
   "Rule Policy": "策略",
   "Rule Usage": "使用次数",
   "Add Rule": "添加规则",
+  "Clear Usage Count": "清除使用次数",
+  "Usage Count Cleared": "使用次数已清除",
   "No Profile Selected For Rule": "没有可添加规则的激活订阅",
   "Rule Content": "规则内容",
   "Proxy Policy": "代理策略",

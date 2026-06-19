@@ -174,6 +174,8 @@
   "Rule Policy": "Policy",
   "Rule Usage": "Usage",
   "Add Rule": "Add Rule",
+  "Clear Usage Count": "Clear usage count",
+  "Usage Count Cleared": "Usage count cleared",
   "No Profile Selected For Rule": "No active profile to add a rule to",
   "Rule Content": "Rule Content",
   "Proxy Policy": "Proxy Policy",
