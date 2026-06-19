@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { mutate } from "swr";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLockFn } from "ahooks";
 import { useTranslation } from "react-i18next";
 import { useSortable } from "@dnd-kit/sortable";
@@ -225,6 +225,31 @@ export const ProfileItem = (props: Props) => {
     }
   });
 
+  // Local profiles have no remote source — "update" means re-pick a file and
+  // overwrite the stored content.
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const onReimportLocal = () => {
+    setAnchorEl(null);
+    fileInputRef.current?.click();
+  };
+  const onLocalFileChange = useLockFn(async (e: any) => {
+    const file = e.target.files?.[0] as File | undefined;
+    e.target.value = "";
+    if (!file) return;
+    setLoadingCache((cache) => ({ ...cache, [uid]: true }));
+    try {
+      const content = await file.text();
+      await saveProfileFile(uid, content);
+      Notice.success(t("Profile Imported Successfully"), 1000);
+      mutate("getProfiles");
+      onSave?.("", content);
+    } catch (err: any) {
+      Notice.error(err?.message || err.toString());
+    } finally {
+      setLoadingCache((cache) => ({ ...cache, [uid]: false }));
+    }
+  });
+
   const urlModeMenu = (
     hasHome ? [{ label: "Home", handler: onOpenHome, disabled: false }] : []
   ).concat([
@@ -300,6 +325,7 @@ export const ProfileItem = (props: Props) => {
     },
     { label: "Open File", handler: onOpenFile, disabled: false },
     { label: "Open Dir", handler: onOpenDir, disabled: false },
+    { label: "Update", handler: onReimportLocal, disabled: false },
     {
       label: "Delete",
       handler: () => {
@@ -385,28 +411,26 @@ export const ProfileItem = (props: Props) => {
             </Subtitle1>
           </Box>
 
-          {/* only if has url can it be updated */}
-          {hasUrl && (
-            <IconButton
-              title={t("Refresh")}
-              sx={{
-                position: "absolute",
-                p: "3px",
-                top: -1,
-                right: -5,
-                animation: loading ? `1s linear infinite ${round}` : "none",
-              }}
-              size="small"
-              color="inherit"
-              disabled={loading}
-              onClick={(e) => {
-                e.stopPropagation();
-                onUpdate(1);
-              }}
-            >
-              <RefreshRounded color="inherit" />
-            </IconButton>
-          )}
+          {/* remote: pull from URL; local: re-pick a file to overwrite */}
+          <IconButton
+            title={hasUrl ? t("Refresh") : t("Update")}
+            sx={{
+              position: "absolute",
+              p: "3px",
+              top: -1,
+              right: -5,
+              animation: loading ? `1s linear infinite ${round}` : "none",
+            }}
+            size="small"
+            color="inherit"
+            disabled={loading}
+            onClick={(e) => {
+              e.stopPropagation();
+              hasUrl ? onUpdate(1) : onReimportLocal();
+            }}
+          >
+            <RefreshRounded color="inherit" />
+          </IconButton>
         </Box>
         {/* the second line show url's info or description */}
         <Box sx={boxStyle}>
@@ -498,6 +522,13 @@ export const ProfileItem = (props: Props) => {
           </MenuItem>
         ))}
       </Menu>
+      <input
+        type="file"
+        accept=".yaml,.yml"
+        ref={fileInputRef}
+        style={{ display: "none" }}
+        onChange={onLocalFileChange}
+      />
       {fileOpen && (
         <EditorViewer
           open={true}
