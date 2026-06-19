@@ -1,20 +1,14 @@
 import useSWR from "swr";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLockFn } from "ahooks";
-import { Box, Button, IconButton, Stack, Divider, Grid2 } from "@mui/material";
-import {
-  Button as FluentButton,
-  Input,
-  Spinner,
-} from "@fluentui/react-components";
+import { Box, Grid2 } from "@mui/material";
+import { Button as FluentButton } from "@fluentui/react-components";
 import {
   ArrowClockwiseRegular,
-  ClipboardPasteRegular,
-  DismissRegular,
   DocumentBulletListRegular,
   FireFilled,
+  PuzzlePieceRegular,
 } from "@fluentui/react-icons";
-import { tokens } from "./_fluent_theme";
 import {
   DndContext,
   closestCenter,
@@ -28,17 +22,8 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
-import { LoadingButton } from "@mui/lab";
-import {
-  ClearRounded,
-  ContentPasteRounded,
-  LocalFireDepartmentRounded,
-  RefreshRounded,
-  TextSnippetOutlined,
-} from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import {
-  importProfile,
   enhanceProfiles,
   restartCore,
   getRuntimeLogs,
@@ -47,34 +32,28 @@ import {
   reorderProfile,
   createProfile,
 } from "@/services/cmds";
-import { useSetLoadingCache, useThemeMode } from "@/services/states";
+import { useSetLoadingCache } from "@/services/states";
 import { closeAllConnections } from "@/services/api";
 import { BasePage, DialogRef, Notice } from "@/components/base";
 import {
   ProfileViewer,
   ProfileViewerRef,
 } from "@/components/profile/profile-viewer";
-import { ProfileMore } from "@/components/profile/profile-more";
 import { ProfileItem } from "@/components/profile/profile-item";
+import { GlobalEnhanceViewer } from "@/components/profile/global-enhance-viewer";
 import { useProfiles } from "@/hooks/use-profiles";
 import { ConfigViewer } from "@/components/setting/mods/config-viewer";
-import { add, throttle } from "lodash-es";
-import { BaseStyledTextField } from "@/components/base/base-styled-text-field";
+import { throttle } from "lodash-es";
 import { readTextFile } from "@tauri-apps/plugin-fs";
-import { readText } from "@tauri-apps/plugin-clipboard-manager";
 import { useLocation } from "react-router-dom";
 import { useListen } from "@/hooks/use-listen";
-import { listen } from "@tauri-apps/api/event";
 import { TauriEvent } from "@tauri-apps/api/event";
 
 const ProfilePage = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const { addListener } = useListen();
-  const [url, setUrl] = useState("");
-  const [disabled, setDisabled] = useState(false);
   const [activatings, setActivatings] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -136,6 +115,7 @@ const ProfilePage = () => {
 
   const viewerRef = useRef<ProfileViewerRef>(null);
   const configRef = useRef<DialogRef>(null);
+  const globalEnhanceRef = useRef<DialogRef>(null);
 
   // distinguish type
   const profileItems = useMemo(() => {
@@ -148,26 +128,6 @@ const ProfilePage = () => {
 
   const currentActivatings = () => {
     return [...new Set([profiles.current ?? ""])].filter(Boolean);
-  };
-
-  const onImport = async () => {
-    if (!url) return;
-    setLoading(true);
-
-    try {
-      await importProfile(url);
-      Notice.success(t("Profile Imported Successfully"));
-      setUrl("");
-      setLoading(false);
-      mutateProfiles();
-      await onEnhance(false);
-    } catch (err: any) {
-      Notice.error(err.message || err.toString());
-      setLoading(false);
-    } finally {
-      setDisabled(false);
-      setLoading(false);
-    }
   };
 
   const onDragEnd = async (event: DragEndEvent) => {
@@ -274,17 +234,6 @@ const ProfilePage = () => {
     });
   });
 
-  const onCopyLink = async () => {
-    const text = await readText();
-    if (text) setUrl(text);
-  };
-
-  const mode = useThemeMode();
-  const islight = mode === "light" ? true : false;
-  const dividercolor = islight
-    ? "rgba(0, 0, 0, 0.06)"
-    : "rgba(255, 255, 255, 0.06)";
-
   return (
     <BasePage
       full
@@ -292,14 +241,20 @@ const ProfilePage = () => {
       contentStyle={{ height: "100%" }}
       header={
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          {/* <IconButton
-            size="small"
-            color="inherit"
-            title={t("Update All Profiles")}
-            onClick={onUpdateAll}
+          <FluentButton
+            appearance="primary"
+            onClick={() => viewerRef.current?.create()}
           >
-            <RefreshRounded />
-          </IconButton> */}
+            {t("New")}
+          </FluentButton>
+
+          <FluentButton
+            icon={<PuzzlePieceRegular />}
+            title={t("Global Enhancement")}
+            onClick={() => globalEnhanceRef.current?.open()}
+            appearance="subtle"
+          />
+
           <FluentButton
             icon={<ArrowClockwiseRegular />}
             title={t("Update All Profiles")}
@@ -307,14 +262,6 @@ const ProfilePage = () => {
             appearance="subtle"
           />
 
-          {/* <IconButton
-            size="small"
-            color="inherit"
-            title={t("View Runtime Config")}
-            onClick={() => configRef.current?.open()}
-          >
-            <TextSnippetOutlined />
-          </IconButton> */}
           <FluentButton
             icon={<DocumentBulletListRegular />}
             title={t("View Runtime Config")}
@@ -322,14 +269,6 @@ const ProfilePage = () => {
             appearance="subtle"
           />
 
-          {/* <IconButton
-            size="small"
-            color="primary"
-            title={t("Reactivate Profiles")}
-            onClick={() => onEnhance(true)}
-          >
-            <LocalFireDepartmentRounded />
-          </IconButton> */}
           <FluentButton
             icon={<FireFilled />}
             title={t("Reactivate Profiles")}
@@ -339,97 +278,12 @@ const ProfilePage = () => {
         </Box>
       }
     >
-      <Stack
-        direction="row"
-        spacing={1}
-        sx={{
-          pt: 1,
-          mb: 0.5,
-          mx: "20px",
-          height: "36px",
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        {/* <BaseStyledTextField */}
-        <Input
-          value={url}
-          // variant="outlined"
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder={t("Profile URL")}
-          contentAfter={
-            <FluentButton
-              className="fds-subtle"
-              onClick={!url ? onCopyLink : () => setUrl("")}
-              icon={!url ? <ClipboardPasteRegular /> : <DismissRegular />}
-              size="small"
-              appearance="subtle"
-            />
-          }
-          style={{ flex: 1 }}
-          // InputProps={{
-          //   sx: { pr: 1 },
-          //   endAdornment: !url ? (
-          //     <IconButton
-          //       size="small"
-          //       sx={{ p: 0.5 }}
-          //       title={t("Paste")}
-          //       onClick={onCopyLink}
-          //     >
-          //       <ContentPasteRounded fontSize="inherit" />
-          //     </IconButton>
-          //   ) : (
-          //     <IconButton
-          //       size="small"
-          //       sx={{ p: 0.5 }}
-          //       title={t("Clear")}
-          //       onClick={() => setUrl("")}
-          //     >
-          //       <ClearRounded fontSize="inherit" />
-          //     </IconButton>
-          //   ),
-          // }}
-        />
-        {/* <LoadingButton
-          disabled={!url || disabled}
-          loading={loading}
-          variant="contained"
-          size="small"
-          sx={{ borderRadius: "6px" }}
-          onClick={onImport}
-        >
-          {t("Import")}
-        </LoadingButton> */}
-        <FluentButton
-          disabled={!url || disabled}
-          onClick={onImport}
-          icon={loading ? <Spinner size="tiny" /> : null}
-          className="fds"
-        >
-          {t("Import")}
-        </FluentButton>
-        {/* <Button
-          variant="contained"
-          size="small"
-          sx={{ borderRadius: "6px" }}
-          onClick={() => viewerRef.current?.create()}
-        >
-          {t("New")}
-        </Button> */}
-        <FluentButton
-          appearance="primary"
-          onClick={() => viewerRef.current?.create()}
-        >
-          {t("New")}
-        </FluentButton>
-      </Stack>
       <Box
         sx={{
           pt: 1,
-          mb: 0.5,
-          pl: "20px",
-          mr: "20px",
-          height: "calc(100% - 68px)",
+          pb: 1,
+          px: "20px",
+          height: "100%",
           overflowY: "auto",
         }}
       >
@@ -438,67 +292,35 @@ const ProfilePage = () => {
           collisionDetection={closestCenter}
           onDragEnd={onDragEnd}
         >
-          <Box sx={{ mb: 1.5 }}>
-            <Grid2 container spacing={{ xs: 1, lg: 1 }}>
-              <SortableContext
-                items={profileItems.map((x) => {
-                  return x.uid;
-                })}
-              >
-                {profileItems.map((item) => (
-                  <Grid2 size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={item.file}>
-                    <ProfileItem
-                      id={item.uid}
-                      selected={profiles.current === item.uid}
-                      activating={activatings.includes(item.uid)}
-                      itemData={item}
-                      onSelect={(f) => onSelect(item.uid, f)}
-                      onEdit={() => viewerRef.current?.edit(item)}
-                      onSave={async (prev, curr) => {
-                        if (prev !== curr && profiles.current === item.uid) {
-                          await onEnhance(false);
-                          await restartCore();
-                          Notice.success(t("Clash Core Restarted"), 1000);
-                        }
-                      }}
-                      onDelete={() => onDelete(item.uid)}
-                    />
-                  </Grid2>
-                ))}
-              </SortableContext>
-            </Grid2>
-          </Box>
-        </DndContext>
-        <Divider
-          variant="middle"
-          flexItem
-          sx={{ width: `calc(100% - 32px)`, borderColor: dividercolor }}
-        ></Divider>
-        <Box sx={{ mt: 1.5 }}>
           <Grid2 container spacing={{ xs: 1, lg: 1 }}>
-            <Grid2 size={{ xs: 12, sm: 6, md: 6, lg: 6 }}>
-              <ProfileMore
-                id="Merge"
-                onSave={async (prev, curr) => {
-                  if (prev !== curr) {
-                    await onEnhance(false);
-                  }
-                }}
-              />
-            </Grid2>
-            <Grid2 size={{ xs: 12, sm: 6, md: 6, lg: 6 }}>
-              <ProfileMore
-                id="Script"
-                logInfo={chainLogs["Script"]}
-                onSave={async (prev, curr) => {
-                  if (prev !== curr) {
-                    await onEnhance(false);
-                  }
-                }}
-              />
-            </Grid2>
+            <SortableContext
+              items={profileItems.map((x) => {
+                return x.uid;
+              })}
+            >
+              {profileItems.map((item) => (
+                <Grid2 size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={item.file}>
+                  <ProfileItem
+                    id={item.uid}
+                    selected={profiles.current === item.uid}
+                    activating={activatings.includes(item.uid)}
+                    itemData={item}
+                    onSelect={(f) => onSelect(item.uid, f)}
+                    onEdit={() => viewerRef.current?.edit(item)}
+                    onSave={async (prev, curr) => {
+                      if (prev !== curr && profiles.current === item.uid) {
+                        await onEnhance(false);
+                        await restartCore();
+                        Notice.success(t("Clash Core Restarted"), 1000);
+                      }
+                    }}
+                    onDelete={() => onDelete(item.uid)}
+                  />
+                </Grid2>
+              ))}
+            </SortableContext>
           </Grid2>
-        </Box>
+        </DndContext>
       </Box>
 
       <ProfileViewer
@@ -509,6 +331,15 @@ const ProfilePage = () => {
         }}
       />
       <ConfigViewer ref={configRef} />
+      <GlobalEnhanceViewer
+        ref={globalEnhanceRef}
+        logInfo={chainLogs["Script"]}
+        onSave={async (prev, curr) => {
+          if (prev !== curr) {
+            await onEnhance(false);
+          }
+        }}
+      />
     </BasePage>
   );
 };

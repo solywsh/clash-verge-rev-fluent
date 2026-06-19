@@ -15,7 +15,15 @@ import {
   styled,
   TextField,
 } from "@mui/material";
-import { Field, Radio, RadioGroup } from "@fluentui/react-components";
+import {
+  Accordion,
+  AccordionHeader,
+  AccordionItem,
+  AccordionPanel,
+  Switch as FluentSwitch,
+  Tab,
+  TabList,
+} from "@fluentui/react-components";
 import { createProfile, patchProfile } from "@/services/cmds";
 import { BaseDialog, Notice, Switch } from "@/components/base";
 import { version } from "@root/package.json";
@@ -29,6 +37,9 @@ export interface ProfileViewerRef {
   create: () => void;
   edit: (item: IProfileItem) => void;
 }
+
+// Default auto-update interval: 1 day.
+const DEFAULT_INTERVAL = 1440;
 
 // create or edit the profile
 // remote / local
@@ -51,6 +62,7 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
         option: {
           with_proxy: false,
           self_proxy: false,
+          update_interval: DEFAULT_INTERVAL,
         },
       },
     });
@@ -91,6 +103,8 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
             throw new Error("The URL should not be null");
           }
 
+          // update_interval > 0 means auto-update is on; 0 / empty means off,
+          // so drop the field entirely in that case.
           if (form.option?.update_interval) {
             form.option.update_interval = +form.option.update_interval;
           } else {
@@ -142,6 +156,10 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
     const isRemote = formType === "remote";
     const isLocal = formType === "local";
 
+    // Auto-update toggle is derived from update_interval (>0 = on).
+    const updateInterval = Number(watch("option.update_interval")) || 0;
+    const autoUpdate = updateInterval > 0;
+
     return (
       <BaseDialog
         open={open}
@@ -154,24 +172,28 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
         onOk={handleOk}
         loading={loading}
       >
+        {/* Remote / Local switch as Fluent Tabs (i18n). Locked while editing,
+            since a profile's type can't change after creation. */}
         <Controller
           name="type"
           control={control}
           render={({ field }) => (
-            // Fluent RadioGroup instead of a MUI <Select>: the MUI dropdown
-            // portals outside the Fluent modal Dialog and gets trapped/clipped,
-            // so the "local" option was unreachable. An inline radio avoids the
-            // portal entirely.
-            <Field label={t("Type")} style={{ marginTop: 8, marginBottom: 8 }}>
-              <RadioGroup
-                layout="horizontal"
-                value={field.value ?? "remote"}
-                onChange={(_, data) => field.onChange(data.value)}
-              >
-                <Radio value="remote" label="Remote" />
-                <Radio value="local" label="Local" />
-              </RadioGroup>
-            </Field>
+            <TabList
+              selectedValue={field.value ?? "remote"}
+              onTabSelect={(_, data) => field.onChange(data.value)}
+              style={{ marginBottom: 4 }}
+            >
+              {(openType === "new" || field.value === "remote") && (
+                <Tab value="remote" disabled={openType === "edit"}>
+                  {t("Remote")}
+                </Tab>
+              )}
+              {(openType === "new" || field.value === "local") && (
+                <Tab value="local" disabled={openType === "edit"}>
+                  {t("Local")}
+                </Tab>
+              )}
+            </TabList>
           )}
         />
 
@@ -206,39 +228,28 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
               )}
             />
 
-            <Controller
-              name="option.user_agent"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...text}
-                  {...field}
-                  placeholder={`clash-verge/v${version}`}
-                  label="User Agent"
-                />
-              )}
-            />
-          </>
-        )}
-
-        {(isRemote || isLocal) && (
-          <Controller
-            name="option.update_interval"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...text}
-                {...field}
-                type="number"
-                label={t("Update Interval")}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">{t("mins")}</InputAdornment>
-                  ),
-                }}
+            <Box
+              sx={{
+                mt: 1.5,
+                mb: 0.5,
+                mx: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <InputLabel>{t("Auto Update")}</InputLabel>
+              <FluentSwitch
+                checked={autoUpdate}
+                onChange={(_, data) =>
+                  formIns.setValue(
+                    "option.update_interval",
+                    data.checked ? DEFAULT_INTERVAL : 0,
+                  )
+                }
               />
-            )}
-          />
+            </Box>
+          </>
         )}
 
         {isLocal && openType === "new" && (
@@ -251,40 +262,93 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
         )}
 
         {isRemote && (
-          <>
-            <Controller
-              name="option.with_proxy"
-              control={control}
-              render={({ field }) => (
-                <StyledBox>
-                  <InputLabel>{t("Use System Proxy")}</InputLabel>
-                  <Switch checked={field.value} {...field} color="primary" />
-                </StyledBox>
-              )}
-            />
+          <Accordion collapsible style={{ marginTop: 8 }}>
+            <AccordionItem value="advanced">
+              <AccordionHeader>{t("Advanced")}</AccordionHeader>
+              <AccordionPanel>
+                <Controller
+                  name="option.update_interval"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...text}
+                      {...field}
+                      disabled={!autoUpdate}
+                      type="number"
+                      label={t("Update Interval")}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            {t("mins")}
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  )}
+                />
 
-            <Controller
-              name="option.self_proxy"
-              control={control}
-              render={({ field }) => (
-                <StyledBox>
-                  <InputLabel>{t("Use Clash Proxy")}</InputLabel>
-                  <Switch checked={field.value} {...field} color="primary" />
-                </StyledBox>
-              )}
-            />
+                <Controller
+                  name="option.user_agent"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...text}
+                      {...field}
+                      placeholder={`clash-verge/v${version}`}
+                      label="User Agent"
+                    />
+                  )}
+                />
 
-            <Controller
-              name="option.danger_accept_invalid_certs"
-              control={control}
-              render={({ field }) => (
-                <StyledBox>
-                  <InputLabel>{t("Accept Invalid Certs (Danger)")}</InputLabel>
-                  <Switch checked={field.value} {...field} color="primary" />
-                </StyledBox>
-              )}
-            />
-          </>
+                <Controller
+                  name="option.with_proxy"
+                  control={control}
+                  render={({ field }) => (
+                    <StyledBox>
+                      <InputLabel>{t("Use System Proxy")}</InputLabel>
+                      <Switch
+                        checked={field.value}
+                        {...field}
+                        color="primary"
+                      />
+                    </StyledBox>
+                  )}
+                />
+
+                <Controller
+                  name="option.self_proxy"
+                  control={control}
+                  render={({ field }) => (
+                    <StyledBox>
+                      <InputLabel>{t("Use Clash Proxy")}</InputLabel>
+                      <Switch
+                        checked={field.value}
+                        {...field}
+                        color="primary"
+                      />
+                    </StyledBox>
+                  )}
+                />
+
+                <Controller
+                  name="option.danger_accept_invalid_certs"
+                  control={control}
+                  render={({ field }) => (
+                    <StyledBox>
+                      <InputLabel>
+                        {t("Accept Invalid Certs (Danger)")}
+                      </InputLabel>
+                      <Switch
+                        checked={field.value}
+                        {...field}
+                        color="primary"
+                      />
+                    </StyledBox>
+                  )}
+                />
+              </AccordionPanel>
+            </AccordionItem>
+          </Accordion>
         )}
       </BaseDialog>
     );
