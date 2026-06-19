@@ -30,6 +30,7 @@ import getSystem from "@/utils/get-system";
 import "dayjs/locale/ru";
 import "dayjs/locale/zh-cn";
 import { getPortableFlag } from "@/services/cmds";
+import { startRuleHitCounter } from "@/services/rule-hit-counter";
 import React from "react";
 import { TransitionGroup, CSSTransition } from "react-transition-group";
 import { useListen } from "@/hooks/use-listen";
@@ -119,6 +120,10 @@ const Layout = () => {
       await appWindow.show();
       await appWindow.setFocus();
     }, 50);
+
+    // Begin accumulating rule-hit counts for the Rules page. Runs for the whole
+    // app lifetime so counts keep growing regardless of the active page.
+    startRuleHitCounter();
   }, []);
 
   useEffect(() => {
