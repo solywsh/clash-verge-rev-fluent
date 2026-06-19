@@ -1,5 +1,5 @@
 import useSWR from "swr";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLockFn } from "ahooks";
 import {
@@ -97,13 +97,19 @@ export const SettingLandingHeader = () => {
   const { data: isAdmin = false } = useSWR("appIsAdmin", appIsAdmin);
   const {
     data: updateInfo,
-    isValidating: checking,
+    isValidating: validating,
     mutate: recheckUpdate,
   } = useSWR("checkUpdate", () => checkUpdateThrottled(), {
     errorRetryCount: 2,
     revalidateIfStale: false,
     focusThrottleInterval: 36e5, // 1 hour
   });
+
+  // SWR's isValidating only flips during a revalidation; the manual check
+  // mutates the cache directly (revalidate: false), so track it separately to
+  // keep the refresh icon spinning while it runs.
+  const [manualChecking, setManualChecking] = useState(false);
+  const checking = validating || manualChecking;
 
   // get_system_info returns "Key: Value" lines; pull out the OS version.
   const info: Record<string, string> = {};
@@ -120,6 +126,7 @@ export const SettingLandingHeader = () => {
   const updateAvailable = !!updateInfo?.available;
 
   const onCheckUpdate = useLockFn(async () => {
+    setManualChecking(true);
     try {
       // Manual check bypasses the cooldown and writes the result back into the
       // shared SWR cache (without an extra revalidation).
@@ -133,6 +140,8 @@ export const SettingLandingHeader = () => {
       }
     } catch (err: any) {
       Notice.error(err?.message || err?.toString());
+    } finally {
+      setManualChecking(false);
     }
   });
 
