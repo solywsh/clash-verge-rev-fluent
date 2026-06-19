@@ -18,6 +18,10 @@ import {
   ArrowDownloadRegular,
   PlugConnectedRegular,
   ArrowSyncRegular,
+  ArrowRoutingRegular,
+  DocumentBulletListRegular,
+  GlobeRegular,
+  DesktopRegular,
   EyeRegular,
   EyeOffRegular,
 } from "@fluentui/react-icons";
@@ -257,7 +261,7 @@ export const ClashModeCard = () => {
   });
 
   return (
-    <EnhancedCard title={t("Proxy Mode")} icon={<ArrowSyncRegular />}>
+    <EnhancedCard title={t("Proxy Mode")} icon={<ArrowRoutingRegular />}>
       <div className={c.modeRow}>
         {MODES.map((m) => (
           <Button
@@ -288,7 +292,10 @@ export const HomeProfileCard = () => {
   const percent = total > 0 ? Math.round(ratio * 100) : 0;
 
   return (
-    <EnhancedCard title={t("Current Profile")} icon={<ArrowSyncRegular />}>
+    <EnhancedCard
+      title={t("Current Profile")}
+      icon={<DocumentBulletListRegular />}
+    >
       {current ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <Row label={t("Name")} value={current.name ?? "-"} />
@@ -353,7 +360,7 @@ export const ProxyTunCard = () => {
   );
 
   return (
-    <EnhancedCard title={t("Network")} icon={<PlugConnectedRegular />}>
+    <EnhancedCard title={t("Network")} icon={<GlobeRegular />}>
       <div className={c.rows}>
         <div className={c.row}>
           <Caption1 className={c.label}>{t("System Proxy")}</Caption1>
@@ -467,7 +474,7 @@ export const SystemInfoCard = () => {
   const kernel = info["System kernel Version"] || "";
 
   return (
-    <EnhancedCard title={t("System Info")} icon={<PlugConnectedRegular />}>
+    <EnhancedCard title={t("System Info")} icon={<DesktopRegular />}>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <Row label={t("OS")} value={osVersion} />
         <Row label={t("Architecture")} value={arch} />
