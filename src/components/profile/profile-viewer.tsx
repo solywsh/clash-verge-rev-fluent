@@ -9,10 +9,6 @@ import { useLockFn } from "ahooks";
 import { useTranslation } from "react-i18next";
 import { useForm, Controller } from "react-hook-form";
 import {
-  Accordion,
-  AccordionHeader,
-  AccordionItem,
-  AccordionPanel,
   Field,
   Input,
   Label,
@@ -21,6 +17,7 @@ import {
   TabList,
   Textarea,
 } from "@fluentui/react-components";
+import { ChevronDownRegular, ChevronRightRegular } from "@fluentui/react-icons";
 import { createProfile, patchProfile } from "@/services/cmds";
 import { tokens } from "@/pages/_fluent_theme";
 import { BaseDialog, Notice } from "@/components/base";
@@ -39,12 +36,28 @@ export interface ProfileViewerRef {
 // Default auto-update interval: 1 day.
 const DEFAULT_INTERVAL = 1440;
 
-// A label-left / control-right row used for the inline switches.
+// A label-left / control-right row used for the inline switches; min-height
+// keeps it on the same vertical rhythm as the stacked Field rows.
 const switchRow: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
   gap: 8,
+  minHeight: 32,
+};
+
+// "Advanced" disclosure toggle, left-aligned to the form fields (no indent).
+const advToggle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+  padding: 0,
+  border: "none",
+  background: "none",
+  font: "inherit",
+  fontWeight: 600,
+  cursor: "pointer",
+  color: tokens.colorNeutralForeground1,
 };
 
 // create or edit the profile
@@ -55,6 +68,7 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
     const [open, setOpen] = useState(false);
     const [openType, setOpenType] = useState<"new" | "edit">("new");
     const [loading, setLoading] = useState(false);
+    const [advOpen, setAdvOpen] = useState(false);
 
     // file input
     const fileDataRef = useRef<string | null>(null);
@@ -306,101 +320,106 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
           )}
 
           {isRemote && (
-            <Accordion collapsible>
-              <AccordionItem value="advanced">
-                <AccordionHeader>{t("Advanced")}</AccordionHeader>
-                <AccordionPanel>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 12,
-                      paddingTop: 8,
-                    }}
-                  >
-                    <Controller
-                      name="option.update_interval"
-                      control={control}
-                      render={({ field }) => (
-                        <Field label={t("Update Interval")}>
-                          <Input
-                            type="number"
-                            disabled={!autoUpdate}
-                            value={field.value?.toString() ?? ""}
-                            onChange={(_, data) =>
-                              field.onChange(
-                                data.value === "" ? 0 : Number(data.value),
-                              )
-                            }
-                            contentAfter={
-                              <span style={{ whiteSpace: "nowrap" }}>
-                                {t("mins")}
-                              </span>
-                            }
-                          />
-                        </Field>
-                      )}
-                    />
+            <>
+              <button
+                type="button"
+                onClick={() => setAdvOpen((o) => !o)}
+                style={advToggle}
+              >
+                {advOpen ? <ChevronDownRegular /> : <ChevronRightRegular />}
+                <span>{t("Advanced")}</span>
+              </button>
 
-                    <Controller
-                      name="option.user_agent"
-                      control={control}
-                      render={({ field }) => (
-                        <Field label="User Agent">
-                          <Input
-                            placeholder={`clash-verge/v${version}`}
-                            value={field.value ?? ""}
-                            onChange={(_, data) => field.onChange(data.value)}
-                          />
-                        </Field>
-                      )}
-                    />
+              {advOpen && (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 12,
+                  }}
+                >
+                  <Controller
+                    name="option.update_interval"
+                    control={control}
+                    render={({ field }) => (
+                      <Field label={t("Update Interval")}>
+                        <Input
+                          type="number"
+                          disabled={!autoUpdate}
+                          value={field.value?.toString() ?? ""}
+                          onChange={(_, data) =>
+                            field.onChange(
+                              data.value === "" ? 0 : Number(data.value),
+                            )
+                          }
+                          contentAfter={
+                            <span style={{ whiteSpace: "nowrap" }}>
+                              {t("mins")}
+                            </span>
+                          }
+                        />
+                      </Field>
+                    )}
+                  />
 
-                    <Controller
-                      name="option.with_proxy"
-                      control={control}
-                      render={({ field }) => (
-                        <div style={switchRow}>
-                          <Label>{t("Use System Proxy")}</Label>
-                          <FluentSwitch
-                            checked={!!field.value}
-                            onChange={(_, data) => field.onChange(data.checked)}
-                          />
-                        </div>
-                      )}
-                    />
+                  <Controller
+                    name="option.user_agent"
+                    control={control}
+                    render={({ field }) => (
+                      <Field label="User Agent">
+                        <Input
+                          placeholder={`clash-verge/v${version}`}
+                          value={field.value ?? ""}
+                          onChange={(_, data) => field.onChange(data.value)}
+                        />
+                      </Field>
+                    )}
+                  />
 
-                    <Controller
-                      name="option.self_proxy"
-                      control={control}
-                      render={({ field }) => (
-                        <div style={switchRow}>
-                          <Label>{t("Use Clash Proxy")}</Label>
-                          <FluentSwitch
-                            checked={!!field.value}
-                            onChange={(_, data) => field.onChange(data.checked)}
-                          />
-                        </div>
-                      )}
-                    />
+                  <Controller
+                    name="option.with_proxy"
+                    control={control}
+                    render={({ field }) => (
+                      <div style={switchRow}>
+                        <Label>{t("Use System Proxy")}</Label>
+                        <FluentSwitch
+                          checked={!!field.value}
+                          onChange={(_, data) => field.onChange(data.checked)}
+                        />
+                      </div>
+                    )}
+                  />
 
-                    <Controller
-                      name="option.danger_accept_invalid_certs"
-                      control={control}
-                      render={({ field }) => (
-                        <div style={switchRow}>
-                          <Label>{t("Accept Invalid Certs (Danger)")}</Label>
-                          <FluentSwitch
-                            checked={!!field.value}
-                            onChange={(_, data) => field.onChange(data.checked)}
-                          />
-                        </div>
-                      )}
-                    />
-                  </div>
-                </AccordionPanel>
-              </AccordionItem>
-            </Accordion>
+                  <Controller
+                    name="option.self_proxy"
+                    control={control}
+                    render={({ field }) => (
+                      <div style={switchRow}>
+                        <Label>{t("Use Clash Proxy")}</Label>
+                        <FluentSwitch
+                          checked={!!field.value}
+                          onChange={(_, data) => field.onChange(data.checked)}
+                        />
+                      </div>
+                    )}
+                  />
+
+                  <Controller
+                    name="option.danger_accept_invalid_certs"
+                    control={control}
+                    render={({ field }) => (
+                      <div style={switchRow}>
+                        <Label>{t("Accept Invalid Certs (Danger)")}</Label>
+                        <FluentSwitch
+                          checked={!!field.value}
+                          onChange={(_, data) => field.onChange(data.checked)}
+                        />
+                      </div>
+                    )}
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
       </BaseDialog>
