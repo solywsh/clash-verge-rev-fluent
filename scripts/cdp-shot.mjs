@@ -1,13 +1,12 @@
 // Quick CDP helper: navigate the SPA and screenshot.
 // Usage: node scripts/cdp-shot.mjs <outfile> [evalExpr]
 import { writeFileSync } from "node:fs";
+import { resolveWsUrl } from "./cdp-target.mjs";
 
-const PAGE_ID = "822B1BB194818A72CBE5005F04F200CA";
-const WS = `ws://localhost:9222/devtools/page/${PAGE_ID}`;
 const out = process.argv[2] || "shot.png";
 const evalExpr = process.argv[3] || null;
 
-const ws = new WebSocket(WS);
+const ws = new WebSocket(await resolveWsUrl());
 let id = 0;
 const pending = new Map();
 const send = (method, params = {}) =>

@@ -1,13 +1,12 @@
 // Real CDP mouse click at the center of the element matched by a selector-fn.
 // Usage: node scripts/cdp-click.mjs "<js returning an element rect {x,y,w,h}>"
 import { writeFileSync } from "node:fs";
+import { resolveWsUrl } from "./cdp-target.mjs";
 
-const PAGE_ID = "822B1BB194818A72CBE5005F04F200CA";
-const WS = `ws://localhost:9222/devtools/page/${PAGE_ID}`;
 const rectExpr = process.argv[2];
 const out = process.argv[3] || "click.png";
 
-const ws = new WebSocket(WS);
+const ws = new WebSocket(await resolveWsUrl());
 let id = 0;
 const pending = new Map();
 const send = (method, params = {}) =>
