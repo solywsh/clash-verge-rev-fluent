@@ -35,7 +35,6 @@ export const UpdateViewer = forwardRef<DialogRef>((props, ref) => {
   );
 
   const [downloaded, setDownloaded] = useState(0);
-  const [buffer, setBuffer] = useState(0);
   const [total, setTotal] = useState(0);
 
   useImperativeHandle(ref, () => ({
@@ -69,17 +68,19 @@ export const UpdateViewer = forwardRef<DialogRef>((props, ref) => {
     }
     if (updateState) return;
     setUpdateState(true);
+    // Reset progress for a fresh download (avoid stale values when re-opened).
+    setDownloaded(0);
+    setTotal(0);
     if (eventListener !== null) {
       eventListener();
     }
     eventListener = await addListener(
       "tauri://update-download-progress",
       (e: Event<any>) => {
-        setTotal(e.payload.contentLength);
-        setBuffer(e.payload.chunkLength);
-        setDownloaded((a) => {
-          return a + e.payload.chunkLength;
-        });
+        // contentLength only arrives with the "Started" event; keep it once set.
+        const { contentLength, chunkLength } = e.payload ?? {};
+        if (contentLength) setTotal(contentLength);
+        setDownloaded((a) => a + (chunkLength ?? 0));
       },
     );
     try {
@@ -138,9 +139,8 @@ export const UpdateViewer = forwardRef<DialogRef>((props, ref) => {
       </Box>
       {updateState && (
         <LinearProgress
-          variant="buffer"
-          value={(downloaded / total) * 100}
-          valueBuffer={buffer}
+          variant={total > 0 ? "determinate" : "indeterminate"}
+          value={total > 0 ? Math.min((downloaded / total) * 100, 100) : 0}
           sx={{ marginTop: "5px" }}
         />
       )}
