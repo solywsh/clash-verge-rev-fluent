@@ -9,23 +9,20 @@ import { useLockFn } from "ahooks";
 import { useTranslation } from "react-i18next";
 import { useForm, Controller } from "react-hook-form";
 import {
-  Box,
-  InputAdornment,
-  InputLabel,
-  styled,
-  TextField,
-} from "@mui/material";
-import {
   Accordion,
   AccordionHeader,
   AccordionItem,
   AccordionPanel,
+  Field,
+  Input,
+  Label,
   Switch as FluentSwitch,
   Tab,
   TabList,
+  Textarea,
 } from "@fluentui/react-components";
 import { createProfile, patchProfile } from "@/services/cmds";
-import { BaseDialog, Notice, Switch } from "@/components/base";
+import { BaseDialog, Notice } from "@/components/base";
 import { version } from "@root/package.json";
 import { FileInput } from "./file-input";
 
@@ -40,6 +37,14 @@ export interface ProfileViewerRef {
 
 // Default auto-update interval: 1 day.
 const DEFAULT_INTERVAL = 1440;
+
+// A label-left / control-right row used for the inline switches.
+const switchRow: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 8,
+};
 
 // create or edit the profile
 // remote / local
@@ -143,15 +148,6 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
       setTimeout(() => formIns.reset(), 500);
     };
 
-    const text = {
-      fullWidth: true,
-      size: "small",
-      margin: "normal",
-      variant: "outlined",
-      autoComplete: "off",
-      autoCorrect: "off",
-    } as const;
-
     const formType = watch("type");
     const isRemote = formType === "remote";
     const isLocal = formType === "local";
@@ -164,7 +160,7 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
       <BaseDialog
         open={open}
         title={openType === "new" ? t("Create Profile") : t("Edit Profile")}
-        contentSx={{ width: 375, pb: 0, maxHeight: "80%" }}
+        contentSx={{ width: 360, pb: 0, maxHeight: "80%" }}
         okBtn={t("Save")}
         cancelBtn={t("Cancel")}
         onClose={handleClose}
@@ -172,192 +168,199 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
         onOk={handleOk}
         loading={loading}
       >
-        {/* Remote / Local switch as Fluent Tabs (i18n). Locked while editing,
-            since a profile's type can't change after creation. */}
-        <Controller
-          name="type"
-          control={control}
-          render={({ field }) => (
-            <TabList
-              selectedValue={field.value ?? "remote"}
-              onTabSelect={(_, data) => field.onChange(data.value)}
-              style={{ marginBottom: 4 }}
-            >
-              {(openType === "new" || field.value === "remote") && (
-                <Tab value="remote" disabled={openType === "edit"}>
-                  {t("Remote")}
-                </Tab>
-              )}
-              {(openType === "new" || field.value === "local") && (
-                <Tab value="local" disabled={openType === "edit"}>
-                  {t("Local")}
-                </Tab>
-              )}
-            </TabList>
-          )}
-        />
-
-        <Controller
-          name="name"
-          control={control}
-          render={({ field }) => (
-            <TextField {...text} {...field} label={t("Name")} />
-          )}
-        />
-
-        <Controller
-          name="desc"
-          control={control}
-          render={({ field }) => (
-            <TextField {...text} {...field} label={t("Descriptions")} />
-          )}
-        />
-
-        {isRemote && (
-          <>
-            <Controller
-              name="url"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...text}
-                  {...field}
-                  multiline
-                  label={t("Subscription URL")}
-                />
-              )}
-            />
-
-            <Box
-              sx={{
-                mt: 1.5,
-                mb: 0.5,
-                mx: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <InputLabel>{t("Auto Update")}</InputLabel>
-              <FluentSwitch
-                checked={autoUpdate}
-                onChange={(_, data) =>
-                  formIns.setValue(
-                    "option.update_interval",
-                    data.checked ? DEFAULT_INTERVAL : 0,
-                  )
-                }
-              />
-            </Box>
-          </>
-        )}
-
-        {isLocal && openType === "new" && (
-          <FileInput
-            onChange={(file, val) => {
-              formIns.setValue("name", formIns.getValues("name") || file.name);
-              fileDataRef.current = val;
-            }}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {/* Remote / Local switch as Fluent Tabs (i18n). Locked while editing,
+              since a profile's type can't change after creation. */}
+          <Controller
+            name="type"
+            control={control}
+            render={({ field }) => (
+              <TabList
+                selectedValue={field.value ?? "remote"}
+                onTabSelect={(_, data) => field.onChange(data.value)}
+              >
+                {(openType === "new" || field.value === "remote") && (
+                  <Tab value="remote" disabled={openType === "edit"}>
+                    {t("Remote")}
+                  </Tab>
+                )}
+                {(openType === "new" || field.value === "local") && (
+                  <Tab value="local" disabled={openType === "edit"}>
+                    {t("Local")}
+                  </Tab>
+                )}
+              </TabList>
+            )}
           />
-        )}
 
-        {isRemote && (
-          <Accordion collapsible style={{ marginTop: 8 }}>
-            <AccordionItem value="advanced">
-              <AccordionHeader>{t("Advanced")}</AccordionHeader>
-              <AccordionPanel>
-                <Controller
-                  name="option.update_interval"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...text}
-                      {...field}
-                      disabled={!autoUpdate}
-                      type="number"
-                      label={t("Update Interval")}
-                      InputProps={{
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            {t("mins")}
-                          </InputAdornment>
-                        ),
-                      }}
+          <Controller
+            name="name"
+            control={control}
+            render={({ field }) => (
+              <Field label={t("Name")}>
+                <Input
+                  value={field.value ?? ""}
+                  onChange={(_, data) => field.onChange(data.value)}
+                />
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="desc"
+            control={control}
+            render={({ field }) => (
+              <Field label={t("Descriptions")}>
+                <Input
+                  value={field.value ?? ""}
+                  onChange={(_, data) => field.onChange(data.value)}
+                />
+              </Field>
+            )}
+          />
+
+          {isRemote && (
+            <>
+              <Controller
+                name="url"
+                control={control}
+                render={({ field }) => (
+                  <Field label={t("Subscription URL")}>
+                    <Textarea
+                      resize="vertical"
+                      value={field.value ?? ""}
+                      onChange={(_, data) => field.onChange(data.value)}
                     />
-                  )}
-                />
+                  </Field>
+                )}
+              />
 
-                <Controller
-                  name="option.user_agent"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...text}
-                      {...field}
-                      placeholder={`clash-verge/v${version}`}
-                      label="User Agent"
+              <div style={switchRow}>
+                <Label>{t("Auto Update")}</Label>
+                <FluentSwitch
+                  checked={autoUpdate}
+                  onChange={(_, data) =>
+                    formIns.setValue(
+                      "option.update_interval",
+                      data.checked ? DEFAULT_INTERVAL : 0,
+                    )
+                  }
+                />
+              </div>
+            </>
+          )}
+
+          {isLocal && openType === "new" && (
+            <FileInput
+              onChange={(file, val) => {
+                formIns.setValue(
+                  "name",
+                  formIns.getValues("name") || file.name,
+                );
+                fileDataRef.current = val;
+              }}
+            />
+          )}
+
+          {isRemote && (
+            <Accordion collapsible>
+              <AccordionItem value="advanced">
+                <AccordionHeader>{t("Advanced")}</AccordionHeader>
+                <AccordionPanel>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 12,
+                      paddingTop: 8,
+                    }}
+                  >
+                    <Controller
+                      name="option.update_interval"
+                      control={control}
+                      render={({ field }) => (
+                        <Field label={t("Update Interval")}>
+                          <Input
+                            type="number"
+                            disabled={!autoUpdate}
+                            value={field.value?.toString() ?? ""}
+                            onChange={(_, data) =>
+                              field.onChange(
+                                data.value === "" ? 0 : Number(data.value),
+                              )
+                            }
+                            contentAfter={
+                              <span style={{ whiteSpace: "nowrap" }}>
+                                {t("mins")}
+                              </span>
+                            }
+                          />
+                        </Field>
+                      )}
                     />
-                  )}
-                />
 
-                <Controller
-                  name="option.with_proxy"
-                  control={control}
-                  render={({ field }) => (
-                    <StyledBox>
-                      <InputLabel>{t("Use System Proxy")}</InputLabel>
-                      <Switch
-                        checked={field.value}
-                        {...field}
-                        color="primary"
-                      />
-                    </StyledBox>
-                  )}
-                />
+                    <Controller
+                      name="option.user_agent"
+                      control={control}
+                      render={({ field }) => (
+                        <Field label="User Agent">
+                          <Input
+                            placeholder={`clash-verge/v${version}`}
+                            value={field.value ?? ""}
+                            onChange={(_, data) => field.onChange(data.value)}
+                          />
+                        </Field>
+                      )}
+                    />
 
-                <Controller
-                  name="option.self_proxy"
-                  control={control}
-                  render={({ field }) => (
-                    <StyledBox>
-                      <InputLabel>{t("Use Clash Proxy")}</InputLabel>
-                      <Switch
-                        checked={field.value}
-                        {...field}
-                        color="primary"
-                      />
-                    </StyledBox>
-                  )}
-                />
+                    <Controller
+                      name="option.with_proxy"
+                      control={control}
+                      render={({ field }) => (
+                        <div style={switchRow}>
+                          <Label>{t("Use System Proxy")}</Label>
+                          <FluentSwitch
+                            checked={!!field.value}
+                            onChange={(_, data) => field.onChange(data.checked)}
+                          />
+                        </div>
+                      )}
+                    />
 
-                <Controller
-                  name="option.danger_accept_invalid_certs"
-                  control={control}
-                  render={({ field }) => (
-                    <StyledBox>
-                      <InputLabel>
-                        {t("Accept Invalid Certs (Danger)")}
-                      </InputLabel>
-                      <Switch
-                        checked={field.value}
-                        {...field}
-                        color="primary"
-                      />
-                    </StyledBox>
-                  )}
-                />
-              </AccordionPanel>
-            </AccordionItem>
-          </Accordion>
-        )}
+                    <Controller
+                      name="option.self_proxy"
+                      control={control}
+                      render={({ field }) => (
+                        <div style={switchRow}>
+                          <Label>{t("Use Clash Proxy")}</Label>
+                          <FluentSwitch
+                            checked={!!field.value}
+                            onChange={(_, data) => field.onChange(data.checked)}
+                          />
+                        </div>
+                      )}
+                    />
+
+                    <Controller
+                      name="option.danger_accept_invalid_certs"
+                      control={control}
+                      render={({ field }) => (
+                        <div style={switchRow}>
+                          <Label>{t("Accept Invalid Certs (Danger)")}</Label>
+                          <FluentSwitch
+                            checked={!!field.value}
+                            onChange={(_, data) => field.onChange(data.checked)}
+                          />
+                        </div>
+                      )}
+                    />
+                  </div>
+                </AccordionPanel>
+              </AccordionItem>
+            </Accordion>
+          )}
+        </div>
       </BaseDialog>
     );
   },
 );
-
-const StyledBox = styled(Box)(() => ({
-  margin: "8px 0 8px 8px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-}));
