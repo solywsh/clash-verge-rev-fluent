@@ -4,7 +4,12 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import { SWRConfig, mutate } from "swr";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation, useRoutes, useNavigate } from "react-router-dom";
+import {
+  useLocation,
+  useRoutes,
+  useNavigate,
+  Navigate,
+} from "react-router-dom";
 import { List, Paper, ThemeProvider, SvgIcon } from "@mui/material";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { routers } from "./_routers";
@@ -67,7 +72,10 @@ const Layout = () => {
   const location = useLocation();
   const routersEles = useRoutes(routers);
   const { addListener, setupCloseListener } = useListen();
-  if (!routersEles) return null;
+  // No route matched the current path (e.g. a removed page like the old
+  // /test or /unlock that the window was last parked on) — redirect home
+  // instead of rendering nothing, which would leave a blank screen.
+  if (!routersEles) return <Navigate to="/" replace />;
 
   setupCloseListener();
 
