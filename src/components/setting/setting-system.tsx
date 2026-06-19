@@ -123,9 +123,17 @@ const SettingSystem = ({ onError, hideTitle }: Props) => {
         label={t("Service Mode")}
         secondary={t("Service Mode Info")}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            flexShrink: 0,
+          }}
+        >
           <Caption1
             style={{
+              whiteSpace: "nowrap",
               color: serviceAvailable
                 ? tokens.colorPaletteGreenForeground1
                 : tokens.colorNeutralForeground4,
@@ -139,12 +147,14 @@ const SettingSystem = ({ onError, hideTitle }: Props) => {
             <>
               <Button
                 size="small"
+                style={{ flexShrink: 0, whiteSpace: "nowrap" }}
                 onClick={() => runServiceAction(reinstallService)}
               >
                 {t("Reinstall Service")}
               </Button>
               <Button
                 size="small"
+                style={{ flexShrink: 0, whiteSpace: "nowrap" }}
                 onClick={() => runServiceAction(uninstallService)}
               >
                 {t("Uninstall Service")}
@@ -154,6 +164,7 @@ const SettingSystem = ({ onError, hideTitle }: Props) => {
             <Button
               size="small"
               appearance="primary"
+              style={{ flexShrink: 0, whiteSpace: "nowrap" }}
               onClick={() => runServiceAction(installService)}
             >
               {t("Install Service")}

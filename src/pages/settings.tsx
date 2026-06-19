@@ -26,6 +26,7 @@ import SettingAppearance from "@/components/setting/setting-appearance";
 import SettingMaintenance from "@/components/setting/setting-maintenance";
 import SettingClash from "@/components/setting/setting-clash";
 import SettingSystem from "@/components/setting/setting-system";
+import { SettingLandingHeader } from "@/components/setting/setting-landing-header";
 import { tokens } from "@/pages/_fluent_theme";
 
 const useStyles = makeStyles({
@@ -171,6 +172,7 @@ const SettingPage = () => {
         </div>
       ) : (
         <div className={classes.cardGrid}>
+          <SettingLandingHeader />
           {categories.map((c) => (
             <div
               key={c.key}

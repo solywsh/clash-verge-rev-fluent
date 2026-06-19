@@ -108,6 +108,7 @@ const useStyle = makeStyles({
   rightContainer: {
     flex: 1,
     display: "flex",
+    alignItems: "center",
     justifyContent: "flex-end",
     marginLeft: "16px",
     gap: "8px",
