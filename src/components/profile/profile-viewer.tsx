@@ -108,9 +108,12 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
             throw new Error("The URL should not be null");
           }
 
-          // update_interval > 0 means auto-update is on; 0 / empty means off,
-          // so drop the field entirely in that case.
-          if (form.option?.update_interval) {
+          // Local profiles have no remote source, so they never auto-update —
+          // drop the interval. For remote, update_interval > 0 = auto-update on,
+          // 0 / empty = off, so drop the field in that case too.
+          if (form.type === "local") {
+            delete form.option?.update_interval;
+          } else if (form.option?.update_interval) {
             form.option.update_interval = +form.option.update_interval;
           } else {
             delete form.option?.update_interval;
