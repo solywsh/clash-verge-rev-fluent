@@ -322,6 +322,7 @@
   "Reset to Default": "Reset to Default",
   "Tun Mode Info": "Tun (Virtual NIC) mode: Captures all system traffic, when enabled, there is no need to enable system proxy.",
   "Tun Mode Service Required": "Please install the Service Mode first, then enable TUN mode.",
+  "Tun Mode Service Install Guide": "TUN mode requires the privileged system service, which isn't installed yet. Install it now and enable TUN? (A system authorization prompt may appear during installation.)",
   "Stack": "Tun Stack",
   "System and Mixed Can Only be Used in Service Mode": "System and Mixed Can Only be Used in Service Mode",
   "Device": "Device Name",

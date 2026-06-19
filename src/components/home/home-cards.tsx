@@ -36,7 +36,10 @@ import {
   getRunningMode,
   appIsAdmin,
   patchClashConfig,
+  isServiceAvailable,
+  installService,
 } from "@/services/cmds";
+import { BaseDialog, Notice } from "@/components/base";
 import { closeAllConnections } from "tauri-plugin-mihomo-api";
 import { useClash } from "@/hooks/use-clash";
 import { useClashInfo } from "@/hooks/use-clash";
@@ -353,11 +356,49 @@ export const ProxyTunCard = () => {
   const c = useStyles();
   const { verge, patchVerge } = useVerge();
 
-  const toggle = useLockFn(
-    async (key: "enable_system_proxy" | "enable_tun_mode", v: boolean) => {
-      await patchVerge({ [key]: v });
-    },
-  );
+  // Service status: the command resolves to true when reachable and rejects
+  // when not, so treat any error as "not installed".
+  const {
+    data: serviceData,
+    error: serviceError,
+    mutate: mutateServiceStatus,
+  } = useSWR("isServiceAvailable", isServiceAvailable, {
+    revalidateOnFocus: false,
+    shouldRetryOnError: false,
+  });
+  const serviceAvailable = serviceData === true && !serviceError;
+
+  const [installOpen, setInstallOpen] = useState(false);
+  const [installing, setInstalling] = useState(false);
+
+  const toggleSysproxy = useLockFn(async (v: boolean) => {
+    await patchVerge({ enable_system_proxy: v });
+  });
+
+  const toggleTun = useLockFn(async (v: boolean) => {
+    // Enabling TUN requires the privileged service. If it isn't installed,
+    // open a guided install dialog instead of silently failing.
+    if (v && !serviceAvailable) {
+      setInstallOpen(true);
+      return;
+    }
+    await patchVerge({ enable_tun_mode: v });
+  });
+
+  const onInstall = useLockFn(async () => {
+    try {
+      setInstalling(true);
+      await installService();
+      await mutateServiceStatus();
+      await patchVerge({ enable_tun_mode: true });
+      Notice.success(t("Service Operation Success"), 1500);
+      setInstallOpen(false);
+    } catch (err: any) {
+      Notice.error(err?.message ?? err?.toString() ?? String(err), 4000);
+    } finally {
+      setInstalling(false);
+    }
+  });
 
   return (
     <EnhancedCard title={t("Network")} icon={<GlobeRegular />}>
@@ -366,17 +407,30 @@ export const ProxyTunCard = () => {
           <Caption1 className={c.label}>{t("System Proxy")}</Caption1>
           <Switch
             checked={verge?.enable_system_proxy ?? false}
-            onChange={(_, d) => toggle("enable_system_proxy", d.checked)}
+            onChange={(_, d) => toggleSysproxy(d.checked)}
           />
         </div>
         <div className={c.row}>
           <Caption1 className={c.label}>{t("Tun Mode")}</Caption1>
           <Switch
             checked={verge?.enable_tun_mode ?? false}
-            onChange={(_, d) => toggle("enable_tun_mode", d.checked)}
+            onChange={(_, d) => toggleTun(d.checked)}
           />
         </div>
       </div>
+
+      <BaseDialog
+        open={installOpen}
+        title={t("Tun Mode")}
+        okBtn={t("Install Service")}
+        cancelBtn={t("Cancel")}
+        loading={installing}
+        onOk={onInstall}
+        onCancel={() => setInstallOpen(false)}
+        onClose={() => setInstallOpen(false)}
+      >
+        <Body1>{t("Tun Mode Service Install Guide")}</Body1>
+      </BaseDialog>
     </EnhancedCard>
   );
 };
