@@ -10,14 +10,12 @@ import { useTranslation } from "react-i18next";
 import { useForm, Controller } from "react-hook-form";
 import {
   Box,
-  FormControl,
   InputAdornment,
   InputLabel,
-  MenuItem,
-  Select,
   styled,
   TextField,
 } from "@mui/material";
+import { Field, Radio, RadioGroup } from "@fluentui/react-components";
 import { createProfile, patchProfile } from "@/services/cmds";
 import { BaseDialog, Notice, Switch } from "@/components/base";
 import { version } from "@root/package.json";
@@ -122,7 +120,7 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
           Notice.error(err.message || err.toString());
           setLoading(false);
         }
-      })
+      }),
     );
 
     const handleClose = () => {
@@ -160,13 +158,20 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
           name="type"
           control={control}
           render={({ field }) => (
-            <FormControl size="small" fullWidth sx={{ mt: 1, mb: 1 }}>
-              <InputLabel>{t("Type")}</InputLabel>
-              <Select {...field} autoFocus label={t("Type")}>
-                <MenuItem value="remote">Remote</MenuItem>
-                <MenuItem value="local">Local</MenuItem>
-              </Select>
-            </FormControl>
+            // Fluent RadioGroup instead of a MUI <Select>: the MUI dropdown
+            // portals outside the Fluent modal Dialog and gets trapped/clipped,
+            // so the "local" option was unreachable. An inline radio avoids the
+            // portal entirely.
+            <Field label={t("Type")} style={{ marginTop: 8, marginBottom: 8 }}>
+              <RadioGroup
+                layout="horizontal"
+                value={field.value ?? "remote"}
+                onChange={(_, data) => field.onChange(data.value)}
+              >
+                <Radio value="remote" label="Remote" />
+                <Radio value="local" label="Local" />
+              </RadioGroup>
+            </Field>
           )}
         />
 
@@ -283,7 +288,7 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
         )}
       </BaseDialog>
     );
-  }
+  },
 );
 
 const StyledBox = styled(Box)(() => ({
