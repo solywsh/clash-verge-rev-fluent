@@ -4,7 +4,11 @@ import { useTranslation } from "react-i18next";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { Box, Typography } from "@mui/material";
 import { Button } from "@fluentui/react-components";
-import { AddRegular } from "@fluentui/react-icons";
+import {
+  AddRegular,
+  ArrowSortUpRegular,
+  ArrowSortDownRegular,
+} from "@fluentui/react-icons";
 import { getRules } from "@/services/api";
 import { enhanceProfiles } from "@/services/cmds";
 import { useProfiles } from "@/hooks/use-profiles";
@@ -20,6 +24,9 @@ import {
 import { tokens } from "./_fluent_theme";
 import { ScrollTopButton } from "@/components/layout/scroll-top-button";
 
+type SortKey = "index" | "type" | "payload" | "proxy" | "usage";
+type SortDir = "asc" | "desc";
+
 const RulesPage = () => {
   const { t } = useTranslation();
   const { data = [], mutate: mutateRules } = useSWR("getRules", getRules);
@@ -28,23 +35,67 @@ const RulesPage = () => {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>("index");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
-  // Subscribe to cumulative hit-count updates; counts are read per-row below.
-  useRuleHitVersion();
+  // Re-render (and re-sort, when sorting by usage) as hit counts accumulate.
+  const hitVersion = useRuleHitVersion();
+  const usageDep = sortKey === "usage" ? hitVersion : 0;
+
+  // Keep each rule's original config position so the "No." column stays stable
+  // even after sorting/filtering.
+  const indexed = useMemo(
+    () => data.map((item, i) => ({ item, no: i + 1 })),
+    [data],
+  );
 
   const rules = useMemo(() => {
-    return data.filter((item) => match(item.payload));
-  }, [data, match]);
+    const filtered = indexed.filter(({ item }) => match(item.payload));
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      let r = 0;
+      switch (sortKey) {
+        case "index":
+          r = a.no - b.no;
+          break;
+        case "type":
+          r = a.item.type.localeCompare(b.item.type);
+          break;
+        case "payload":
+          r = a.item.payload.localeCompare(b.item.payload);
+          break;
+        case "proxy":
+          r = a.item.proxy.localeCompare(b.item.proxy);
+          break;
+        case "usage":
+          r =
+            getRuleHitCount(a.item.type, a.item.payload) -
+            getRuleHitCount(b.item.type, b.item.payload);
+          break;
+      }
+      // Stable tiebreak by original config order.
+      if (r === 0) r = a.no - b.no;
+      return r * dir;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [indexed, match, sortKey, sortDir, usageDep]);
 
   const scrollToTop = () => {
-    virtuosoRef.current?.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    virtuosoRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleScroll = (e: any) => {
     setShowScrollTop(e.target.scrollTop > 100);
+  };
+
+  const onSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      // Usage reads best high-to-low; text columns read best A-to-Z.
+      setSortDir(key === "usage" ? "desc" : "asc");
+    }
   };
 
   const onAddRule = () => {
@@ -55,6 +106,45 @@ const RulesPage = () => {
     setEditorOpen(true);
   };
 
+  const HeaderCell = ({
+    col,
+    label,
+    align = "left",
+  }: {
+    col: SortKey;
+    label: string;
+    align?: "left" | "center" | "right";
+  }) => (
+    <Box
+      onClick={() => onSort(col)}
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 0.25,
+        justifyContent:
+          align === "right"
+            ? "flex-end"
+            : align === "center"
+              ? "center"
+              : "flex-start",
+        cursor: "pointer",
+        userSelect: "none",
+        color: sortKey === col ? "text.primary" : "text.secondary",
+        "&:hover": { color: "text.primary" },
+      }}
+    >
+      <Typography variant="caption" color="inherit">
+        {label}
+      </Typography>
+      {sortKey === col &&
+        (sortDir === "asc" ? (
+          <ArrowSortUpRegular fontSize={14} />
+        ) : (
+          <ArrowSortDownRegular fontSize={14} />
+        ))}
+    </Box>
+  );
+
   return (
     <BasePage
       full
@@ -62,14 +152,17 @@ const RulesPage = () => {
       contentStyle={{ height: "100%" }}
       header={
         <Box display="flex" alignItems="center" gap={1}>
-          <Box sx={{ width: 240 }}>
+          <Box sx={{ width: 240, display: "flex", flexShrink: 0 }}>
             <BaseSearchBox onSearch={(match) => setMatch(() => match)} />
           </Box>
-          <ProviderButton />
+          <Box sx={{ flexShrink: 0 }}>
+            <ProviderButton />
+          </Box>
           <Button
             appearance="primary"
             icon={<AddRegular />}
             onClick={onAddRule}
+            style={{ flexShrink: 0 }}
           >
             {t("Add Rule")}
           </Button>
@@ -108,7 +201,8 @@ const RulesPage = () => {
           flexDirection: "column",
         }}
       >
-        {/* Column header — uses the same grid template as each rule row. */}
+        {/* Column header — uses the same grid template as each rule row and is
+            click-to-sort. */}
         <Box
           sx={{
             display: "grid",
@@ -121,29 +215,11 @@ const RulesPage = () => {
             flexShrink: 0,
           }}
         >
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ textAlign: "center" }}
-          >
-            {t("Rule No")}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {t("Rule Type")}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {t("Rule Value")}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {t("Rule Policy")}
-          </Typography>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ textAlign: "right" }}
-          >
-            {t("Rule Usage")}
-          </Typography>
+          <HeaderCell col="index" label={t("Rule No")} align="center" />
+          <HeaderCell col="type" label={t("Rule Type")} />
+          <HeaderCell col="payload" label={t("Rule Value")} />
+          <HeaderCell col="proxy" label={t("Rule Policy")} />
+          <HeaderCell col="usage" label={t("Rule Usage")} align="right" />
         </Box>
 
         <Box sx={{ flex: 1, position: "relative", minHeight: 0 }}>
@@ -153,9 +229,9 @@ const RulesPage = () => {
                 ref={virtuosoRef}
                 style={{ height: "100%" }}
                 data={rules}
-                itemContent={(index, item) => (
+                itemContent={(_, { item, no }) => (
                   <RuleItem
-                    index={index + 1}
+                    index={no}
                     value={item}
                     usage={getRuleHitCount(item.type, item.payload)}
                   />
