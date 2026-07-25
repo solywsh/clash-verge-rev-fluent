@@ -1,2 +1,8 @@
+# 统一以 LF 存入仓库：CI 在 Linux 上跑 `biome format .`（lineEnding: auto），
+# 一旦某个文件带着 CRLF 进了索引，format:check 就会在 CI 上失败而本地通过。
+# src/services/rule-hit-counter.ts 和 rule-source.ts 曾被 git 判定为 binary，
+# 因此从不做行尾转换，正是这么挂的。
+* text=auto eol=lf
+
 .github/workflows/*.lock.yml linguist-generated=true merge=ours
 Changelog.md merge=union
