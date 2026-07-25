@@ -81,7 +81,7 @@ export const useRenderList = (mode: string) => {
           headState.sortType,
         );
 
-        ret.push({ type: 1, key: `head-${group.name}`, group, headState });
+        // 控制条(定位/测速/排序/过滤)已移除，改由组头右侧的测速按钮承担测速。
 
         if (!proxies.length) {
           ret.push({ type: 3, key: `empty-${group.name}`, group, headState });

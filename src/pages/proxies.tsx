@@ -2,16 +2,8 @@ import useSWR from "swr";
 import { useEffect } from "react";
 import { useLockFn } from "ahooks";
 import { useTranslation } from "react-i18next";
-import { Box, Button, ButtonGroup } from "@mui/material";
-import {
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuItemRadio,
-  MenuList,
-  MenuPopover,
-  MenuTrigger,
-} from "@fluentui/react-components";
+import { Box } from "@mui/material";
+import { Tab, TabList } from "@fluentui/react-components";
 import { closeAllConnections, getClashConfig } from "@/services/api";
 import { patchClashConfig } from "@/services/cmds";
 import { useVerge } from "@/hooks/use-verge";
@@ -65,39 +57,16 @@ const ProxyPage = () => {
         <Box display="flex" alignItems="center" gap={1}>
           <ProviderButton />
 
-          {/* <ButtonGroup size="small">
+          <TabList
+            selectedValue={curMode ?? "rule"}
+            onTabSelect={(_, data) => onChangeMode(data.value as string)}
+          >
             {modeList.map((mode) => (
-              <Button
-                key={mode}
-                variant={mode === curMode ? "contained" : "outlined"}
-                onClick={() => onChangeMode(mode)}
-                sx={{ textTransform: "capitalize" }}
-              >
+              <Tab key={mode} value={mode}>
                 {t(mode)}
-              </Button>
+              </Tab>
             ))}
-          </ButtonGroup> */}
-          <Menu>
-            <MenuTrigger disableButtonEnhancement>
-              <MenuButton appearance="secondary">
-                {t(curMode ?? "global")}
-              </MenuButton>
-            </MenuTrigger>
-            <MenuPopover>
-              <MenuList checkedValues={{ mode: [curMode ?? "global"] }}>
-                {modeList.map((mode) => (
-                  <MenuItemRadio
-                    key={mode}
-                    onClick={() => onChangeMode(mode)}
-                    value={mode}
-                    name="mode"
-                  >
-                    {t(mode)}
-                  </MenuItemRadio>
-                ))}
-              </MenuList>
-            </MenuPopover>
-          </Menu>
+          </TabList>
         </Box>
       }
     >

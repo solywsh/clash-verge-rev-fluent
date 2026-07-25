@@ -1,12 +1,16 @@
 import { tokens } from "../../pages/_fluent_theme";
 import { Expander } from "../fluent/expander";
 import {
+  Button,
   makeStyles,
   mergeClasses,
+  Spinner,
   Subtitle1,
   Subtitle2,
   Title3,
 } from "@fluentui/react-components";
+import { NetworkCheckFilled } from "@fluentui/react-icons";
+import { useTranslation } from "react-i18next";
 import {
   alpha,
   Box,
@@ -35,7 +39,7 @@ interface RenderProps {
   item: IRenderItem;
   indent: boolean;
   onLocation: (group: IProxyGroupItem) => void;
-  onCheckAll: (groupName: string) => void;
+  onCheckAll: (groupName: string) => void | Promise<void>;
   onHeadState: (groupName: string, patch: Partial<HeadState>) => void;
   onChangeProxy: (group: IProxyGroupItem, proxy: IProxyItem) => void;
   headState?: HeadState;
@@ -73,12 +77,26 @@ export const ProxyRender = (props: RenderProps) => {
     index,
   } = props;
   const { type, group, headState, proxy, proxyCol } = item;
+  const { t } = useTranslation();
   const { verge } = useVerge();
   const enable_group_icon = verge?.enable_group_icon ?? true;
   const mode = useThemeMode();
   const isDark = mode === "light" ? false : true;
   const itembackgroundcolor = isDark ? "#282A36" : "#ffffff";
   const [iconCachePath, setIconCachePath] = useState("");
+  const [testing, setTesting] = useState(false);
+
+  const handleCheckDelay = async (e: React.MouseEvent) => {
+    // 阻止冒泡，避免触发组头的展开/收起
+    e.stopPropagation();
+    if (testing) return;
+    setTesting(true);
+    try {
+      await onCheckAll(group.name);
+    } finally {
+      setTesting(false);
+    }
+  };
 
   useEffect(() => {
     initIconCachePath();
@@ -111,6 +129,15 @@ export const ProxyRender = (props: RenderProps) => {
           currentGroupName = group.name;
           onHeadState(group.name, { open: expanded });
         }}
+        right={
+          <Button
+            appearance="subtle"
+            className="fds-subtle"
+            title={t("Delay check")}
+            icon={testing ? <Spinner size="tiny" /> : <NetworkCheckFilled />}
+            onClick={handleCheckDelay}
+          />
+        }
         // style={{
         //   background: tokens.surface2,
         //   border: `1px solid ${tokens.colorNeutralStroke3}`,
