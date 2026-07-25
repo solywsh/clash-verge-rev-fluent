@@ -92,7 +92,7 @@ export const SettingLandingHeader = () => {
 
   // Reuse the same SWR keys as the home page / update viewer so the data is
   // shared from cache instead of triggering duplicate IPC / network calls.
-  const { data: sysInfo = "" } = useSWR("getSystemInfo", getSystemInfo);
+  const { data: sysInfo } = useSWR("getSystemInfo", getSystemInfo);
   const { data: runningMode = "" } = useSWR("getRunningMode", getRunningMode);
   const { data: isAdmin = false } = useSWR("appIsAdmin", appIsAdmin);
   const {
@@ -111,13 +111,8 @@ export const SettingLandingHeader = () => {
   const [manualChecking, setManualChecking] = useState(false);
   const checking = validating || manualChecking;
 
-  // get_system_info returns "Key: Value" lines; pull out the OS version.
-  const info: Record<string, string> = {};
-  sysInfo.split("\n").forEach((line) => {
-    const idx = line.indexOf(":");
-    if (idx > 0) info[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
-  });
-  const osVersion = info["System Version"] || info["System Name"] || "";
+  // get_system_info 现在返回结构体（上游改动），直接取 OS 版本字段。
+  const osVersion = sysInfo?.system_version || sysInfo?.system_name || "";
 
   const summary = [osVersion, isAdmin ? `${runningMode} (admin)` : runningMode]
     .filter(Boolean)

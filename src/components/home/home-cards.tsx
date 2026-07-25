@@ -511,21 +511,14 @@ export const IpInfoCard = () => {
 // ---------------- System info ----------------
 export const SystemInfoCard = () => {
   const { t } = useTranslation();
-  const { data: sysInfo = "" } = useSWR("getSystemInfo", getSystemInfo);
+  const { data: sysInfo } = useSWR("getSystemInfo", getSystemInfo);
   const { data: runningMode = "" } = useSWR("getRunningMode", getRunningMode);
   const { data: isAdmin = false } = useSWR("appIsAdmin", appIsAdmin);
 
-  // get_system_info returns "Key: Value" lines; parse them into a map and show
-  // the useful fields (full OS version, arch, kernel) rather than the bare
-  // "System Name: Windows" first line.
-  const info: Record<string, string> = {};
-  sysInfo.split("\n").forEach((line) => {
-    const idx = line.indexOf(":");
-    if (idx > 0) info[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
-  });
-  const osVersion = info["System Version"] || info["System Name"] || "-";
-  const arch = info["System Arch"] || "-";
-  const kernel = info["System kernel Version"] || "";
+  // get_system_info 现在返回结构体（上游改动），直接取字段，回退到系统名/占位。
+  const osVersion = sysInfo?.system_version || sysInfo?.system_name || "-";
+  const arch = sysInfo?.system_arch || "-";
+  const kernel = sysInfo?.system_kernel_version || "";
 
   return (
     <EnhancedCard title={t("System Info")} icon={<DesktopRegular />}>

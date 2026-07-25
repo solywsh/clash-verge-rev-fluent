@@ -326,8 +326,19 @@ export async function checkMediaUnlock() {
 }
 
 // ===== Home 仪表盘相关 =====
+// 上游把 get_system_info 从「多行字符串」改成了结构体（tauri-plugin-clash-verge-sysinfo）。
+export interface ISystemInfo {
+  system_name: string;
+  system_version: string;
+  system_kernel_version: string;
+  system_arch: string;
+  app_version: string;
+  app_core_mode: string;
+  app_is_admin: boolean;
+}
+
 export async function getSystemInfo() {
-  return invoke<string>("get_system_info");
+  return invoke<ISystemInfo>("get_system_info");
 }
 
 export async function getAppUptime() {

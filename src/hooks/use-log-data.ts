@@ -53,7 +53,7 @@ export const useLogData = (_logLevel?: LogLevel) => {
 
     let isActive = true;
     const socket = createMihomoWs(
-      { stream: "logs", level: "debug" },
+      { stream: "logs", level: "DEBUG" },
       {
         onmessage(event) {
           if (!isActive) return;
