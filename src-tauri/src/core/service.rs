@@ -39,6 +39,57 @@ pub struct ServiceManager {
     operation_done: Notify,
 }
 
+/// 触发服务安装/重装的来源。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Trigger {
+    /// 启动流程、内核启动重试、sidecar→service 交接监视器等后台路径。
+    Auto,
+    /// 设置页里用户主动点击的安装/卸载/重装/修复。
+    User,
+}
+
+/// 提权闸门。安装/卸载服务要以管理员运行 `clash-verge-service-{install,uninstall}.exe`,
+/// 非提权进程走 `runas` 会弹 UAC。这些操作分散在多个重试循环里(启动等待、内核启动重试
+/// SERVICE_START_RETRIES、交接监视器),任何持续失败的原因(最典型的是服务端与客户端 IPC
+/// 协议版本不一致)都会让每一轮都重新提权一次,把一次启动变成十几个 UAC 弹窗。
+///
+/// 所以后台路径每次运行只允许提权一次;用户一旦拒绝授权就彻底停手,改由设置页的
+/// 安装/修复按钮显式重置。
+static AUTO_ELEVATION_USED: AtomicBool = AtomicBool::new(false);
+static ELEVATION_DECLINED: AtomicBool = AtomicBool::new(false);
+
+fn elevation_declined() -> bool {
+    ELEVATION_DECLINED.load(Ordering::Acquire)
+}
+
+fn mark_elevation_declined() {
+    ELEVATION_DECLINED.store(true, Ordering::Release);
+}
+
+/// 用户主动操作:重新打开闸门,让这一次点击一定能弹出授权窗口。
+fn reset_elevation_gate() {
+    AUTO_ELEVATION_USED.store(false, Ordering::Release);
+    ELEVATION_DECLINED.store(false, Ordering::Release);
+}
+
+/// 后台路径申请提权。返回 `Err` 表示这次应当直接跳过(不弹窗)。
+fn acquire_auto_elevation() -> Result<()> {
+    if elevation_declined() {
+        bail!("上次提权授权被拒绝，不再自动安装服务（可在设置中手动修复）");
+    }
+    if AUTO_ELEVATION_USED.swap(true, Ordering::AcqRel) {
+        bail!("本次运行已尝试过自动安装服务，不再重复弹出授权窗口");
+    }
+    Ok(())
+}
+
+/// `runas` 在 UAC 被取消(或 ShellExecuteEx 起不来进程)时返回 `!0`,即退出码 -1 ——
+/// 它不会返回 `Err`,所以只能靠这个退出码识别"用户点了否"。
+#[cfg(target_os = "windows")]
+fn is_elevation_declined(status: &std::process::ExitStatus) -> bool {
+    status.code() == Some(-1)
+}
+
 #[cfg(not(target_os = "macos"))]
 fn service_core_path(clash_core: &str, bin_ext: &str) -> Result<PathBuf> {
     Ok(current_exe()?.with_file_name(format!("{clash_core}{bin_ext}")))
@@ -192,7 +243,14 @@ fn uninstall_service() -> Result<()> {
     let token = Token::with_current_process()?;
     let level = token.privilege_level()?;
     let status = match level {
-        PrivilegeLevel::NotPrivileged => RunasCommand::new(uninstall_path).show(false).status()?,
+        PrivilegeLevel::NotPrivileged => {
+            let status = RunasCommand::new(uninstall_path).show(false).status()?;
+            if is_elevation_declined(&status) {
+                mark_elevation_declined();
+                bail!("卸载服务未获得管理员授权");
+            }
+            status
+        }
         _ => StdCommand::new(uninstall_path).creation_flags(0x08000000).status()?,
     };
 
@@ -227,6 +285,10 @@ fn install_service() -> Result<()> {
     let output = match level {
         PrivilegeLevel::NotPrivileged => {
             let status = RunasCommand::new(&install_path).show(false).status()?;
+            if is_elevation_declined(&status) {
+                mark_elevation_declined();
+                bail!("安装服务未获得管理员授权");
+            }
             Output {
                 status,
                 stdout: Vec::new(),
@@ -289,6 +351,12 @@ fn uninstall_service() -> Result<()> {
         status.code().unwrap_or(-1)
     );
 
+    // pkexec 用 126 表示授权对话框被取消/未通过。
+    if status.code() == Some(126) {
+        mark_elevation_declined();
+        bail!("卸载服务未获得授权");
+    }
+
     if !status.success() {
         bail!(
             "failed to uninstall service with status {}",
@@ -328,6 +396,12 @@ fn install_service() -> Result<()> {
             result
         }
     };
+
+    // pkexec 用 126 表示授权对话框被取消/未通过。
+    if output.status.code() == Some(126) {
+        mark_elevation_declined();
+        bail!("安装服务未获得授权");
+    }
 
     if let Some((code, err)) = check_output_error(&output) {
         logging!(
@@ -413,6 +487,13 @@ fn install_service() -> Result<()> {
     let command = format!(r#"do shell script "{shell}" with administrator privileges with prompt "{prompt}""#);
 
     let output = StdCommand::new("osascript").args(vec!["-e", &command]).output()?;
+
+    // osascript 在用户点"取消"时以 -128 / "User canceled." 结束。
+    if !output.status.success() && String::from_utf8_lossy(&output.stderr).contains("User canceled") {
+        mark_elevation_declined();
+        bail!("安装服务未获得管理员授权");
+    }
+
     if let Some((code, err)) = check_output_error(&output) {
         logging!(
             error,
@@ -554,6 +635,10 @@ fn reinstall_service() -> Result<()> {
 
     // 先卸载服务
     if let Err(err) = uninstall_service() {
+        // 用户刚拒绝了卸载的授权,再弹一次安装的授权只会让人更烦 —— 直接放弃这一轮。
+        if elevation_declined() {
+            bail!("卸载服务未获得管理员授权，已跳过后续安装: {err}");
+        }
         logging!(warn, Type::Service, "failed to uninstall service: {}", err);
     }
 
@@ -751,21 +836,37 @@ impl ServiceManager {
 
     pub async fn refresh(&self) -> Result<()> {
         self.run_operation(async {
-            self.apply_service_status(if clash_verge_service_ipc::is_reinstall_service_needed().await {
-                ServiceStatus::NeedsReinstall
-            } else {
-                ServiceStatus::Ready
-            })
+            self.apply_service_status(
+                if clash_verge_service_ipc::is_reinstall_service_needed().await {
+                    ServiceStatus::NeedsReinstall
+                } else {
+                    ServiceStatus::Ready
+                },
+                Trigger::Auto,
+            )
             .await
         })
         .await
     }
 
     pub async fn handle_service_status(&self, status: ServiceStatus) -> Result<()> {
-        self.run_operation(self.apply_service_status(status)).await
+        // 用户主动点了按钮,这一次必须允许弹授权窗口。
+        reset_elevation_gate();
+        self.run_operation(self.apply_service_status(status, Trigger::User))
+            .await
     }
 
-    async fn apply_service_status(&self, status: ServiceStatus) -> Result<()> {
+    async fn apply_service_status(&self, status: ServiceStatus, trigger: Trigger) -> Result<()> {
+        // 需要提权的分支统一过一次闸门,避免后台重试循环反复弹 UAC。
+        if trigger == Trigger::Auto
+            && !matches!(status, ServiceStatus::Ready | ServiceStatus::Unavailable(_))
+            && let Err(err) = acquire_auto_elevation()
+        {
+            logging!(info, Type::Service, "跳过自动提权: {}", err);
+            self.set_status(ServiceStatus::Unavailable(err.to_string()));
+            return Err(err);
+        }
+
         self.set_status(status.clone());
         match status {
             ServiceStatus::Ready => logging!(info, Type::Service, "服务就绪，直接启动"),

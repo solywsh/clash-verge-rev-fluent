@@ -101,9 +101,13 @@ tauri-plugin-mihomo = { git = "https://github.com/clash-verge-rev/tauri-plugin-m
 tauri-plugin-decorum = { git = "https://github.com/Daydreamer-riri/tauri-plugin-decorum.git" }
 clash_verge_logger = { git = "https://github.com/clash-verge-rev/clash-verge-logger" }
 async-trait = "0.1.89"
+# Pin an exact tag: the service binaries shipped in src-tauri/resources are
+# downloaded at the version this client crate resolves to (see scripts/prebuild.mjs,
+# which reads it back out of Cargo.lock). A floating `^2.3.3` let the two drift and
+# broke the IPC handshake — see docs/service-version-pinning.md.
 clash_verge_service_ipc = { version = "2.3.3", features = [
   "client",
-], git = "https://github.com/clash-verge-rev/clash-verge-service-ipc" }
+], git = "https://github.com/clash-verge-rev/clash-verge-service-ipc", tag = "v2.3.3" }
 arc-swap = "1.9.2"
 tokio-rustls = "0.26.4"
 rustls = { version = "0.23.41", features = ["ring"] }

@@ -432,8 +432,6 @@ async function resolveLocales() {
 // legacy protocol and is incompatible — installing it makes the IPC handshake
 // fail with "Failed to parse HTTP response". Releases are versioned archives
 // (zip on Windows, tar.gz elsewhere) containing all three binaries.
-const SERVICE_LATEST_URL =
-  "https://github.com/clash-verge-rev/clash-verge-service-ipc/releases/latest";
 const SERVICE_URL_PREFIX =
   "https://github.com/clash-verge-rev/clash-verge-service-ipc/releases/download";
 
@@ -460,32 +458,28 @@ function serviceFileInfo(name) {
 
 let SERVICE_VERSION;
 
-// Resolve the latest service release tag by following the /releases/latest redirect.
-async function getLatestServiceVersion() {
+// The service binaries speak an IPC protocol whose version must equal the
+// `clash_verge_service_ipc` CLIENT crate compiled into the app. Downloading
+// `releases/latest` instead let the two drift apart: a newer service refuses
+// `start_clash` with "service protocol version does not match", and the app
+// then reinstalls the service in a loop — one UAC prompt per install/uninstall.
+// Cargo.lock is the single source of truth, so resolve the tag from there.
+function getPinnedServiceVersion() {
   if (SERVICE_VERSION) return SERVICE_VERSION;
 
-  const options = { method: "GET", redirect: "follow" };
-  const httpProxy =
-    process.env.HTTP_PROXY ||
-    process.env.http_proxy ||
-    process.env.HTTPS_PROXY ||
-    process.env.https_proxy;
-  if (httpProxy) options.agent = proxyAgent(httpProxy);
-
-  const response = await fetch(SERVICE_LATEST_URL, options);
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch ${SERVICE_LATEST_URL}: ${response.status}`,
-    );
-  }
-  const match = response.url.match(/\/releases\/tag\/([^/?#]+)/);
+  const lockPath = path.join(cwd, "Cargo.lock");
+  const lock = fs.readFileSync(lockPath, "utf-8");
+  const match = lock.match(
+    /name = "clash_verge_service_ipc"\r?\nversion = "([^"]+)"/,
+  );
   if (!match) {
     throw new Error(
-      `Unable to resolve service release tag from ${response.url}`,
+      `Unable to find the "clash_verge_service_ipc" package in ${lockPath}`,
     );
   }
-  SERVICE_VERSION = decodeURIComponent(match[1]);
-  log_info(`Latest service version: ${SERVICE_VERSION}`);
+
+  SERVICE_VERSION = `v${match[1]}`;
+  log_info(`Pinned service version (from Cargo.lock): ${SERVICE_VERSION}`);
   return SERVICE_VERSION;
 }
 
@@ -511,12 +505,30 @@ const resolveService = async () => {
     return { ...info, targetPath: path.join(resDir, info.targetFile) };
   });
 
-  if (!FORCE && files.every(({ targetPath }) => fs.existsSync(targetPath))) {
-    log_success(`"clash-verge-service-ipc" already exists, skipping download`);
+  const version = getPinnedServiceVersion();
+  const versionStamp = path.join(resDir, ".service-version");
+
+  // Only reuse what is on disk when it came from the pinned release — otherwise
+  // a crate bump would keep shipping the previously downloaded binaries.
+  const installedVersion = fs.existsSync(versionStamp)
+    ? fs.readFileSync(versionStamp, "utf-8").trim()
+    : null;
+  if (
+    !FORCE &&
+    installedVersion === version &&
+    files.every(({ targetPath }) => fs.existsSync(targetPath))
+  ) {
+    log_success(
+      `"clash-verge-service-ipc" ${version} already exists, skipping download`,
+    );
     return;
   }
+  if (installedVersion && installedVersion !== version) {
+    log_info(
+      `service binaries on disk are ${installedVersion}, pinned is ${version} — re-downloading`,
+    );
+  }
 
-  const version = await getLatestServiceVersion();
   const archiveExt = platform === "win32" ? "zip" : "tar.gz";
   const archiveFile = `clash-verge-service-ipc-${version}-${SIDECAR_HOST}.${archiveExt}`;
   const downloadURL = `${SERVICE_URL_PREFIX}/${version}/${archiveFile}`;
@@ -549,6 +561,7 @@ const resolveService = async () => {
       log_success(`Extracted service file: ${targetFile}`);
     }
 
+    await fsp.writeFile(versionStamp, `${version}\n`);
     log_success(`service bundle finished: ${archiveFile}`);
   } finally {
     await fsp.rm(tempDir, { recursive: true, force: true });
