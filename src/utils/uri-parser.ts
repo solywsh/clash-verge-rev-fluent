@@ -64,15 +64,18 @@ function isIPv4(address: string): boolean {
 }
 
 function isIPv6(address: string): boolean {
-  // Check if the address is IPv6
-  // FIXME: `\3` 引用的分组 `(::)` 出现在它之后，在 JS 里恒匹配空串，导致整个否定
-  // 前瞻等价于「长度小于 1」——本函数对任何非空输入都返回 false，WireGuard 的 IPv6
-  // 地址因此从未被写入 proxy.ipv6。修正则会启用一条从未执行过的代码路径，属于运行时
-  // 行为变更，需单独评估，暂维持现状。
-  const ipv6Regex =
-    // eslint-disable-next-line no-useless-backreference
-    /^((?=.*(::))(?!.*\3.+)(::)?)([0-9A-Fa-f]{1,4}(\3|:\b)|\3){7}[0-9A-Fa-f]{1,4}$/
-  return ipv6Regex.test(address)
+  // 交给 URL 解析器做校验：方括号里的主机必须是合法 IPv6 字面量，这条规则由
+  // WHATWG URL 规范定义，各引擎实现一致。
+  //
+  // 这里原先是一段手写正则，其中 `\3` 引用的分组 `(::)` 出现在它自己之后 —— 在 JS 里
+  // 这种反向引用恒匹配空串，使否定前瞻退化成「长度小于 1」，于是该函数对任何非空输入
+  // 都返回 false，WireGuard 的 IPv6 地址从来没能写进 proxy.ipv6。改用内置解析器而不是
+  // 再写一段更长的正则，正是为了不重蹈覆辙。
+  try {
+    return new URL(`http://[${address}]`).hostname.startsWith('[')
+  } catch {
+    return false
+  }
 }
 
 function decodeBase64OrOriginal(str: string): string {
