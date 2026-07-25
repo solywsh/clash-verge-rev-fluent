@@ -1,54 +1,51 @@
-import dayjs from "dayjs";
-import i18next from "i18next";
-import relativeTime from "dayjs/plugin/relativeTime";
-import { SWRConfig, mutate } from "swr";
-import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import {
-  useLocation,
-  useRoutes,
-  useNavigate,
-  Navigate,
-} from "react-router-dom";
-import { List, Paper, ThemeProvider, SvgIcon } from "@mui/material";
-import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
-import { routers } from "./_routers";
-import { getAxios } from "@/services/api";
-import { useVerge } from "@/hooks/use-verge";
-import LogoSvg from "@/assets/image/logo.svg?react";
-import iconLight from "@/assets/image/icon_light.svg?react";
-import iconDark from "@/assets/image/icon_dark.svg?react";
-import Logo from "@/assets/image/logo.png";
-import { useThemeMode } from "@/services/states";
-import { Notice } from "@/components/base";
-import { LayoutItem } from "@/components/layout/layout-item";
-import { LayoutControl } from "@/components/layout/layout-control";
-import { LayoutTraffic } from "@/components/layout/layout-traffic";
-import { UpdateButton } from "@/components/layout/update-button";
-import { useCustomTheme } from "@/components/layout/use-custom-theme";
-import getSystem from "@/utils/get-system";
-import "dayjs/locale/ru";
-import "dayjs/locale/zh-cn";
-import { getPortableFlag } from "@/services/cmds";
-import { startRuleHitCounter } from "@/services/rule-hit-counter";
-import React from "react";
-import { TransitionGroup, CSSTransition } from "react-transition-group";
-import { useListen } from "@/hooks/use-listen";
+import { Paper, ThemeProvider } from '@mui/material'
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
+import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
+import i18next from 'i18next'
+import { useEffect } from 'react'
+import React from 'react'
+import { useTranslation } from 'react-i18next'
+import { useLocation, useRoutes, useNavigate, Navigate } from 'react-router-dom'
+import { TransitionGroup, CSSTransition } from 'react-transition-group'
+import { SWRConfig, mutate } from 'swr'
+
+import Logo from '@/assets/image/logo.png'
+import { Notice } from '@/components/base'
+import { LayoutControl } from '@/components/layout/layout-control'
+import { LayoutTraffic } from '@/components/layout/layout-traffic'
+import { useCustomTheme } from '@/components/layout/use-custom-theme'
+import { useVerge } from '@/hooks/use-verge'
+import { getAxios } from '@/services/api'
+import { useThemeMode } from '@/services/states'
+import getSystem from '@/utils/get-system'
+
+import { routers } from './_routers'
+
+import 'dayjs/locale/ru'
+import 'dayjs/locale/zh-cn'
+import { getPortableFlag } from '@/services/cmds'
+import { startRuleHitCounter } from '@/services/rule-hit-counter'
+import { useListen } from '@/hooks/use-listen'
+
 import {
   TabList,
   Button,
   makeStyles,
   mergeClasses,
   Caption1,
-} from "@fluentui/react-components";
-import { FluentProviderWithTheme, tokens } from "./_fluent_theme";
-import { FluentLayoutItem } from "../components/fluent/layout-item";
-import { NavigationRegular } from "@fluentui/react-icons";
+} from '@fluentui/react-components'
 
-const appWindow = getCurrentWebviewWindow();
-export let portableFlag = false;
+import { FluentProviderWithTheme, tokens } from './_fluent_theme'
 
-dayjs.extend(relativeTime);
+import { FluentLayoutItem } from '../components/fluent/layout-item'
+
+import { NavigationRegular } from '@fluentui/react-icons'
+
+const appWindow = getCurrentWebviewWindow()
+export let portableFlag = false
+
+dayjs.extend(relativeTime)
 
 const useStyle = makeStyles({
   sidebar: {
@@ -57,87 +54,87 @@ const useStyle = makeStyles({
   traffic: {
     transition: `opacity ${tokens.durationNormal} ${tokens.curveDecelerateMid}`,
   },
-});
+})
 
-const OS = getSystem();
+const OS = getSystem()
 
 const Layout = () => {
-  const mode = useThemeMode();
-  const isDark = mode === "light" ? false : true;
-  const { t } = useTranslation();
-  const { theme } = useCustomTheme();
+  const mode = useThemeMode()
+  const isDark = mode === 'light' ? false : true
+  const { t } = useTranslation()
+  const { theme } = useCustomTheme()
 
-  const { verge } = useVerge();
-  const { language, start_page } = verge || {};
-  const navigate = useNavigate();
-  const location = useLocation();
-  const routersEles = useRoutes(routers);
-  const { addListener, setupCloseListener } = useListen();
+  const { verge } = useVerge()
+  const { language, start_page } = verge || {}
+  const navigate = useNavigate()
+  const location = useLocation()
+  const routersEles = useRoutes(routers)
+  const { addListener, setupCloseListener } = useListen()
   // No route matched the current path (e.g. a removed page like the old
   // /test or /unlock that the window was last parked on) — redirect home
   // instead of rendering nothing, which would leave a blank screen.
-  if (!routersEles) return <Navigate to="/" replace />;
+  if (!routersEles) return <Navigate to="/" replace />
 
-  setupCloseListener();
+  setupCloseListener()
 
   useEffect(() => {
-    addListener("verge://refresh-clash-config", async () => {
+    addListener('verge://refresh-clash-config', async () => {
       // the clash info may be updated
-      await getAxios(true);
-      mutate("getProxies");
-      mutate("getVersion");
-      mutate("getClashConfig");
-      mutate("getProxyProviders");
-    });
+      await getAxios(true)
+      mutate('getProxies')
+      mutate('getVersion')
+      mutate('getClashConfig')
+      mutate('getProxyProviders')
+    })
 
     // update the verge config
-    addListener("verge://refresh-verge-config", () => mutate("getVergeConfig"));
+    addListener('verge://refresh-verge-config', () => mutate('getVergeConfig'))
 
     // 设置提示监听
-    addListener("verge://notice-message", ({ payload }) => {
-      const [status, msg] = payload as [string, string];
+    addListener('verge://notice-message', ({ payload }) => {
+      const [status, msg] = payload as [string, string]
       switch (status) {
-        case "import_sub_url::ok":
-          navigate("/profile", { state: { current: msg } });
+        case 'import_sub_url::ok':
+          navigate('/profile', { state: { current: msg } })
 
-          Notice.success(t("Import Subscription Successful"));
-          break;
-        case "import_sub_url::error":
-          navigate("/profile");
-          Notice.error(msg);
-          break;
-        case "set_config::error":
-          Notice.error(msg);
-          break;
+          Notice.success(t('Import Subscription Successful'))
+          break
+        case 'import_sub_url::error':
+          navigate('/profile')
+          Notice.error(msg)
+          break
+        case 'set_config::error':
+          Notice.error(msg)
+          break
         default:
-          break;
+          break
       }
-    });
+    })
 
     setTimeout(async () => {
-      portableFlag = await getPortableFlag();
-      await appWindow.unminimize();
-      await appWindow.show();
-      await appWindow.setFocus();
-    }, 50);
+      portableFlag = await getPortableFlag()
+      await appWindow.unminimize()
+      await appWindow.show()
+      await appWindow.setFocus()
+    }, 50)
 
     // Begin accumulating rule-hit counts for the Rules page. Runs for the whole
     // app lifetime so counts keep growing regardless of the active page.
-    startRuleHitCounter();
-  }, []);
+    startRuleHitCounter()
+  }, [])
 
   useEffect(() => {
     if (language) {
-      dayjs.locale(language === "zh" ? "zh-cn" : language);
-      i18next.changeLanguage(language);
+      dayjs.locale(language === 'zh' ? 'zh-cn' : language)
+      i18next.changeLanguage(language)
     }
     if (start_page) {
-      navigate(start_page);
+      navigate(start_page)
     }
-  }, [language, start_page]);
+  }, [language, start_page])
 
-  const [sideBarExpand, setSideBarExpand] = React.useState(true);
-  const { sidebar, traffic } = useStyle();
+  const [sideBarExpand, setSideBarExpand] = React.useState(true)
+  const { sidebar, traffic } = useStyle()
 
   return (
     <SWRConfig value={{ errorRetryCount: 3 }}>
@@ -159,35 +156,35 @@ const Layout = () => {
             className={`${OS} layout`}
             onContextMenu={(e) => {
               // only prevent it on Windows
-              const validList = ["input", "textarea"];
-              const target = e.currentTarget;
+              const validList = ['input', 'textarea']
+              const target = e.currentTarget
               if (
-                OS === "windows" &&
+                OS === 'windows' &&
                 !(
                   validList.includes(target.tagName.toLowerCase()) ||
                   target.isContentEditable
                 )
               ) {
-                e.preventDefault();
+                e.preventDefault()
               }
             }}
             sx={[
               ({ palette }) => ({
                 bgcolor: palette.background.paper,
               }),
-              OS === "linux"
+              OS === 'linux'
                 ? {
-                    borderRadius: "8px",
-                    border: "2px solid var(--divider-color)",
-                    width: "calc(100vw - 4px)",
-                    height: "calc(100vh - 4px)",
+                    borderRadius: '8px',
+                    border: '2px solid var(--divider-color)',
+                    width: 'calc(100vw - 4px)',
+                    height: 'calc(100vh - 4px)',
                   }
                 : {},
             ]}
           >
             <div
-              className={mergeClasses("layout__left", sidebar)}
-              style={{ width: sideBarExpand ? "200px" : "48px" }}
+              className={mergeClasses('layout__left', sidebar)}
+              style={{ width: sideBarExpand ? '200px' : '48px' }}
             >
               {/* <div className="the-logo" data-tauri-drag-region="true">
                 <div
@@ -234,7 +231,7 @@ const Layout = () => {
               {renderFluentSideBar()}
 
               <div
-                className={mergeClasses("the-traffic", traffic)}
+                className={mergeClasses('the-traffic', traffic)}
                 style={{ opacity: sideBarExpand ? 1 : 0 }}
               >
                 <LayoutTraffic />
@@ -242,14 +239,14 @@ const Layout = () => {
             </div>
 
             <div className="layout__right">
-              {OS !== "windows" && (
+              {OS !== 'windows' && (
                 <div className="the-bar">
                   <div
                     className="the-dragbar"
                     data-tauri-drag-region="true"
-                    style={{ width: "100%" }}
+                    style={{ width: '100%' }}
                   ></div>
-                  {OS !== "macos" && <LayoutControl />}
+                  {OS !== 'macos' && <LayoutControl />}
                 </div>
               )}
 
@@ -267,7 +264,7 @@ const Layout = () => {
         </FluentProviderWithTheme>
       </ThemeProvider>
     </SWRConfig>
-  );
+  )
 
   function renderFluentSideBar() {
     return (
@@ -289,8 +286,8 @@ const Layout = () => {
           </FluentLayoutItem>
         ))}
       </TabList>
-    );
+    )
   }
-};
+}
 
-export default Layout;
+export default Layout

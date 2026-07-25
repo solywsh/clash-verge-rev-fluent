@@ -1,66 +1,67 @@
-import { makeStyles, mergeClasses, Tab } from "@fluentui/react-components";
-import { tokens } from "../../pages/_fluent_theme";
-import { useVerge } from "../../hooks/use-verge";
-import { useMatch, useResolvedPath } from "react-router-dom";
+import { makeStyles, mergeClasses, Tab } from '@fluentui/react-components'
+import { useMatch, useResolvedPath } from 'react-router-dom'
+
+import { useVerge } from '../../hooks/use-verge'
+import { tokens } from '../../pages/_fluent_theme'
 
 interface Props {
-  to: string;
-  children: string | null;
-  icon: React.ReactNode[];
+  to: string
+  children: string | null
+  icon: React.ReactNode[]
 }
 export const useListItemStyle = makeStyles({
   item: {
-    columnGap: "12px !important",
-    height: "36px",
-    whiteSpace: "nowrap",
-    marginBottom: "4px !important",
-    borderRadius: "4px !important",
-    outline: "none !important",
-    "&::after": {
-      backgroundColor: tokens.colorCompoundBrandStrokeHover + " !important",
+    columnGap: '12px !important',
+    height: '36px',
+    whiteSpace: 'nowrap',
+    marginBottom: '4px !important',
+    borderRadius: '4px !important',
+    outline: 'none !important',
+    '&::after': {
+      backgroundColor: tokens.colorCompoundBrandStrokeHover + ' !important',
     },
-    "&:hover": {
-      backgroundColor: tokens.overlay1 + " !important",
-      "&::before": {
-        backgroundColor: "rgba(0, 0, 0, 0)",
+    '&:hover': {
+      backgroundColor: tokens.overlay1 + ' !important',
+      '&::before': {
+        backgroundColor: 'rgba(0, 0, 0, 0)',
       },
-      "& .fui-Tab__icon": {
-        color: tokens.colorNeutralForeground1Hover + " !important",
+      '& .fui-Tab__icon': {
+        color: tokens.colorNeutralForeground1Hover + ' !important',
       },
     },
-    "&:active": {
-      backgroundColor: tokens.overlay1Pressed + " !important",
-      "& > span": {
+    '&:active': {
+      backgroundColor: tokens.overlay1Pressed + ' !important',
+      '& > span': {
         opacity: 0.8,
       },
-      "&::before": {
-        backgroundColor: "rgba(0, 0, 0, 0)",
+      '&::before': {
+        backgroundColor: 'rgba(0, 0, 0, 0)',
       },
     },
   },
   selected: {
-    backgroundColor: tokens.overlay1 + " !important",
+    backgroundColor: tokens.overlay1 + ' !important',
 
-    "&:hover": {
-      backgroundColor: tokens.overlay1Pressed + " !important",
+    '&:hover': {
+      backgroundColor: tokens.overlay1Pressed + ' !important',
     },
   },
   iconOverride: {
-    color: tokens.colorNeutralForeground1 + " !important",
+    color: tokens.colorNeutralForeground1 + ' !important',
   },
   content: {
     fontWeight: 400,
     color: tokens.colorNeutralForeground1Hover,
   },
-});
+})
 
 export function FluentLayoutItem(props: Props) {
-  const { to, children, icon } = props;
-  const { verge } = useVerge();
-  const resolved = useResolvedPath(to);
-  const match = useMatch({ path: resolved.pathname, end: true });
+  const { to, children, icon } = props
+  const { verge } = useVerge()
+  const resolved = useResolvedPath(to)
+  const match = useMatch({ path: resolved.pathname, end: true })
 
-  const classes = useListItemStyle();
+  const classes = useListItemStyle()
 
   return (
     <Tab
@@ -72,7 +73,7 @@ export function FluentLayoutItem(props: Props) {
       }}
       content={{ className: classes.content }}
     >
-      {children?.replace(/\s/g, "")}
+      {children?.replace(/\s/g, '')}
     </Tab>
-  );
+  )
 }

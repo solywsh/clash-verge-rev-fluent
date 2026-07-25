@@ -1,61 +1,62 @@
-import { forwardRef, useImperativeHandle, useState } from "react";
-import { useLockFn } from "ahooks";
-import { useTranslation } from "react-i18next";
 import {
   Input,
   Label,
   Select,
   Switch as FluentSwitch,
-} from "@fluentui/react-components";
-import { useVerge } from "@/hooks/use-verge";
-import { BaseDialog, DialogRef, Notice } from "@/components/base";
-import { FluentTooltipIcon } from "@/components/base/base-tooltip-icon";
+} from '@fluentui/react-components'
+import { useLockFn } from 'ahooks'
+import { forwardRef, useImperativeHandle, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+
+import { BaseDialog, DialogRef, Notice } from '@/components/base'
+import { FluentTooltipIcon } from '@/components/base/base-tooltip-icon'
+import { useVerge } from '@/hooks/use-verge'
 
 const rowStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
   gap: 12,
-  padding: "5px 2px",
-};
+  padding: '5px 2px',
+}
 
 const labelGroupStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-};
+  display: 'flex',
+  alignItems: 'center',
+}
 
 export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
-  const { t } = useTranslation();
-  const { verge, patchVerge } = useVerge();
+  const { t } = useTranslation()
+  const { verge, patchVerge } = useVerge()
 
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false)
   const [values, setValues] = useState({
-    appLogLevel: "info",
+    appLogLevel: 'info',
     autoCloseConnection: true,
     autoCheckUpdate: true,
     enableBuiltinEnhanced: true,
     proxyLayoutColumn: 6,
-    defaultLatencyTest: "",
+    defaultLatencyTest: '',
     autoLogClean: 0,
     defaultLatencyTimeout: 10000,
-  });
+  })
 
   useImperativeHandle(ref, () => ({
     open: () => {
-      setOpen(true);
+      setOpen(true)
       setValues({
-        appLogLevel: verge?.app_log_level ?? "info",
+        appLogLevel: verge?.app_log_level ?? 'info',
         autoCloseConnection: verge?.auto_close_connection ?? true,
         autoCheckUpdate: verge?.auto_check_update ?? true,
         enableBuiltinEnhanced: verge?.enable_builtin_enhanced ?? true,
         proxyLayoutColumn: verge?.proxy_layout_column || 6,
-        defaultLatencyTest: verge?.default_latency_test || "",
+        defaultLatencyTest: verge?.default_latency_test || '',
         autoLogClean: verge?.auto_log_clean || 0,
         defaultLatencyTimeout: verge?.default_latency_timeout || 10000,
-      });
+      })
     },
     close: () => setOpen(false),
-  }));
+  }))
 
   const onSave = useLockFn(async () => {
     try {
@@ -68,27 +69,27 @@ export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
         default_latency_test: values.defaultLatencyTest,
         default_latency_timeout: values.defaultLatencyTimeout,
         auto_log_clean: values.autoLogClean as any,
-      });
-      setOpen(false);
+      })
+      setOpen(false)
     } catch (err: any) {
-      Notice.error(err.message || err.toString());
+      Notice.error(err.message || err.toString())
     }
-  });
+  })
 
   return (
     <BaseDialog
       open={open}
-      title={t("Miscellaneous")}
+      title={t('Miscellaneous')}
       contentSx={{ width: 450 }}
-      okBtn={t("Save")}
-      cancelBtn={t("Cancel")}
+      okBtn={t('Save')}
+      cancelBtn={t('Cancel')}
       onClose={() => setOpen(false)}
       onCancel={() => setOpen(false)}
       onOk={onSave}
     >
-      <div style={{ display: "flex", flexDirection: "column" }}>
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
         <div style={rowStyle}>
-          <Label>{t("App Log Level")}</Label>
+          <Label>{t('App Log Level')}</Label>
           <Select
             style={{ width: 100 }}
             value={values.appLogLevel}
@@ -96,7 +97,7 @@ export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
               setValues((v) => ({ ...v, appLogLevel: data.value }))
             }
           >
-            {["trace", "debug", "info", "warn", "error", "silent"].map((i) => (
+            {['trace', 'debug', 'info', 'warn', 'error', 'silent'].map((i) => (
               <option value={i} key={i}>
                 {i[0].toUpperCase() + i.slice(1).toLowerCase()}
               </option>
@@ -106,8 +107,8 @@ export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
 
         <div style={rowStyle}>
           <div style={labelGroupStyle}>
-            <Label>{t("Auto Close Connections")}</Label>
-            <FluentTooltipIcon title={t("Auto Close Connections Info")} />
+            <Label>{t('Auto Close Connections')}</Label>
+            <FluentTooltipIcon title={t('Auto Close Connections Info')} />
           </div>
           <FluentSwitch
             checked={values.autoCloseConnection}
@@ -118,7 +119,7 @@ export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
         </div>
 
         <div style={rowStyle}>
-          <Label>{t("Auto Check Update")}</Label>
+          <Label>{t('Auto Check Update')}</Label>
           <FluentSwitch
             checked={values.autoCheckUpdate}
             onChange={(_, data) =>
@@ -129,8 +130,8 @@ export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
 
         <div style={rowStyle}>
           <div style={labelGroupStyle}>
-            <Label>{t("Enable Builtin Enhanced")}</Label>
-            <FluentTooltipIcon title={t("Enable Builtin Enhanced Info")} />
+            <Label>{t('Enable Builtin Enhanced')}</Label>
+            <FluentTooltipIcon title={t('Enable Builtin Enhanced Info')} />
           </div>
           <FluentSwitch
             checked={values.enableBuiltinEnhanced}
@@ -141,7 +142,7 @@ export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
         </div>
 
         <div style={rowStyle}>
-          <Label>{t("Proxy Layout Columns")}</Label>
+          <Label>{t('Proxy Layout Columns')}</Label>
           <Select
             style={{ width: 135 }}
             value={String(values.proxyLayoutColumn)}
@@ -153,7 +154,7 @@ export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
             }
           >
             <option value={6} key={6}>
-              {t("Auto Columns")}
+              {t('Auto Columns')}
             </option>
             {[1, 2, 3, 4, 5].map((i) => (
               <option value={i} key={i}>
@@ -164,7 +165,7 @@ export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
         </div>
 
         <div style={rowStyle}>
-          <Label>{t("Auto Log Clean")}</Label>
+          <Label>{t('Auto Log Clean')}</Label>
           <Select
             style={{ width: 135 }}
             value={String(values.autoLogClean)}
@@ -176,10 +177,10 @@ export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
             }
           >
             {[
-              { key: t("Never Clean"), value: 0 },
-              { key: t("Retain _n Days", { n: 7 }), value: 1 },
-              { key: t("Retain _n Days", { n: 30 }), value: 2 },
-              { key: t("Retain _n Days", { n: 90 }), value: 3 },
+              { key: t('Never Clean'), value: 0 },
+              { key: t('Retain _n Days', { n: 7 }), value: 1 },
+              { key: t('Retain _n Days', { n: 30 }), value: 2 },
+              { key: t('Retain _n Days', { n: 90 }), value: 3 },
             ].map((i) => (
               <option key={i.value} value={i.value}>
                 {i.key}
@@ -190,8 +191,8 @@ export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
 
         <div style={rowStyle}>
           <div style={labelGroupStyle}>
-            <Label>{t("Default Latency Test")}</Label>
-            <FluentTooltipIcon title={t("Default Latency Test Info")} />
+            <Label>{t('Default Latency Test')}</Label>
+            <FluentTooltipIcon title={t('Default Latency Test Info')} />
           </div>
           <Input
             autoComplete="new-password"
@@ -208,7 +209,7 @@ export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
         </div>
 
         <div style={rowStyle}>
-          <Label>{t("Default Latency Timeout")}</Label>
+          <Label>{t('Default Latency Timeout')}</Label>
           <Input
             autoComplete="new-password"
             type="number"
@@ -224,10 +225,10 @@ export const MiscViewer = forwardRef<DialogRef>((props, ref) => {
                 defaultLatencyTimeout: parseInt(data.value),
               }))
             }
-            contentAfter={t("millis")}
+            contentAfter={t('millis')}
           />
         </div>
       </div>
     </BaseDialog>
-  );
-});
+  )
+})

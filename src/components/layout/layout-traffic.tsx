@@ -1,141 +1,142 @@
-import { useEffect, useRef, useState } from "react";
-import { Box, Typography } from "@mui/material";
 import {
   ArrowDownwardRounded,
   ArrowUpwardRounded,
   MemoryRounded,
-} from "@mui/icons-material";
-import { tokens } from "../../pages/_fluent_theme";
-import { useClashInfo } from "@/hooks/use-clash";
-import { useVerge } from "@/hooks/use-verge";
-import { TrafficGraph, type TrafficRef } from "./traffic-graph";
-import { useVisibility } from "@/hooks/use-visibility";
-import parseTraffic from "@/utils/parse-traffic";
-import useSWRSubscription from "swr/subscription";
-import { createMihomoWs } from "@/utils/websocket";
-import { useTranslation } from "react-i18next";
-import { isDebugEnabled, gc } from "@/services/api";
+} from '@mui/icons-material'
+import { Box, Typography } from '@mui/material'
+import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import useSWRSubscription from 'swr/subscription'
+
+import { useClashInfo } from '@/hooks/use-clash'
+import { useVerge } from '@/hooks/use-verge'
+import { useVisibility } from '@/hooks/use-visibility'
+import { isDebugEnabled, gc } from '@/services/api'
+import parseTraffic from '@/utils/parse-traffic'
+import { createMihomoWs } from '@/utils/websocket'
+
+import { TrafficGraph, type TrafficRef } from './traffic-graph'
 
 interface MemoryUsage {
-  inuse: number;
-  oslimit?: number;
+  inuse: number
+  oslimit?: number
 }
 
 // setup the traffic
 export const LayoutTraffic = () => {
-  const { t } = useTranslation();
-  const { clashInfo } = useClashInfo();
-  const { verge } = useVerge();
+  const { t } = useTranslation()
+  const { clashInfo } = useClashInfo()
+  const { verge } = useVerge()
 
   // whether hide traffic graph
-  const trafficGraph = verge?.traffic_graph ?? true;
+  const trafficGraph = verge?.traffic_graph ?? true
 
-  const trafficRef = useRef<TrafficRef>(null);
-  const pageVisible = useVisibility();
-  const [isDebug, setIsDebug] = useState(false);
+  const trafficRef = useRef<TrafficRef>(null)
+  const pageVisible = useVisibility()
+  const [isDebug, setIsDebug] = useState(false)
 
   useEffect(() => {
-    isDebugEnabled().then((flag) => setIsDebug(flag));
-    return () => {};
-  }, [isDebug]);
+    isDebugEnabled().then((flag) => setIsDebug(flag))
+    return () => {}
+  }, [isDebug])
 
   const { data: traffic = { up: 0, down: 0 } } = useSWRSubscription<
     ITrafficItem,
     any,
-    "getRealtimeTraffic" | null
+    'getRealtimeTraffic' | null
   >(
-    clashInfo && pageVisible ? "getRealtimeTraffic" : null,
+    clashInfo && pageVisible ? 'getRealtimeTraffic' : null,
     (_key, { next }) => {
       const s = createMihomoWs(
-        { stream: "traffic" },
+        { stream: 'traffic' },
         {
           onmessage(event) {
-            const data = JSON.parse(event.data) as ITrafficItem;
-            trafficRef.current?.appendData(data);
-            next(null, data);
+            const data = JSON.parse(event.data) as ITrafficItem
+            trafficRef.current?.appendData(data)
+            next(null, data)
           },
           onerror(err) {
-            s.close();
-            next(err, { up: 0, down: 0 });
+            s.close()
+            next(err, { up: 0, down: 0 })
           },
         },
-      );
+      )
 
       return () => {
-        s.close();
-      };
+        s.close()
+      }
     },
     {
       fallbackData: { up: 0, down: 0 },
       keepPreviousData: true,
     },
-  );
+  )
 
   /* --------- meta memory information --------- */
 
-  const displayMemory = verge?.enable_memory_usage ?? true;
+  const displayMemory = verge?.enable_memory_usage ?? true
 
   const { data: memory = { inuse: 0 } } = useSWRSubscription<
     MemoryUsage,
     any,
-    "getRealtimeMemory" | null
+    'getRealtimeMemory' | null
   >(
-    clashInfo && pageVisible && displayMemory ? "getRealtimeMemory" : null,
+    clashInfo && pageVisible && displayMemory ? 'getRealtimeMemory' : null,
     (_key, { next }) => {
       const s = createMihomoWs(
-        { stream: "memory" },
+        { stream: 'memory' },
         {
           onmessage(event) {
-            const data = JSON.parse(event.data) as MemoryUsage;
-            next(null, data);
+            const data = JSON.parse(event.data) as MemoryUsage
+            next(null, data)
           },
           onerror(err) {
-            s.close();
-            next(err, { inuse: 0 });
+            s.close()
+            next(err, { inuse: 0 })
           },
         },
-      );
+      )
 
       return () => {
-        s.close();
-      };
+        s.close()
+      }
     },
     {
       fallbackData: { inuse: 0 },
       keepPreviousData: true,
     },
-  );
+  )
 
-  const [up, upUnit] = parseTraffic(traffic.up);
-  const [down, downUnit] = parseTraffic(traffic.down);
-  const [inuse, inuseUnit] = parseTraffic(memory.inuse);
+  const [up, upUnit] = parseTraffic(traffic.up)
+  const [down, downUnit] = parseTraffic(traffic.down)
+  const [inuse, inuseUnit] = parseTraffic(memory.inuse)
 
   const boxStyle: any = {
-    display: "flex",
-    alignItems: "center",
-    whiteSpace: "nowrap",
-  };
+    display: 'flex',
+    alignItems: 'center',
+    whiteSpace: 'nowrap',
+  }
   const iconStyle: any = {
-    sx: { mr: "8px", fontSize: 16 },
-  };
+    sx: { mr: '8px', fontSize: 16 },
+  }
   const valStyle: any = {
-    component: "span",
-    textAlign: "center",
-    sx: { flex: "1 1 56px", userSelect: "none" },
-  };
+    component: 'span',
+    textAlign: 'center',
+    sx: { flex: '1 1 56px', userSelect: 'none' },
+  }
   const unitStyle: any = {
-    component: "span",
-    color: "grey.500",
-    fontSize: "12px",
-    textAlign: "right",
-    sx: { flex: "0 1 27px", userSelect: "none" },
-  };
+    component: 'span',
+    color: 'grey.500',
+    fontSize: '12px',
+    textAlign: 'right',
+    sx: { flex: '0 1 27px', userSelect: 'none' },
+  }
 
   return (
-    <Box position="absolute" sx={{ bottom: 24, width: "180px" }}>
+    <Box position="absolute" sx={{ bottom: 24, width: '180px' }}>
       {trafficGraph && pageVisible && (
         <div
-          style={{ width: "100%", height: 60, marginBottom: 6 }}
+          style={{ width: '100%', height: 60, marginBottom: 6 }}
           onClick={trafficRef.current?.toggleStyle}
         >
           <TrafficGraph ref={trafficRef} />
@@ -143,10 +144,10 @@ export const LayoutTraffic = () => {
       )}
 
       <Box display="flex" flexDirection="column" gap={0.75}>
-        <Box title={t("Upload Speed")} {...boxStyle}>
+        <Box title={t('Upload Speed')} {...boxStyle}>
           <ArrowUpwardRounded
             {...iconStyle}
-            color={+up > 0 ? "secondary" : "disabled"}
+            color={+up > 0 ? 'secondary' : 'disabled'}
           />
           <Typography {...valStyle} color="secondary">
             {up}
@@ -154,10 +155,10 @@ export const LayoutTraffic = () => {
           <Typography {...unitStyle}>{upUnit}/s</Typography>
         </Box>
 
-        <Box title={t("Download Speed")} {...boxStyle}>
+        <Box title={t('Download Speed')} {...boxStyle}>
           <ArrowDownwardRounded
             {...iconStyle}
-            color={+down > 0 ? "primary" : "disabled"}
+            color={+down > 0 ? 'primary' : 'disabled'}
           />
           <Typography {...valStyle} color="primary">
             {down}
@@ -167,12 +168,12 @@ export const LayoutTraffic = () => {
 
         {displayMemory && (
           <Box
-            title={t(isDebug ? "Memory Cleanup" : "Memory Usage")}
+            title={t(isDebug ? 'Memory Cleanup' : 'Memory Usage')}
             {...boxStyle}
-            sx={{ cursor: isDebug ? "pointer" : "auto" }}
-            color={isDebug ? "success.main" : "disabled"}
+            sx={{ cursor: isDebug ? 'pointer' : 'auto' }}
+            color={isDebug ? 'success.main' : 'disabled'}
             onClick={async () => {
-              isDebug && (await gc());
+              if (isDebug) await gc()
             }}
           >
             <MemoryRounded {...iconStyle} />
@@ -182,5 +183,5 @@ export const LayoutTraffic = () => {
         )}
       </Box>
     </Box>
-  );
-};
+  )
+}

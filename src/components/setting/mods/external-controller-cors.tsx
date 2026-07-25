@@ -1,83 +1,85 @@
-import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
-import { useLockFn } from "ahooks";
-import { useTranslation } from "react-i18next";
 import {
   Switch as FluentSwitch,
   Button as FluentButton,
   Input,
   Caption1,
-} from "@fluentui/react-components";
-import { DeleteRegular, AddRegular } from "@fluentui/react-icons";
-import { DialogRef, Notice } from "@/components/base";
-import { useClash } from "@/hooks/use-clash";
-import { restartCore } from "@/services/cmds";
-import { Expander } from "../../fluent/expander";
-import { tokens } from "../../../pages/_fluent_theme";
+} from '@fluentui/react-components'
+import { DeleteRegular, AddRegular } from '@fluentui/react-icons'
+import { useLockFn } from 'ahooks'
+import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+
+import { DialogRef, Notice } from '@/components/base'
+import { useClash } from '@/hooks/use-clash'
+import { restartCore } from '@/services/cmds'
+
+import { tokens } from '../../../pages/_fluent_theme'
+import { Expander } from '../../fluent/expander'
 
 // These dev URLs are always included; hidden from the UI list.
 const DEV_URLS = [
-  "tauri://localhost",
-  "http://tauri.localhost",
-  "http://localhost:3000",
-];
+  'tauri://localhost',
+  'http://tauri.localhost',
+  'http://localhost:3000',
+]
 
 const filterBaseOriginsForUI = (origins: string[]) =>
-  origins.filter((origin) => !DEV_URLS.includes(origin.trim()));
+  origins.filter((origin) => !DEV_URLS.includes(origin.trim()))
 
 const getFullOrigins = (origins: string[]) => [
   ...new Set([...origins, ...DEV_URLS]),
-];
+]
 
 export const HeaderConfiguration = forwardRef<DialogRef>((props, ref) => {
-  const { t } = useTranslation();
-  const { clash, mutateClash, patchClash } = useClash();
-  const [open, setOpen] = useState(false);
+  const { t } = useTranslation()
+  const { clash, mutateClash, patchClash } = useClash()
+  const [, setOpen] = useState(false)
 
-  const [allowPrivateNetwork, setAllowPrivateNetwork] = useState(true);
-  const [allowOrigins, setAllowOrigins] = useState<string[]>([]);
+  const [allowPrivateNetwork, setAllowPrivateNetwork] = useState(true)
+  const [allowOrigins, setAllowOrigins] = useState<string[]>([])
 
   const loadFromClash = () => {
-    const cors = clash?.["external-controller-cors"];
-    setAllowPrivateNetwork(cors?.["allow-private-network"] ?? true);
-    setAllowOrigins(filterBaseOriginsForUI(cors?.["allow-origins"] ?? []));
-  };
+    const cors = clash?.['external-controller-cors']
+    setAllowPrivateNetwork(cors?.['allow-private-network'] ?? true)
+    setAllowOrigins(filterBaseOriginsForUI(cors?.['allow-origins'] ?? []))
+  }
 
   useImperativeHandle(ref, () => ({
     open: () => {
-      loadFromClash();
-      setOpen(true);
+      loadFromClash()
+      setOpen(true)
     },
     close: () => setOpen(false),
-  }));
+  }))
 
   // Populate from clash when rendered inline (canExpand content)
   useEffect(() => {
-    loadFromClash();
-  }, [clash?.["external-controller-cors"]]);
+    loadFromClash()
+  }, [clash?.['external-controller-cors']])
 
   const onSave = useLockFn(async () => {
     try {
       await patchClash({
-        "external-controller-cors": {
-          "allow-private-network": allowPrivateNetwork,
-          "allow-origins": getFullOrigins(allowOrigins).filter(
-            (o) => o.trim() !== "",
+        'external-controller-cors': {
+          'allow-private-network': allowPrivateNetwork,
+          'allow-origins': getFullOrigins(allowOrigins).filter(
+            (o) => o.trim() !== '',
           ),
         },
-      });
-      await restartCore();
-      await mutateClash();
-      Notice.success(t("Settings Applied"), 1000);
-      setOpen(false);
+      })
+      await restartCore()
+      await mutateClash()
+      Notice.success(t('Settings Applied'), 1000)
+      setOpen(false)
     } catch (err: any) {
-      Notice.error(err.message || err.toString());
+      Notice.error(err.message || err.toString())
     }
-  });
+  })
 
   return (
     <>
       <Expander
-        left={t("Allow Private Network")}
+        left={t('Allow Private Network')}
         right={
           <FluentSwitch
             checked={allowPrivateNetwork}
@@ -87,14 +89,14 @@ export const HeaderConfiguration = forwardRef<DialogRef>((props, ref) => {
       />
 
       <Expander
-        left={t("Allowed Origins")}
+        left={t('Allowed Origins')}
         right={
           <FluentButton
             appearance="subtle"
             icon={<AddRegular />}
-            onClick={() => setAllowOrigins((o) => [...o, ""])}
+            onClick={() => setAllowOrigins((o) => [...o, ''])}
           >
-            {t("Add")}
+            {t('Add')}
           </FluentButton>
         }
       />
@@ -109,9 +111,9 @@ export const HeaderConfiguration = forwardRef<DialogRef>((props, ref) => {
               placeholder="https://example.com"
               onChange={(e) =>
                 setAllowOrigins((list) => {
-                  const next = [...list];
-                  next[index] = e.target.value;
-                  return next;
+                  const next = [...list]
+                  next[index] = e.target.value
+                  return next
                 })
               }
             />
@@ -130,13 +132,13 @@ export const HeaderConfiguration = forwardRef<DialogRef>((props, ref) => {
 
       <Caption1
         style={{
-          display: "block",
+          display: 'block',
           color: tokens.colorNeutralForeground3,
-          padding: "8px",
-          fontStyle: "italic",
+          padding: '8px',
+          fontStyle: 'italic',
         }}
       >
-        {t("CORS Always Included")}: {DEV_URLS.join(", ")}
+        {t('CORS Always Included')}: {DEV_URLS.join(', ')}
       </Caption1>
 
       <Expander
@@ -146,10 +148,10 @@ export const HeaderConfiguration = forwardRef<DialogRef>((props, ref) => {
             onClick={onSave}
             style={{ marginBlock: 4 }}
           >
-            {t("Save")}
+            {t('Save')}
           </FluentButton>
         }
       />
     </>
-  );
-});
+  )
+})

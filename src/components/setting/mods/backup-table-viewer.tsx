@@ -1,4 +1,5 @@
-import { SVGProps, memo } from "react";
+import DeleteIcon from '@mui/icons-material/Delete'
+import RestoreIcon from '@mui/icons-material/Restore'
 import {
   Box,
   Paper,
@@ -11,37 +12,37 @@ import {
   TableHead,
   TableRow,
   TablePagination,
-} from "@mui/material";
-import { Notice } from "@/components/base";
-import { Typography } from "@mui/material";
-import { useLockFn } from "ahooks";
-import { useTranslation } from "react-i18next";
-import { Dayjs } from "dayjs";
+} from '@mui/material'
+import { Typography } from '@mui/material'
+import { useLockFn } from 'ahooks'
+import { Dayjs } from 'dayjs'
+import { SVGProps, memo } from 'react'
+import { useTranslation } from 'react-i18next'
+
+import { Notice } from '@/components/base'
 import {
   deleteWebdavBackup,
   restoreWebDavBackup,
   restartApp,
-} from "@/services/cmds";
-import DeleteIcon from "@mui/icons-material/Delete";
-import RestoreIcon from "@mui/icons-material/Restore";
+} from '@/services/cmds'
 
 export type BackupFile = IWebDavFile & {
-  platform: string;
-  backup_time: Dayjs;
-  allow_apply: boolean;
-};
+  platform: string
+  backup_time: Dayjs
+  allow_apply: boolean
+}
 
-export const DEFAULT_ROWS_PER_PAGE = 5;
+export const DEFAULT_ROWS_PER_PAGE = 5
 
 export interface BackupTableViewerProps {
-  datasource: BackupFile[];
-  page: number;
+  datasource: BackupFile[]
+  page: number
   onPageChange: (
     event: React.MouseEvent<HTMLButtonElement> | null,
     page: number,
-  ) => void;
-  total: number;
-  onRefresh: () => Promise<void>;
+  ) => void
+  total: number
+  onRefresh: () => Promise<void>
 }
 
 export const BackupTableViewer = memo(
@@ -52,28 +53,28 @@ export const BackupTableViewer = memo(
     total,
     onRefresh,
   }: BackupTableViewerProps) => {
-    const { t } = useTranslation();
+    const { t } = useTranslation()
 
     const handleDelete = useLockFn(async (filename: string) => {
-      await deleteWebdavBackup(filename);
-      await onRefresh();
-    });
+      await deleteWebdavBackup(filename)
+      await onRefresh()
+    })
 
     const handleRestore = useLockFn(async (filename: string) => {
       await restoreWebDavBackup(filename).then(() => {
-        Notice.success(t("Restore Success, App will restart in 1s"));
-      });
-      await restartApp();
-    });
+        Notice.success(t('Restore Success, App will restart in 1s'))
+      })
+      await restartApp()
+    })
 
     return (
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>{t("Filename")}</TableCell>
-              <TableCell>{t("Backup Time")}</TableCell>
-              <TableCell align="right">{t("Actions")}</TableCell>
+              <TableCell>{t('Filename')}</TableCell>
+              <TableCell>{t('Backup Time')}</TableCell>
+              <TableCell align="right">{t('Actions')}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -81,9 +82,9 @@ export const BackupTableViewer = memo(
               datasource?.map((file, index) => (
                 <TableRow key={index}>
                   <TableCell component="th" scope="row">
-                    {file.platform === "windows" ? (
+                    {file.platform === 'windows' ? (
                       <WindowsIcon className="h-full w-full" />
-                    ) : file.platform === "linux" ? (
+                    ) : file.platform === 'linux' ? (
                       <LinuxIcon className="h-full w-full" />
                     ) : (
                       <MacIcon className="h-full w-full" />
@@ -96,23 +97,23 @@ export const BackupTableViewer = memo(
                   <TableCell align="right">
                     <Box
                       sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "flex-end",
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'flex-end',
                       }}
                     >
                       <IconButton
                         color="secondary"
-                        aria-label={t("Delete")}
+                        aria-label={t('Delete')}
                         size="small"
-                        title={t("Delete Backup")}
+                        title={t('Delete Backup')}
                         onClick={async (e: React.MouseEvent) => {
-                          e.preventDefault();
+                          e.preventDefault()
                           const confirmed = await window.confirm(
-                            t("Confirm to delete this backup file?"),
-                          );
+                            t('Confirm to delete this backup file?'),
+                          )
                           if (confirmed) {
-                            await handleDelete(file.filename);
+                            await handleDelete(file.filename)
                           }
                         }}
                       >
@@ -125,17 +126,17 @@ export const BackupTableViewer = memo(
                       />
                       <IconButton
                         color="primary"
-                        aria-label={t("Restore")}
+                        aria-label={t('Restore')}
                         size="small"
-                        title={t("Restore Backup")}
+                        title={t('Restore Backup')}
                         disabled={!file.allow_apply}
                         onClick={async (e: React.MouseEvent) => {
-                          e.preventDefault();
+                          e.preventDefault()
                           const confirmed = await window.confirm(
-                            t("Confirm to restore this backup file?"),
-                          );
+                            t('Confirm to restore this backup file?'),
+                          )
                           if (confirmed) {
-                            await handleRestore(file.filename);
+                            await handleRestore(file.filename)
                           }
                         }}
                       >
@@ -150,10 +151,10 @@ export const BackupTableViewer = memo(
                 <TableCell colSpan={3} align="center">
                   <Box
                     sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                       height: 150,
                     }}
                   >
@@ -162,7 +163,7 @@ export const BackupTableViewer = memo(
                       color="textSecondary"
                       align="center"
                     >
-                      {t("No Backups")}
+                      {t('No Backups')}
                     </Typography>
                   </Box>
                 </TableCell>
@@ -177,12 +178,12 @@ export const BackupTableViewer = memo(
           rowsPerPage={DEFAULT_ROWS_PER_PAGE}
           page={page}
           onPageChange={onPageChange}
-          labelRowsPerPage={t("Rows per page")}
+          labelRowsPerPage={t('Rows per page')}
         />
       </TableContainer>
-    );
+    )
   },
-);
+)
 
 function LinuxIcon(props: SVGProps<SVGSVGElement>) {
   return (
@@ -228,7 +229,7 @@ function LinuxIcon(props: SVGProps<SVGSVGElement>) {
         d="M32 32.7v.3c.2.4.7.5 1.1.5c.6 0 1.2-.4 1.5-.8c0-.1.1-.2.2-.3c.2-.3.3-.5.4-.6c0 0-.1-.1-.1-.2c-.1-.2-.4-.4-.8-.5c-.3-.1-.8-.2-1-.2c-.9-.1-1.4.2-1.7.5c0 0 .1 0 .1.1c.2.2.3.4.3.7c.1.2 0 .3 0 .5"
       />
     </svg>
-  );
+  )
 }
 
 function WindowsIcon(props: SVGProps<SVGSVGElement>) {
@@ -245,7 +246,7 @@ function WindowsIcon(props: SVGProps<SVGSVGElement>) {
         d="M6.555 1.375L0 2.237v5.45h6.555zM0 13.795l6.555.933V8.313H0zm7.278-5.4l.026 6.378L16 16V8.395zM16 0L7.33 1.244v6.414H16z"
       />
     </svg>
-  );
+  )
 }
 
 function MacIcon(props: SVGProps<SVGSVGElement>) {
@@ -262,5 +263,5 @@ function MacIcon(props: SVGProps<SVGSVGElement>) {
         d="M23.934 18.947c-.598 1.324-.884 1.916-1.652 3.086c-1.073 1.634-2.588 3.673-4.461 3.687c-1.666.014-2.096-1.087-4.357-1.069c-2.261.011-2.732 1.089-4.4 1.072c-1.873-.017-3.307-1.854-4.381-3.485c-3.003-4.575-3.32-9.937-1.464-12.79C4.532 7.425 6.61 6.237 8.561 6.237c1.987 0 3.236 1.092 4.879 1.092c1.594 0 2.565-1.095 4.863-1.095c1.738 0 3.576.947 4.889 2.581c-4.296 2.354-3.598 8.49.742 10.132M16.559 4.408c.836-1.073 1.47-2.587 1.24-4.131c-1.364.093-2.959.964-3.891 2.092c-.844 1.027-1.544 2.553-1.271 4.029c1.488.048 3.028-.839 3.922-1.99"
       />
     </svg>
-  );
+  )
 }

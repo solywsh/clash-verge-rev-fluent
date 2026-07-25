@@ -1,159 +1,159 @@
-import dayjs from "dayjs";
-import { invoke } from "@tauri-apps/api/core";
-import { Notice } from "@/components/base";
+import { invoke } from '@tauri-apps/api/core'
+
+import { Notice } from '@/components/base'
 
 export async function copyClashEnv() {
-  return invoke<void>("copy_clash_env");
+  return invoke<void>('copy_clash_env')
 }
 
 export async function getProfiles() {
-  return invoke<IProfilesConfig>("get_profiles");
+  return invoke<IProfilesConfig>('get_profiles')
 }
 
 export async function enhanceProfiles() {
-  return invoke<void>("enhance_profiles");
+  return invoke<void>('enhance_profiles')
 }
 
 export async function patchProfilesConfig(profiles: IProfilesConfig) {
-  return invoke<void>("patch_profiles_config", { profiles });
+  return invoke<void>('patch_profiles_config', { profiles })
 }
 
 export async function createProfile(
   item: Partial<IProfileItem>,
   fileData?: string | null,
 ) {
-  return invoke<void>("create_profile", { item, fileData });
+  return invoke<void>('create_profile', { item, fileData })
 }
 
 export async function viewProfile(index: string) {
-  return invoke<void>("view_profile", { index });
+  return invoke<void>('view_profile', { index })
 }
 
 export async function openProfileDir(index: string) {
-  return invoke<void>("open_profile_dir", { index });
+  return invoke<void>('open_profile_dir', { index })
 }
 
 export async function readProfileFile(index: string) {
-  return invoke<string>("read_profile_file", { index });
+  return invoke<string>('read_profile_file', { index })
 }
 
 export async function saveProfileFile(index: string, fileData: string) {
-  return invoke<void>("save_profile_file", { index, fileData });
+  return invoke<void>('save_profile_file', { index, fileData })
 }
 
 export async function importProfile(url: string) {
-  return invoke<void>("import_profile", {
+  return invoke<void>('import_profile', {
     url,
     option: { with_proxy: true },
-  });
+  })
 }
 
 export async function reorderProfile(activeId: string, overId: string) {
-  return invoke<void>("reorder_profile", {
+  return invoke<void>('reorder_profile', {
     activeId,
     overId,
-  });
+  })
 }
 
 export async function updateProfile(index: string, option?: IProfileOption) {
-  return invoke<void>("update_profile", { index, option });
+  return invoke<void>('update_profile', { index, option })
 }
 
 export async function deleteProfile(index: string) {
-  return invoke<void>("delete_profile", { index });
+  return invoke<void>('delete_profile', { index })
 }
 
 export async function patchProfile(
   index: string,
   profile: Partial<IProfileItem>,
 ) {
-  return invoke<void>("patch_profile", { index, profile });
+  return invoke<void>('patch_profile', { index, profile })
 }
 
 export async function getClashInfo() {
-  return invoke<IClashInfo | null>("get_clash_info");
+  return invoke<IClashInfo | null>('get_clash_info')
 }
 
 // Get runtime config which controlled by verge
 export async function getRuntimeConfig() {
-  return invoke<IConfigData | null>("get_runtime_config");
+  return invoke<IConfigData | null>('get_runtime_config')
 }
 
 export async function getRuntimeYaml() {
-  return invoke<string | null>("get_runtime_yaml");
+  return invoke<string | null>('get_runtime_yaml')
 }
 
 export async function getRuntimeExists() {
-  return invoke<string[]>("get_runtime_exists");
+  return invoke<string[]>('get_runtime_exists')
 }
 
 export async function getRuntimeLogs() {
-  return invoke<Record<string, [string, string][]>>("get_runtime_logs");
+  return invoke<Record<string, [string, string][]>>('get_runtime_logs')
 }
 
 export async function patchClashConfig(payload: Partial<IConfigData>) {
-  return invoke<void>("patch_clash_config", { payload });
+  return invoke<void>('patch_clash_config', { payload })
 }
 
 export async function getVergeConfig() {
-  return invoke<IVergeConfig>("get_verge_config");
+  return invoke<IVergeConfig>('get_verge_config')
 }
 
 export async function patchVergeConfig(payload: IVergeConfig) {
-  return invoke<void>("patch_verge_config", { payload });
+  return invoke<void>('patch_verge_config', { payload })
 }
 
 export async function getSystemProxy() {
   return invoke<{
-    enable: boolean;
-    server: string;
-    bypass: string;
-  }>("get_sys_proxy");
+    enable: boolean
+    server: string
+    bypass: string
+  }>('get_sys_proxy')
 }
 
 export async function getAutotemProxy() {
   return invoke<{
-    enable: boolean;
-    url: string;
-  }>("get_auto_proxy");
+    enable: boolean
+    url: string
+  }>('get_auto_proxy')
 }
 
 export async function changeClashCore(clashCore: string) {
-  return invoke<any>("change_clash_core", { clashCore });
+  return invoke<any>('change_clash_core', { clashCore })
 }
 
 export async function restartCore() {
-  return invoke<void>("restart_core");
+  return invoke<void>('restart_core')
 }
 
 export async function restartApp() {
-  return invoke<void>("restart_app");
+  return invoke<void>('restart_app')
 }
 
 export async function getAppDir() {
-  return invoke<string>("get_app_dir");
+  return invoke<string>('get_app_dir')
 }
 
 export async function openAppDir() {
-  return invoke<void>("open_app_dir").catch((err) =>
+  return invoke<void>('open_app_dir').catch((err) =>
     Notice.error(err?.message || err.toString(), 1500),
-  );
+  )
 }
 
 export async function openCoreDir() {
-  return invoke<void>("open_core_dir").catch((err) =>
+  return invoke<void>('open_core_dir').catch((err) =>
     Notice.error(err?.message || err.toString(), 1500),
-  );
+  )
 }
 
 export async function openLogsDir() {
-  return invoke<void>("open_logs_dir").catch((err) =>
+  return invoke<void>('open_logs_dir').catch((err) =>
     Notice.error(err?.message || err.toString(), 1500),
-  );
+  )
 }
 
 export async function openWebUrl(url: string) {
-  return invoke<void>("open_web_url", { url });
+  return invoke<void>('open_web_url', { url })
 }
 
 export async function cmdGetProxyDelay(
@@ -163,222 +163,222 @@ export async function cmdGetProxyDelay(
 ) {
   // Backend bridges to the mihomo plugin, which URL-encodes the proxy name
   // itself, so pass the raw name here (encoding it would double-encode).
-  return invoke<{ delay: number }>("clash_api_get_proxy_delay", {
+  return invoke<{ delay: number }>('clash_api_get_proxy_delay', {
     name,
     url,
     timeout,
-  });
+  })
 }
 
 export async function cmdTestDelay(url: string) {
-  return invoke<number>("test_delay", { url });
+  return invoke<number>('test_delay', { url })
 }
 
 export async function invoke_uwp_tool() {
-  return invoke<void>("invoke_uwp_tool").catch((err) =>
+  return invoke<void>('invoke_uwp_tool').catch((err) =>
     Notice.error(err?.message || err.toString(), 1500),
-  );
+  )
 }
 
 export async function getPortableFlag() {
-  return invoke<boolean>("get_portable_flag");
+  return invoke<boolean>('get_portable_flag')
 }
 
 export async function openDevTools() {
-  return invoke("open_devtools");
+  return invoke('open_devtools')
 }
 
 export async function exitApp() {
-  return invoke("exit_app");
+  return invoke('exit_app')
 }
 
 export async function copyIconFile(
   path: string,
-  name: "common" | "sysproxy" | "tun",
+  name: 'common' | 'sysproxy' | 'tun',
 ) {
-  return invoke<void>("copy_icon_file", { path, name });
+  return invoke<void>('copy_icon_file', { path, name })
 }
 
 export async function downloadIconCache(url: string, name: string) {
-  return invoke<string>("download_icon_cache", { url, name });
+  return invoke<string>('download_icon_cache', { url, name })
 }
 
 export async function getNetworkInterfaces() {
-  return invoke<string[]>("get_network_interfaces");
+  return invoke<string[]>('get_network_interfaces')
 }
 
 export async function getNetworkInterfacesInfo() {
-  return invoke<INetworkInterface[]>("get_network_interfaces_info");
+  return invoke<INetworkInterface[]>('get_network_interfaces_info')
 }
 
 export async function createWebdavBackup() {
-  return invoke<void>("create_webdav_backup");
+  return invoke<void>('create_webdav_backup')
 }
 
 export async function deleteWebdavBackup(filename: string) {
-  return invoke<void>("delete_webdav_backup", { filename });
+  return invoke<void>('delete_webdav_backup', { filename })
 }
 
 export async function restoreWebDavBackup(filename: string) {
-  return invoke<void>("restore_webdav_backup", { filename });
+  return invoke<void>('restore_webdav_backup', { filename })
 }
 
 export async function saveWebdavConfig(
   url: string,
   username: string,
-  password: String,
+  password: string,
 ) {
-  return invoke<void>("save_webdav_config", {
+  return invoke<void>('save_webdav_config', {
     url,
     username,
     password,
-  });
+  })
 }
 
 export async function listWebDavBackup() {
-  let list: IWebDavFile[] = await invoke<IWebDavFile[]>("list_webdav_backup");
+  const list: IWebDavFile[] = await invoke<IWebDavFile[]>('list_webdav_backup')
   list.map((item) => {
-    item.filename = item.href.split("/").pop() as string;
-  });
-  return list;
+    item.filename = item.href.split('/').pop() as string
+  })
+  return list
 }
 
 // 配置校验结果（DNS 等）
 export interface IValidationOutcome {
-  status: "valid" | "invalid" | "skipped";
-  message?: string;
+  status: 'valid' | 'invalid' | 'skipped'
+  message?: string
 }
 
 // ===== Lightweight (轻量) 模式 =====
 export async function entryLightweightMode() {
-  return invoke<void>("entry_lightweight_mode");
+  return invoke<void>('entry_lightweight_mode')
 }
 
 export async function exitLightweightMode() {
-  return invoke<void>("exit_lightweight_mode");
+  return invoke<void>('exit_lightweight_mode')
 }
 
 // ===== 端口占用检测 =====
 export async function isPortInUse(port: number) {
-  return invoke<boolean>("is_port_in_use", { port });
+  return invoke<boolean>('is_port_in_use', { port })
 }
 
 // ===== DNS 设置 =====
 export async function checkDnsConfigExists() {
-  return invoke<boolean>("check_dns_config_exists");
+  return invoke<boolean>('check_dns_config_exists')
 }
 
 export async function getDnsConfigContent() {
-  return invoke<string>("get_dns_config_content");
+  return invoke<string>('get_dns_config_content')
 }
 
 export async function saveDnsConfig(dnsConfig: Record<string, any>) {
-  return invoke<void>("save_dns_config", { dnsConfig });
+  return invoke<void>('save_dns_config', { dnsConfig })
 }
 
 export async function validateDnsConfig() {
-  return invoke<IValidationOutcome>("validate_dns_config");
+  return invoke<IValidationOutcome>('validate_dns_config')
 }
 
 export async function applyDnsConfig(apply: boolean) {
-  return invoke<void>("apply_dns_config", { apply });
+  return invoke<void>('apply_dns_config', { apply })
 }
 
 // ===== 本地备份 =====
 export async function createLocalBackup() {
-  return invoke<void>("create_local_backup");
+  return invoke<void>('create_local_backup')
 }
 
 export async function listLocalBackup() {
-  return invoke<ILocalBackupFile[]>("list_local_backup");
+  return invoke<ILocalBackupFile[]>('list_local_backup')
 }
 
 export async function deleteLocalBackup(filename: string) {
-  return invoke<void>("delete_local_backup", { filename });
+  return invoke<void>('delete_local_backup', { filename })
 }
 
 export async function restoreLocalBackup(filename: string) {
-  return invoke<void>("restore_local_backup", { filename });
+  return invoke<void>('restore_local_backup', { filename })
 }
 
 // source: 待导入的备份文件绝对路径，返回导入后的文件名
 export async function importLocalBackup(source: string) {
-  return invoke<string>("import_local_backup", { source });
+  return invoke<string>('import_local_backup', { source })
 }
 
 // destination: 导出目标绝对路径
 export async function exportLocalBackup(filename: string, destination: string) {
-  return invoke<void>("export_local_backup", { filename, destination });
+  return invoke<void>('export_local_backup', { filename, destination })
 }
 
 // ===== 诊断信息导出 =====
 export async function exportDiagnosticInfo() {
-  return invoke<void>("export_diagnostic_info");
+  return invoke<void>('export_diagnostic_info')
 }
 
 // ===== 流媒体解锁检测 =====
 export async function getUnlockItems() {
-  return invoke<IUnlockItem[]>("get_unlock_items");
+  return invoke<IUnlockItem[]>('get_unlock_items')
 }
 
 export async function checkMediaUnlock() {
-  return invoke<IUnlockItem[]>("check_media_unlock");
+  return invoke<IUnlockItem[]>('check_media_unlock')
 }
 
 // ===== Home 仪表盘相关 =====
 // 上游把 get_system_info 从「多行字符串」改成了结构体（tauri-plugin-clash-verge-sysinfo）。
 export interface ISystemInfo {
-  system_name: string;
-  system_version: string;
-  system_kernel_version: string;
-  system_arch: string;
-  app_version: string;
-  app_core_mode: string;
-  app_is_admin: boolean;
+  system_name: string
+  system_version: string
+  system_kernel_version: string
+  system_arch: string
+  app_version: string
+  app_core_mode: string
+  app_is_admin: boolean
 }
 
 export async function getSystemInfo() {
-  return invoke<ISystemInfo>("get_system_info");
+  return invoke<ISystemInfo>('get_system_info')
 }
 
 export async function getAppUptime() {
-  return invoke<number>("get_app_uptime");
+  return invoke<number>('get_app_uptime')
 }
 
 export async function appIsAdmin() {
-  return invoke<boolean>("app_is_admin");
+  return invoke<boolean>('app_is_admin')
 }
 
 export async function getRunningMode() {
-  return invoke<string>("get_running_mode");
+  return invoke<string>('get_running_mode')
 }
 
 export async function getSystemHostname() {
-  return invoke<string>("get_system_hostname");
+  return invoke<string>('get_system_hostname')
 }
 
 export async function patchClashMode(payload: string) {
-  return invoke<void>("patch_clash_mode", { payload });
+  return invoke<void>('patch_clash_mode', { payload })
 }
 
 // Privileged service (required for TUN mode on Windows). `is_service_available`
 // resolves to true when the service is reachable and REJECTS when it is not.
 export async function isServiceAvailable() {
-  return invoke<boolean>("is_service_available");
+  return invoke<boolean>('is_service_available')
 }
 
 export async function installService() {
-  return invoke<void>("install_service");
+  return invoke<void>('install_service')
 }
 
 export async function uninstallService() {
-  return invoke<void>("uninstall_service");
+  return invoke<void>('uninstall_service')
 }
 
 export async function reinstallService() {
-  return invoke<void>("reinstall_service");
+  return invoke<void>('reinstall_service')
 }
 
 export async function repairService() {
-  return invoke<void>("repair_service");
+  return invoke<void>('repair_service')
 }

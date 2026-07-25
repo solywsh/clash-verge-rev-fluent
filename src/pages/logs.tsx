@@ -1,64 +1,59 @@
-import { useMemo, useState } from "react";
-import { Box, Button, IconButton, MenuItem } from "@mui/material";
-import { Virtuoso } from "react-virtuoso";
-import { useTranslation } from "react-i18next";
-import { useLocalStorage } from "foxact/use-local-storage";
 import {
   Button as FluentButton,
   MenuButton,
   Menu,
   MenuTrigger,
-  TabList,
-  Tab,
   MenuPopover,
   MenuList,
   MenuItemRadio,
-} from "@fluentui/react-components";
-import { tokens } from "./_fluent_theme";
-import { PauseCircleRegular, PlayCircleRegular } from "@fluentui/react-icons";
-import {
-  PlayCircleOutlineRounded,
-  PauseCircleOutlineRounded,
-} from "@mui/icons-material";
-import { useLogData, LogLevel, clearLogs } from "@/hooks/use-log-data";
-import { useEnableLog } from "@/services/states";
-import { BaseEmpty, BasePage } from "@/components/base";
-import LogItem from "@/components/log/log-item";
-import { useTheme } from "@mui/material/styles";
-import { FluentBaseSearchBox as BaseSearchBox } from "@/components/base/base-search-box";
-import { BaseStyledSelect } from "@/components/base/base-styled-select";
-import { SearchState } from "@/components/base/base-search-box";
+} from '@fluentui/react-components'
+import { PauseCircleRegular, PlayCircleRegular } from '@fluentui/react-icons'
+import { Box } from '@mui/material'
+import { useTheme } from '@mui/material/styles'
+import { useLocalStorage } from 'foxact/use-local-storage'
+import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Virtuoso } from 'react-virtuoso'
+
+import { BaseEmpty, BasePage } from '@/components/base'
+import { FluentBaseSearchBox as BaseSearchBox } from '@/components/base/base-search-box'
+import { SearchState } from '@/components/base/base-search-box'
+import LogItem from '@/components/log/log-item'
+import { useLogData, LogLevel, clearLogs } from '@/hooks/use-log-data'
+import { useEnableLog } from '@/services/states'
+
+import { tokens } from './_fluent_theme'
 
 const LogPage = () => {
-  const { t } = useTranslation();
-  const [enableLog, setEnableLog] = useEnableLog();
-  const theme = useTheme();
-  const isDark = theme.palette.mode === "dark";
+  const { t } = useTranslation()
+  const [enableLog, setEnableLog] = useEnableLog()
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
   const [logLevel, setLogLevel] = useLocalStorage<LogLevel>(
-    "log:log-level",
-    "info",
-  );
-  const [match, setMatch] = useState(() => (_: string) => true);
-  const logData = useLogData(logLevel);
-  const [searchState, setSearchState] = useState<SearchState>();
+    'log:log-level',
+    'info',
+  )
+  const [match, setMatch] = useState(() => (_: string) => true)
+  const logData = useLogData(logLevel)
+  const [searchState, setSearchState] = useState<SearchState>()
 
   const filterLogs = useMemo(() => {
     return logData
       ? logData.filter((data) =>
-          logLevel === "all"
+          logLevel === 'all'
             ? match(data.payload)
             : data.type.includes(logLevel) && match(data.payload),
         )
-      : [];
-  }, [logData, logLevel, match]);
+      : []
+  }, [logData, logLevel, match])
 
   return (
     <BasePage
       full
-      title={t("Logs")}
-      contentStyle={{ height: "100%" }}
+      title={t('Logs')}
+      contentStyle={{ height: '100%' }}
       header={
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {/* <IconButton
             title={t("Pause")}
             size="small"
@@ -80,11 +75,11 @@ const LogPage = () => {
           {enableLog === true && (
             <FluentButton
               onClick={() => {
-                clearLogs();
+                clearLogs()
               }}
               className="fds"
             >
-              {t("Clear")}
+              {t('Clear')}
             </FluentButton>
           )}
         </Box>
@@ -94,10 +89,10 @@ const LogPage = () => {
         sx={{
           pt: 1,
           mb: 0.5,
-          mx: "20px",
-          height: "36px",
-          display: "flex",
-          alignItems: "center",
+          mx: '20px',
+          height: '36px',
+          display: 'flex',
+          alignItems: 'center',
           gap: 1,
         }}
       >
@@ -142,8 +137,8 @@ const LogPage = () => {
         </Menu>
         <BaseSearchBox
           onSearch={(matcher, state) => {
-            setMatch(() => matcher);
-            setSearchState(state);
+            setMatch(() => matcher)
+            setSearchState(state)
           }}
         />
       </Box>
@@ -151,9 +146,9 @@ const LogPage = () => {
       <Box
         height="calc(100% - 65px)"
         sx={{
-          margin: "10px",
-          mx: "20px",
-          borderRadius: "8px",
+          margin: '10px',
+          mx: '20px',
+          borderRadius: '8px',
           // bgcolor: isDark ? "#282a36" : "#ffffff",
           bgcolor: tokens.surface1,
         }}
@@ -165,14 +160,14 @@ const LogPage = () => {
             itemContent={(index, item) => (
               <LogItem value={item} searchState={searchState} />
             )}
-            followOutput={"smooth"}
+            followOutput={'smooth'}
           />
         ) : (
           <BaseEmpty />
         )}
       </Box>
     </BasePage>
-  );
-};
+  )
+}
 
-export default LogPage;
+export default LogPage

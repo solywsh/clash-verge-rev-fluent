@@ -1,26 +1,28 @@
-import { useEffect } from "react";
-import { useEnableLog } from "../services/states";
-import { createMihomoWs } from "../utils/websocket";
-import { useClashInfo } from "./use-clash";
-import dayjs from "dayjs";
-import { create } from "zustand";
-import { useVisibility } from "./use-visibility";
+import dayjs from 'dayjs'
+import { useEffect } from 'react'
+import { create } from 'zustand'
 
-const MAX_LOG_NUM = 1000;
+import { useEnableLog } from '../services/states'
+import { createMihomoWs } from '../utils/websocket'
 
-export type LogLevel = "warning" | "info" | "debug" | "error" | "all";
+import { useClashInfo } from './use-clash'
+import { useVisibility } from './use-visibility'
+
+const MAX_LOG_NUM = 1000
+
+export type LogLevel = 'warning' | 'info' | 'debug' | 'error' | 'all'
 
 interface ILogItem {
-  time?: string;
-  type: string;
-  payload: string;
-  [key: string]: any;
+  time?: string
+  type: string
+  payload: string
+  [key: string]: any
 }
 
 interface LogStore {
-  logs: ILogItem[];
-  clearLogs: () => void;
-  appendLog: (log: ILogItem) => void;
+  logs: ILogItem[]
+  clearLogs: () => void
+  appendLog: (log: ILogItem) => void
 }
 
 // A single unified log buffer. We subscribe once at the most verbose level
@@ -38,46 +40,46 @@ const useLogStore = create<LogStore>(
             : [...state.logs, log],
       })),
   }),
-);
+)
 
 // `logLevel` is accepted for backwards compatibility but no longer changes the
 // subscription (we always stream at "debug"); callers filter the result by level.
 export const useLogData = (_logLevel?: LogLevel) => {
-  const { clashInfo } = useClashInfo();
-  const [enableLog] = useEnableLog();
-  const { logs, appendLog } = useLogStore();
-  const pageVisible = useVisibility();
+  const { clashInfo } = useClashInfo()
+  const [enableLog] = useEnableLog()
+  const { logs, appendLog } = useLogStore()
+  const pageVisible = useVisibility()
 
   useEffect(() => {
-    if (!enableLog || !clashInfo || !pageVisible) return;
+    if (!enableLog || !clashInfo || !pageVisible) return
 
-    let isActive = true;
+    let isActive = true
     const socket = createMihomoWs(
-      { stream: "logs", level: "DEBUG" },
+      { stream: 'logs', level: 'DEBUG' },
       {
         onmessage(event) {
-          if (!isActive) return;
-          const data = JSON.parse(event.data) as ILogItem;
-          const time = dayjs().format("MM-DD HH:mm:ss");
-          appendLog({ ...data, time });
+          if (!isActive) return
+          const data = JSON.parse(event.data) as ILogItem
+          const time = dayjs().format('MM-DD HH:mm:ss')
+          appendLog({ ...data, time })
         },
         onerror() {
-          if (!isActive) return;
-          socket.close();
+          if (!isActive) return
+          socket.close()
         },
       },
-    );
+    )
 
     return () => {
-      isActive = false;
-      socket.close();
-    };
-  }, [clashInfo, enableLog, pageVisible]);
+      isActive = false
+      socket.close()
+    }
+  }, [clashInfo, enableLog, pageVisible])
 
-  return logs;
-};
+  return logs
+}
 
 // 导出清空日志的方法
 export const clearLogs = () => {
-  useLogStore.getState().clearLogs();
-};
+  useLogStore.getState().clearLogs()
+}

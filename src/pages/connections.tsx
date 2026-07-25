@@ -1,156 +1,154 @@
-import { useMemo, useRef, useState } from "react";
-import { useLockFn } from "ahooks";
-import { Box, Button, IconButton, MenuItem } from "@mui/material";
-import { Button as FluentButton } from "@fluentui/react-components";
-import {
-  GridKanbanRegular,
-  TextBulletListRegular,
-} from "@fluentui/react-icons";
-import { tokens } from "./_fluent_theme";
-import { Virtuoso } from "react-virtuoso";
-import { useTranslation } from "react-i18next";
-import { TableChartRounded, TableRowsRounded } from "@mui/icons-material";
-import { closeAllConnections } from "@/services/api";
-import { useConnectionSetting } from "@/services/states";
-import { useClashInfo } from "@/hooks/use-clash";
-import { BaseEmpty, BasePage } from "@/components/base";
-import { ConnectionItem } from "@/components/connection/connection-item";
-import { ConnectionTable } from "@/components/connection/connection-table";
+import { Button as FluentButton } from '@fluentui/react-components'
+import { GridKanbanRegular, TextBulletListRegular } from '@fluentui/react-icons'
+import { Box, MenuItem } from '@mui/material'
+import { useTheme } from '@mui/material/styles'
+import { useLockFn } from 'ahooks'
+import { useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Virtuoso } from 'react-virtuoso'
+import useSWRSubscription from 'swr/subscription'
+
+import { BaseEmpty, BasePage } from '@/components/base'
+import { FluentBaseSearchBox as BaseSearchBox } from '@/components/base/base-search-box'
+import { BaseStyledSelect } from '@/components/base/base-styled-select'
 import {
   ConnectionDetail,
   ConnectionDetailRef,
-} from "@/components/connection/connection-detail";
-import parseTraffic from "@/utils/parse-traffic";
-import { FluentBaseSearchBox as BaseSearchBox } from "@/components/base/base-search-box";
-import { BaseStyledSelect } from "@/components/base/base-styled-select";
-import useSWRSubscription from "swr/subscription";
-import { createMihomoWs } from "@/utils/websocket";
-import { useTheme } from "@mui/material/styles";
-import { useVisibility } from "@/hooks/use-visibility";
+} from '@/components/connection/connection-detail'
+import { ConnectionItem } from '@/components/connection/connection-item'
+import { ConnectionTable } from '@/components/connection/connection-table'
+import { useClashInfo } from '@/hooks/use-clash'
+import { useVisibility } from '@/hooks/use-visibility'
+import { closeAllConnections } from '@/services/api'
+import { useConnectionSetting } from '@/services/states'
+import parseTraffic from '@/utils/parse-traffic'
+import { createMihomoWs } from '@/utils/websocket'
+
+import { tokens } from './_fluent_theme'
 
 const initConn: IConnections = {
   uploadTotal: 0,
   downloadTotal: 0,
   connections: [],
-};
+}
 
-type OrderFunc = (list: IConnectionsItem[]) => IConnectionsItem[];
+type OrderFunc = (list: IConnectionsItem[]) => IConnectionsItem[]
 
 const ConnectionsPage = () => {
-  const { t } = useTranslation();
-  const { clashInfo } = useClashInfo();
-  const pageVisible = useVisibility();
-  const theme = useTheme();
-  const isDark = theme.palette.mode === "dark";
-  const [match, setMatch] = useState(() => (_: string) => true);
-  const [curOrderOpt, setOrderOpt] = useState("Default");
+  const { t } = useTranslation()
+  const { clashInfo } = useClashInfo()
+  const pageVisible = useVisibility()
+  const theme = useTheme()
+  const isDark = theme.palette.mode === 'dark'
+  const [match, setMatch] = useState(() => (_: string) => true)
+  const [curOrderOpt, setOrderOpt] = useState('Default')
 
-  const [setting, setSetting] = useConnectionSetting();
+  const [setting, setSetting] = useConnectionSetting()
 
-  const isTableLayout = setting.layout === "table";
+  const isTableLayout = setting.layout === 'table'
 
   const orderOpts: Record<string, OrderFunc> = {
     Default: (list) =>
       list.sort(
         (a, b) =>
-          new Date(b.start || "0").getTime()! -
-          new Date(a.start || "0").getTime()!,
+          new Date(b.start || '0').getTime()! -
+          new Date(a.start || '0').getTime()!,
       ),
-    "Upload Speed": (list) => list.sort((a, b) => b.curUpload! - a.curUpload!),
-    "Download Speed": (list) =>
+    'Upload Speed': (list) => list.sort((a, b) => b.curUpload! - a.curUpload!),
+    'Download Speed': (list) =>
       list.sort((a, b) => b.curDownload! - a.curDownload!),
-  };
+  }
 
   const { data: connData = initConn } = useSWRSubscription<
     IConnections,
     any,
-    "getClashConnections" | null
+    'getClashConnections' | null
   >(
-    clashInfo && pageVisible ? "getClashConnections" : null,
+    clashInfo && pageVisible ? 'getClashConnections' : null,
     (_key, { next }) => {
       const s = createMihomoWs(
-        { stream: "connections" },
+        { stream: 'connections' },
         {
           onmessage(event) {
             // meta v1.15.0 出现 data.connections 为 null 的情况
-            const data = JSON.parse(event.data) as IConnections;
+            const data = JSON.parse(event.data) as IConnections
             // 尽量与前一次 connections 的展示顺序保持一致
             next(null, (old = initConn) => {
-              const oldConn = old.connections;
-              const maxLen = data.connections?.length;
+              const oldConn = old.connections
+              const maxLen = data.connections?.length
 
-              const connections: IConnectionsItem[] = [];
+              const connections: IConnectionsItem[] = []
 
               const rest = (data.connections || []).filter((each) => {
-                const index = oldConn.findIndex((o) => o.id === each.id);
+                const index = oldConn.findIndex((o) => o.id === each.id)
 
                 if (index >= 0 && index < maxLen) {
-                  const old = oldConn[index];
-                  each.curUpload = each.upload - old.upload;
-                  each.curDownload = each.download - old.download;
+                  const old = oldConn[index]
+                  each.curUpload = each.upload - old.upload
+                  each.curDownload = each.download - old.download
 
-                  connections[index] = each;
-                  return false;
+                  connections[index] = each
+                  return false
                 }
-                return true;
-              });
+                return true
+              })
 
               for (let i = 0; i < maxLen; ++i) {
                 if (!connections[i] && rest.length > 0) {
-                  connections[i] = rest.shift()!;
-                  connections[i].curUpload = 0;
-                  connections[i].curDownload = 0;
+                  connections[i] = rest.shift()!
+                  connections[i].curUpload = 0
+                  connections[i].curDownload = 0
                 }
               }
 
-              return { ...data, connections };
-            });
+              return { ...data, connections }
+            })
           },
           onerror(event) {
-            next(event);
+            next(event)
           },
         },
-      );
+      )
 
       return () => {
-        s.close();
-      };
+        s.close()
+      }
     },
-  );
+  )
 
   const [filterConn, download, upload] = useMemo(() => {
-    const orderFunc = orderOpts[curOrderOpt];
+    const orderFunc = orderOpts[curOrderOpt]
     let connections = connData.connections.filter((conn) =>
-      match(conn.metadata.host || conn.metadata.destinationIP || ""),
-    );
+      match(conn.metadata.host || conn.metadata.destinationIP || ''),
+    )
 
-    if (orderFunc) connections = orderFunc(connections);
+    if (orderFunc) connections = orderFunc(connections)
 
-    let download = 0;
-    let upload = 0;
+    let download = 0
+    let upload = 0
     connections.forEach((x) => {
-      download += x.download;
-      upload += x.upload;
-    });
-    return [connections, download, upload];
-  }, [connData, match, curOrderOpt]);
+      download += x.download
+      upload += x.upload
+    })
+    return [connections, download, upload]
+  }, [connData, match, curOrderOpt])
 
-  const onCloseAll = useLockFn(closeAllConnections);
+  const onCloseAll = useLockFn(closeAllConnections)
 
-  const detailRef = useRef<ConnectionDetailRef>(null!);
+  const detailRef = useRef<ConnectionDetailRef>(null!)
 
   return (
     <BasePage
       full
-      title={<span style={{ whiteSpace: "nowrap" }}>{t("Connections")}</span>}
-      contentStyle={{ height: "100%" }}
+      title={<span style={{ whiteSpace: 'nowrap' }}>{t('Connections')}</span>}
+      contentStyle={{ height: '100%' }}
       header={
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Box sx={{ mx: 1 }}>
-            {t("Downloaded")}: {parseTraffic(download)}
+            {t('Downloaded')}: {parseTraffic(download)}
           </Box>
           <Box sx={{ mx: 1 }}>
-            {t("Uploaded")}: {parseTraffic(upload)}
+            {t('Uploaded')}: {parseTraffic(upload)}
           </Box>
           {/* <IconButton
             color="inherit"
@@ -181,14 +179,14 @@ const ConnectionsPage = () => {
             appearance="subtle"
             onClick={() =>
               setSetting((o) =>
-                o?.layout !== "table"
-                  ? { ...o, layout: "table" }
-                  : { ...o, layout: "list" },
+                o?.layout !== 'table'
+                  ? { ...o, layout: 'table' }
+                  : { ...o, layout: 'list' },
               )
             }
           />
           <FluentButton onClick={onCloseAll} className="fds">
-            <span style={{ whiteSpace: "nowrap" }}>{t("Close All")}</span>
+            <span style={{ whiteSpace: 'nowrap' }}>{t('Close All')}</span>
           </FluentButton>
         </Box>
       }
@@ -197,11 +195,11 @@ const ConnectionsPage = () => {
         sx={{
           pt: 1,
           mb: 0.5,
-          mx: "20px",
-          height: "36px",
-          display: "flex",
-          alignItems: "center",
-          userSelect: "text",
+          mx: '20px',
+          height: '36px',
+          display: 'flex',
+          alignItems: 'center',
+          userSelect: 'text',
         }}
       >
         {!isTableLayout && (
@@ -222,10 +220,10 @@ const ConnectionsPage = () => {
       <Box
         height="calc(100% - 65px)"
         sx={{
-          userSelect: "text",
-          margin: "10px",
-          mx: "20px",
-          borderRadius: "8px",
+          userSelect: 'text',
+          margin: '10px',
+          mx: '20px',
+          borderRadius: '8px',
           // bgcolor: isDark ? "#282a36" : "#ffffff",
           bgcolor: tokens.surface1,
         }}
@@ -251,7 +249,7 @@ const ConnectionsPage = () => {
       </Box>
       <ConnectionDetail ref={detailRef} />
     </BasePage>
-  );
-};
+  )
+}
 
-export default ConnectionsPage;
+export default ConnectionsPage

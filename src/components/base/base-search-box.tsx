@@ -1,9 +1,8 @@
-import RegularExpressionIcon from "@/assets/image/component/use_regular_expression.svg?react";
 import {
   Button,
   Input,
   Tooltip as FluentTooltip,
-} from "@fluentui/react-components";
+} from '@fluentui/react-components'
 import {
   TextCaseTitleFilled,
   TextCaseTitleRegular,
@@ -11,101 +10,102 @@ import {
   TextWholeWordRegular,
   TextPeriodAsteriskRegular,
   TextPeriodAsteriskFilled,
-} from "@fluentui/react-icons";
-import { tokens } from "../../pages/_fluent_theme";
-import { Box, SvgIcon, TextField, styled } from "@mui/material";
-import Tooltip from "@mui/material/Tooltip";
-import { ChangeEvent, useEffect, useRef, useState } from "react";
+} from '@fluentui/react-icons'
+import { Box, SvgIcon, TextField, styled } from '@mui/material'
+import Tooltip from '@mui/material/Tooltip'
+import { ChangeEvent, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
-import { useTranslation } from "react-i18next";
-import matchCaseIcon from "@/assets/image/component/match_case.svg?react";
-import matchWholeWordIcon from "@/assets/image/component/match_whole_word.svg?react";
-import useRegularExpressionIcon from "@/assets/image/component/use_regular_expression.svg?react";
+import matchCaseIcon from '@/assets/image/component/match_case.svg?react'
+import matchWholeWordIcon from '@/assets/image/component/match_whole_word.svg?react'
+import useRegularExpressionIcon from '@/assets/image/component/use_regular_expression.svg?react'
+
+import { tokens } from '../../pages/_fluent_theme'
 
 export type SearchState = {
-  text: string;
-  matchCase: boolean;
-  matchWholeWord: boolean;
-  useRegularExpression: boolean;
-};
+  text: string
+  matchCase: boolean
+  matchWholeWord: boolean
+  useRegularExpression: boolean
+}
 
 type SearchProps = {
-  placeholder?: string;
-  matchCase?: boolean;
-  matchWholeWord?: boolean;
-  useRegularExpression?: boolean;
-  onSearch: (match: (content: string) => boolean, state: SearchState) => void;
-};
+  placeholder?: string
+  matchCase?: boolean
+  matchWholeWord?: boolean
+  useRegularExpression?: boolean
+  onSearch: (match: (content: string) => boolean, state: SearchState) => void
+}
 
 export const BaseSearchBox = styled((props: SearchProps) => {
-  const { t } = useTranslation();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [matchCase, setMatchCase] = useState(props.matchCase ?? false);
+  const { t } = useTranslation()
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [matchCase, setMatchCase] = useState(props.matchCase ?? false)
   const [matchWholeWord, setMatchWholeWord] = useState(
     props.matchWholeWord ?? false,
-  );
+  )
   const [useRegularExpression, setUseRegularExpression] = useState(
     props.useRegularExpression ?? false,
-  );
-  const [errorMessage, setErrorMessage] = useState("");
+  )
+  const [errorMessage, setErrorMessage] = useState('')
 
   const iconStyle = {
     style: {
-      height: "24px",
-      width: "24px",
-      cursor: "pointer",
+      height: '24px',
+      width: '24px',
+      cursor: 'pointer',
     } as React.CSSProperties,
     inheritViewBox: true,
-  };
+  }
 
   useEffect(() => {
-    if (!inputRef.current) return;
+    if (!inputRef.current) return
 
     onChange({
       target: inputRef.current,
-    } as ChangeEvent<HTMLInputElement>);
-  }, [matchCase, matchWholeWord, useRegularExpression]);
+    } as ChangeEvent<HTMLInputElement>)
+  }, [matchCase, matchWholeWord, useRegularExpression])
 
   const onChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     props.onSearch(
-      (content) => doSearch([content], e.target?.value ?? "").length > 0,
+      (content) => doSearch([content], e.target?.value ?? '').length > 0,
       {
-        text: e.target?.value ?? "",
+        text: e.target?.value ?? '',
         matchCase,
         matchWholeWord,
         useRegularExpression,
       },
-    );
-  };
+    )
+  }
 
   const doSearch = (searchList: string[], searchItem: string) => {
-    setErrorMessage("");
+    setErrorMessage('')
     return searchList.filter((item) => {
       try {
-        let searchItemCopy = searchItem;
+        let searchItemCopy = searchItem
         if (!matchCase) {
-          item = item.toLowerCase();
-          searchItemCopy = searchItemCopy.toLowerCase();
+          item = item.toLowerCase()
+          searchItemCopy = searchItemCopy.toLowerCase()
         }
         if (matchWholeWord) {
-          const regex = new RegExp(`\\b${searchItemCopy}\\b`);
+          const regex = new RegExp(`\\b${searchItemCopy}\\b`)
           if (useRegularExpression) {
-            const regexWithOptions = new RegExp(searchItemCopy);
-            return regexWithOptions.test(item) && regex.test(item);
+            const regexWithOptions = new RegExp(searchItemCopy)
+            return regexWithOptions.test(item) && regex.test(item)
           } else {
-            return regex.test(item);
+            return regex.test(item)
           }
         } else if (useRegularExpression) {
-          const regex = new RegExp(searchItemCopy);
-          return regex.test(item);
+          const regex = new RegExp(searchItemCopy)
+          return regex.test(item)
         } else {
-          return item.includes(searchItemCopy);
+          return item.includes(searchItemCopy)
         }
       } catch (err) {
-        setErrorMessage(`${err}`);
+        setErrorMessage(`${err}`)
       }
-    });
-  };
+    })
+  }
 
   return (
     <Tooltip title={errorMessage} placement="bottom-start">
@@ -117,47 +117,47 @@ export const BaseSearchBox = styled((props: SearchProps) => {
         size="small"
         variant="outlined"
         spellCheck="false"
-        placeholder={props.placeholder ?? t("Filter conditions")}
+        placeholder={props.placeholder ?? t('Filter conditions')}
         sx={{ input: { py: 0.65, px: 1.25 } }}
         onChange={onChange}
         InputProps={{
           sx: { pr: 1 },
           endAdornment: (
             <Box display="flex">
-              <Tooltip title={t("Match Case")}>
+              <Tooltip title={t('Match Case')}>
                 <div>
                   <SvgIcon
                     component={matchCaseIcon}
                     {...iconStyle}
-                    aria-label={matchCase ? "active" : "inactive"}
+                    aria-label={matchCase ? 'active' : 'inactive'}
                     onClick={() => {
-                      setMatchCase(!matchCase);
+                      setMatchCase(!matchCase)
                     }}
                   />
                 </div>
               </Tooltip>
-              <Tooltip title={t("Match Whole Word")}>
+              <Tooltip title={t('Match Whole Word')}>
                 <div>
                   <SvgIcon
                     component={matchWholeWordIcon}
                     {...iconStyle}
-                    aria-label={matchWholeWord ? "active" : "inactive"}
+                    aria-label={matchWholeWord ? 'active' : 'inactive'}
                     onClick={() => {
-                      setMatchWholeWord(!matchWholeWord);
+                      setMatchWholeWord(!matchWholeWord)
                     }}
                   />
                 </div>
               </Tooltip>
-              <Tooltip title={t("Use Regular Expression")}>
+              <Tooltip title={t('Use Regular Expression')}>
                 <div>
                   <SvgIcon
                     component={useRegularExpressionIcon}
-                    aria-label={useRegularExpression ? "active" : "inactive"}
+                    aria-label={useRegularExpression ? 'active' : 'inactive'}
                     {...iconStyle}
                     onClick={() => {
-                      setUseRegularExpression(!useRegularExpression);
+                      setUseRegularExpression(!useRegularExpression)
                     }}
-                  />{" "}
+                  />{' '}
                 </div>
               </Tooltip>
             </Box>
@@ -166,89 +166,89 @@ export const BaseSearchBox = styled((props: SearchProps) => {
         {...props}
       />
     </Tooltip>
-  );
+  )
 })(({ theme }) => ({
-  "& .MuiInputBase-root": {
-    background: theme.palette.mode === "light" ? "#fff" : undefined,
-    "padding-right": "4px",
+  '& .MuiInputBase-root': {
+    background: theme.palette.mode === 'light' ? '#fff' : undefined,
+    'padding-right': '4px',
   },
   "& .MuiInputBase-root svg[aria-label='active'] path": {
     fill: theme.palette.primary.light,
   },
   "& .MuiInputBase-root svg[aria-label='inactive'] path": {
-    fill: "#A7A7A7",
+    fill: '#A7A7A7',
   },
-}));
+}))
 
 export function FluentBaseSearchBox(props: SearchProps) {
-  const { t } = useTranslation();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [matchCase, setMatchCase] = useState(props.matchCase ?? false);
+  const { t } = useTranslation()
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [matchCase, setMatchCase] = useState(props.matchCase ?? false)
   const [matchWholeWord, setMatchWholeWord] = useState(
     props.matchWholeWord ?? false,
-  );
+  )
   const [useRegularExpression, setUseRegularExpression] = useState(
     props.useRegularExpression ?? false,
-  );
-  const [errorMessage, setErrorMessage] = useState("");
+  )
+  const [errorMessage, setErrorMessage] = useState('')
 
   const iconStyle = {
     style: {
-      height: "24px",
-      width: "24px",
-      cursor: "pointer",
+      height: '24px',
+      width: '24px',
+      cursor: 'pointer',
     } as React.CSSProperties,
     inheritViewBox: true,
-  };
+  }
 
   useEffect(() => {
-    if (!inputRef.current) return;
+    if (!inputRef.current) return
 
     onChange({
       target: inputRef.current,
-    } as ChangeEvent<HTMLInputElement>);
-  }, [matchCase, matchWholeWord, useRegularExpression]);
+    } as ChangeEvent<HTMLInputElement>)
+  }, [matchCase, matchWholeWord, useRegularExpression])
 
   const onChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     props.onSearch(
-      (content) => doSearch([content], e.target?.value ?? "").length > 0,
+      (content) => doSearch([content], e.target?.value ?? '').length > 0,
       {
-        text: e.target?.value ?? "",
+        text: e.target?.value ?? '',
         matchCase,
         matchWholeWord,
         useRegularExpression,
       },
-    );
-  };
+    )
+  }
 
   const doSearch = (searchList: string[], searchItem: string) => {
-    setErrorMessage("");
+    setErrorMessage('')
     return searchList.filter((item) => {
       try {
-        let searchItemCopy = searchItem;
+        let searchItemCopy = searchItem
         if (!matchCase) {
-          item = item.toLowerCase();
-          searchItemCopy = searchItemCopy.toLowerCase();
+          item = item.toLowerCase()
+          searchItemCopy = searchItemCopy.toLowerCase()
         }
         if (matchWholeWord) {
-          const regex = new RegExp(`\\b${searchItemCopy}\\b`);
+          const regex = new RegExp(`\\b${searchItemCopy}\\b`)
           if (useRegularExpression) {
-            const regexWithOptions = new RegExp(searchItemCopy);
-            return regexWithOptions.test(item) && regex.test(item);
+            const regexWithOptions = new RegExp(searchItemCopy)
+            return regexWithOptions.test(item) && regex.test(item)
           } else {
-            return regex.test(item);
+            return regex.test(item)
           }
         } else if (useRegularExpression) {
-          const regex = new RegExp(searchItemCopy);
-          return regex.test(item);
+          const regex = new RegExp(searchItemCopy)
+          return regex.test(item)
         } else {
-          return item.includes(searchItemCopy);
+          return item.includes(searchItemCopy)
         }
       } catch (err) {
-        setErrorMessage(`${err}`);
+        setErrorMessage(`${err}`)
       }
-    });
-  };
+    })
+  }
 
   return (
     <FluentTooltip
@@ -261,19 +261,19 @@ export function FluentBaseSearchBox(props: SearchProps) {
         autoComplete="new-password"
         ref={inputRef}
         spellCheck="false"
-        placeholder={props.placeholder ?? t("Filter conditions")}
+        placeholder={props.placeholder ?? t('Filter conditions')}
         onChange={onChange}
         style={{ flex: 1 }}
         contentAfter={
           <>
-            <FluentTooltip content={t("Match Case")} relationship="label">
+            <FluentTooltip content={t('Match Case')} relationship="label">
               <Button
                 className="fds-subtle"
                 appearance="subtle"
                 size="small"
-                aria-label={matchCase ? "active" : "inactive"}
+                aria-label={matchCase ? 'active' : 'inactive'}
                 onClick={() => {
-                  setMatchCase(!matchCase);
+                  setMatchCase(!matchCase)
                 }}
                 icon={
                   matchCase ? (
@@ -284,14 +284,14 @@ export function FluentBaseSearchBox(props: SearchProps) {
                 }
               />
             </FluentTooltip>
-            <FluentTooltip content={t("Match Whole Word")} relationship="label">
+            <FluentTooltip content={t('Match Whole Word')} relationship="label">
               <Button
                 className="fds-subtle"
                 appearance="subtle"
                 size="small"
-                aria-label={matchCase ? "active" : "inactive"}
+                aria-label={matchCase ? 'active' : 'inactive'}
                 onClick={() => {
-                  setMatchWholeWord(!matchWholeWord);
+                  setMatchWholeWord(!matchWholeWord)
                 }}
                 icon={
                   matchWholeWord ? (
@@ -303,16 +303,16 @@ export function FluentBaseSearchBox(props: SearchProps) {
               />
             </FluentTooltip>
             <FluentTooltip
-              content={t("Use Regular Expression")}
+              content={t('Use Regular Expression')}
               relationship="label"
             >
               <Button
                 className="fds-subtle"
                 appearance="subtle"
                 size="small"
-                aria-label={matchCase ? "active" : "inactive"}
+                aria-label={matchCase ? 'active' : 'inactive'}
                 onClick={() => {
-                  setUseRegularExpression(!useRegularExpression);
+                  setUseRegularExpression(!useRegularExpression)
                 }}
                 icon={
                   useRegularExpression ? (
@@ -330,5 +330,5 @@ export function FluentBaseSearchBox(props: SearchProps) {
         {...props}
       />
     </FluentTooltip>
-  );
+  )
 }

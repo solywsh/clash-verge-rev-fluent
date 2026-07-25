@@ -1,14 +1,4 @@
 import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from "react";
-import { useLockFn } from "ahooks";
-import { useTranslation } from "react-i18next";
-import { useForm, Controller } from "react-hook-form";
-import {
   Field,
   Input,
   Label,
@@ -16,139 +6,151 @@ import {
   Tab,
   TabList,
   Textarea,
-} from "@fluentui/react-components";
-import { ChevronDownRegular, ChevronRightRegular } from "@fluentui/react-icons";
-import { createProfile, patchProfile } from "@/services/cmds";
-import { tokens } from "@/pages/_fluent_theme";
-import { BaseDialog, Notice } from "@/components/base";
-import { version } from "@root/package.json";
-import { FileInput } from "./file-input";
+} from '@fluentui/react-components'
+import { ChevronDownRegular, ChevronRightRegular } from '@fluentui/react-icons'
+import { useLockFn } from 'ahooks'
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react'
+import { useForm, Controller } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
+
+import { BaseDialog, Notice } from '@/components/base'
+import { tokens } from '@/pages/_fluent_theme'
+import { createProfile, patchProfile } from '@/services/cmds'
+import { version } from '@root/package.json'
+
+import { FileInput } from './file-input'
 
 interface Props {
-  onChange: () => void;
+  onChange: () => void
 }
 
 export interface ProfileViewerRef {
-  create: () => void;
-  edit: (item: IProfileItem) => void;
+  create: () => void
+  edit: (item: IProfileItem) => void
 }
 
 // Default auto-update interval: 1 day.
-const DEFAULT_INTERVAL = 1440;
+const DEFAULT_INTERVAL = 1440
 
 // A label-left / control-right row used for the inline switches; min-height
 // keeps it on the same vertical rhythm as the stacked Field rows.
 const switchRow: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
   gap: 8,
   minHeight: 32,
-};
+}
 
 // "Advanced" disclosure toggle, left-aligned to the form fields (no indent).
 const advToggle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
+  display: 'flex',
+  alignItems: 'center',
   gap: 6,
   padding: 0,
-  border: "none",
-  background: "none",
-  font: "inherit",
+  border: 'none',
+  background: 'none',
+  font: 'inherit',
   fontWeight: 600,
-  cursor: "pointer",
+  cursor: 'pointer',
   color: tokens.colorNeutralForeground1,
-};
+}
 
 // create or edit the profile
 // remote / local
 export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
   (props, ref) => {
-    const { t } = useTranslation();
-    const [open, setOpen] = useState(false);
-    const [openType, setOpenType] = useState<"new" | "edit">("new");
-    const [loading, setLoading] = useState(false);
-    const [advOpen, setAdvOpen] = useState(false);
+    const { t } = useTranslation()
+    const [open, setOpen] = useState(false)
+    const [openType, setOpenType] = useState<'new' | 'edit'>('new')
+    const [loading, setLoading] = useState(false)
+    const [advOpen, setAdvOpen] = useState(false)
 
     // file input
-    const fileDataRef = useRef<string | null>(null);
+    const fileDataRef = useRef<string | null>(null)
 
     const { control, watch, register, ...formIns } = useForm<IProfileItem>({
       defaultValues: {
-        type: "remote",
-        name: "",
-        desc: "",
-        url: "",
+        type: 'remote',
+        name: '',
+        desc: '',
+        url: '',
         option: {
           with_proxy: false,
           self_proxy: false,
           update_interval: DEFAULT_INTERVAL,
         },
       },
-    });
+    })
 
     useImperativeHandle(ref, () => ({
       create: () => {
-        setOpenType("new");
-        setOpen(true);
+        setOpenType('new')
+        setOpen(true)
       },
       edit: (item) => {
         if (item) {
           Object.entries(item).forEach(([key, value]) => {
-            formIns.setValue(key as any, value);
-          });
+            formIns.setValue(key as any, value)
+          })
         }
-        setOpenType("edit");
-        setOpen(true);
+        setOpenType('edit')
+        setOpen(true)
       },
-    }));
+    }))
 
-    const selfProxy = watch("option.self_proxy");
-    const withProxy = watch("option.with_proxy");
-
-    useEffect(() => {
-      if (selfProxy) formIns.setValue("option.with_proxy", false);
-    }, [selfProxy]);
+    const selfProxy = watch('option.self_proxy')
+    const withProxy = watch('option.with_proxy')
 
     useEffect(() => {
-      if (withProxy) formIns.setValue("option.self_proxy", false);
-    }, [withProxy]);
+      if (selfProxy) formIns.setValue('option.with_proxy', false)
+    }, [selfProxy])
+
+    useEffect(() => {
+      if (withProxy) formIns.setValue('option.self_proxy', false)
+    }, [withProxy])
 
     const handleOk = useLockFn(
       formIns.handleSubmit(async (form) => {
-        setLoading(true);
+        setLoading(true)
         try {
-          if (!form.type) throw new Error("`Type` should not be null");
-          if (form.type === "remote" && !form.url) {
-            throw new Error("The URL should not be null");
+          if (!form.type) throw new Error('`Type` should not be null')
+          if (form.type === 'remote' && !form.url) {
+            throw new Error('The URL should not be null')
           }
 
           // Local profiles have no remote source, so they never auto-update —
           // drop the interval. For remote, update_interval > 0 = auto-update on,
           // 0 / empty = off, so drop the field in that case too.
-          if (form.type === "local") {
-            delete form.option?.update_interval;
+          if (form.type === 'local') {
+            delete form.option?.update_interval
           } else if (form.option?.update_interval) {
-            form.option.update_interval = +form.option.update_interval;
+            form.option.update_interval = +form.option.update_interval
           } else {
-            delete form.option?.update_interval;
+            delete form.option?.update_interval
           }
-          if (form.option?.user_agent === "") {
-            delete form.option.user_agent;
+          if (form.option?.user_agent === '') {
+            delete form.option.user_agent
           }
-          const name = form.name || `${form.type} file`;
-          const item = { ...form, name };
+          const name = form.name || `${form.type} file`
+          const item = { ...form, name }
 
           // 创建
-          if (openType === "new") {
+          if (openType === 'new') {
             const userChoseProxy =
-              !!item.option?.with_proxy || !!item.option?.self_proxy;
+              !!item.option?.with_proxy || !!item.option?.self_proxy
             try {
-              await createProfile(item, fileDataRef.current);
+              await createProfile(item, fileDataRef.current)
             } catch (createErr) {
               // 远程拉取失败(如 403 / 无法请求),且用户未手动指定代理时,
               // 自动用系统代理 → 内核代理各重试一次。
-              if (item.type !== "remote" || userChoseProxy) throw createErr;
+              if (item.type !== 'remote' || userChoseProxy) throw createErr
               const withProxyOpt = (patch: Partial<IProfileOption>) => ({
                 ...item,
                 option: {
@@ -157,70 +159,70 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
                   self_proxy: false,
                   ...patch,
                 },
-              });
+              })
               try {
-                Notice.info(t("Retry With System Proxy"), 1500);
+                Notice.info(t('Retry With System Proxy'), 1500)
                 await createProfile(
                   withProxyOpt({ with_proxy: true }),
                   fileDataRef.current,
-                );
+                )
               } catch {
                 try {
-                  Notice.info(t("Retry With Clash Proxy"), 1500);
+                  Notice.info(t('Retry With Clash Proxy'), 1500)
                   await createProfile(
                     withProxyOpt({ self_proxy: true }),
                     fileDataRef.current,
-                  );
+                  )
                 } catch {
-                  throw createErr; // 都失败,抛出原始错误以保留最清晰的信息
+                  throw createErr // 都失败,抛出原始错误以保留最清晰的信息
                 }
               }
             }
           }
           // 编辑
           else {
-            if (!form.uid) throw new Error("UID not found");
-            await patchProfile(form.uid, item);
+            if (!form.uid) throw new Error('UID not found')
+            await patchProfile(form.uid, item)
           }
-          setOpen(false);
-          setLoading(false);
-          setTimeout(() => formIns.reset(), 500);
-          fileDataRef.current = null;
-          props.onChange();
+          setOpen(false)
+          setLoading(false)
+          setTimeout(() => formIns.reset(), 500)
+          fileDataRef.current = null
+          props.onChange()
         } catch (err: any) {
-          Notice.error(err.message || err.toString());
-          setLoading(false);
+          Notice.error(err.message || err.toString())
+          setLoading(false)
         }
       }),
-    );
+    )
 
     const handleClose = () => {
-      setOpen(false);
-      fileDataRef.current = null;
-      setTimeout(() => formIns.reset(), 500);
-    };
+      setOpen(false)
+      fileDataRef.current = null
+      setTimeout(() => formIns.reset(), 500)
+    }
 
-    const formType = watch("type");
-    const isRemote = formType === "remote";
-    const isLocal = formType === "local";
+    const formType = watch('type')
+    const isRemote = formType === 'remote'
+    const isLocal = formType === 'local'
 
     // Auto-update toggle is derived from update_interval (>0 = on).
-    const updateInterval = Number(watch("option.update_interval")) || 0;
-    const autoUpdate = updateInterval > 0;
+    const updateInterval = Number(watch('option.update_interval')) || 0
+    const autoUpdate = updateInterval > 0
 
     return (
       <BaseDialog
         open={open}
-        title={openType === "new" ? t("Create Profile") : t("Edit Profile")}
-        contentSx={{ width: 360, pb: 0, maxHeight: "80%" }}
-        okBtn={t("Save")}
-        cancelBtn={t("Cancel")}
+        title={openType === 'new' ? t('Create Profile') : t('Edit Profile')}
+        contentSx={{ width: 360, pb: 0, maxHeight: '80%' }}
+        okBtn={t('Save')}
+        cancelBtn={t('Cancel')}
         onClose={handleClose}
         onCancel={handleClose}
         onOk={handleOk}
         loading={loading}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {/* Remote / Local switch as Fluent Tabs (i18n). Locked while editing,
               since a profile's type can't change after creation. */}
           <Controller
@@ -228,7 +230,7 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
             control={control}
             render={({ field }) => (
               <TabList
-                selectedValue={field.value ?? "remote"}
+                selectedValue={field.value ?? 'remote'}
                 onTabSelect={(_, data) => field.onChange(data.value)}
                 // Tabs carry their own horizontal padding; cancel it so the
                 // first tab's text lines up with the form fields below.
@@ -236,14 +238,14 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
                   marginLeft: `calc(0px - ${tokens.spacingHorizontalMNudge})`,
                 }}
               >
-                {(openType === "new" || field.value === "remote") && (
-                  <Tab value="remote" disabled={openType === "edit"}>
-                    {t("Remote")}
+                {(openType === 'new' || field.value === 'remote') && (
+                  <Tab value="remote" disabled={openType === 'edit'}>
+                    {t('Remote')}
                   </Tab>
                 )}
-                {(openType === "new" || field.value === "local") && (
-                  <Tab value="local" disabled={openType === "edit"}>
-                    {t("Local")}
+                {(openType === 'new' || field.value === 'local') && (
+                  <Tab value="local" disabled={openType === 'edit'}>
+                    {t('Local')}
                   </Tab>
                 )}
               </TabList>
@@ -254,9 +256,9 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
             name="name"
             control={control}
             render={({ field }) => (
-              <Field label={t("Name")}>
+              <Field label={t('Name')}>
                 <Input
-                  value={field.value ?? ""}
+                  value={field.value ?? ''}
                   onChange={(_, data) => field.onChange(data.value)}
                 />
               </Field>
@@ -267,9 +269,9 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
             name="desc"
             control={control}
             render={({ field }) => (
-              <Field label={t("Descriptions")}>
+              <Field label={t('Descriptions')}>
                 <Input
-                  value={field.value ?? ""}
+                  value={field.value ?? ''}
                   onChange={(_, data) => field.onChange(data.value)}
                 />
               </Field>
@@ -282,10 +284,10 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
                 name="url"
                 control={control}
                 render={({ field }) => (
-                  <Field label={t("Subscription URL")}>
+                  <Field label={t('Subscription URL')}>
                     <Textarea
                       resize="vertical"
-                      value={field.value ?? ""}
+                      value={field.value ?? ''}
                       onChange={(_, data) => field.onChange(data.value)}
                     />
                   </Field>
@@ -293,12 +295,12 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
               />
 
               <div style={switchRow}>
-                <Label>{t("Auto Update")}</Label>
+                <Label>{t('Auto Update')}</Label>
                 <FluentSwitch
                   checked={autoUpdate}
                   onChange={(_, data) =>
                     formIns.setValue(
-                      "option.update_interval",
+                      'option.update_interval',
                       data.checked ? DEFAULT_INTERVAL : 0,
                     )
                   }
@@ -307,14 +309,11 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
             </>
           )}
 
-          {isLocal && openType === "new" && (
+          {isLocal && openType === 'new' && (
             <FileInput
               onChange={(file, val) => {
-                formIns.setValue(
-                  "name",
-                  formIns.getValues("name") || file.name,
-                );
-                fileDataRef.current = val;
+                formIns.setValue('name', formIns.getValues('name') || file.name)
+                fileDataRef.current = val
               }}
             />
           )}
@@ -327,14 +326,14 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
                 style={advToggle}
               >
                 {advOpen ? <ChevronDownRegular /> : <ChevronRightRegular />}
-                <span>{t("Advanced")}</span>
+                <span>{t('Advanced')}</span>
               </button>
 
               {advOpen && (
                 <div
                   style={{
-                    display: "flex",
-                    flexDirection: "column",
+                    display: 'flex',
+                    flexDirection: 'column',
                     gap: 12,
                   }}
                 >
@@ -342,19 +341,19 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
                     name="option.update_interval"
                     control={control}
                     render={({ field }) => (
-                      <Field label={t("Update Interval")}>
+                      <Field label={t('Update Interval')}>
                         <Input
                           type="number"
                           disabled={!autoUpdate}
-                          value={field.value?.toString() ?? ""}
+                          value={field.value?.toString() ?? ''}
                           onChange={(_, data) =>
                             field.onChange(
-                              data.value === "" ? 0 : Number(data.value),
+                              data.value === '' ? 0 : Number(data.value),
                             )
                           }
                           contentAfter={
-                            <span style={{ whiteSpace: "nowrap" }}>
-                              {t("mins")}
+                            <span style={{ whiteSpace: 'nowrap' }}>
+                              {t('mins')}
                             </span>
                           }
                         />
@@ -369,7 +368,7 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
                       <Field label="User Agent">
                         <Input
                           placeholder={`clash-verge/v${version}`}
-                          value={field.value ?? ""}
+                          value={field.value ?? ''}
                           onChange={(_, data) => field.onChange(data.value)}
                         />
                       </Field>
@@ -381,7 +380,7 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
                     control={control}
                     render={({ field }) => (
                       <div style={switchRow}>
-                        <Label>{t("Use System Proxy")}</Label>
+                        <Label>{t('Use System Proxy')}</Label>
                         <FluentSwitch
                           checked={!!field.value}
                           onChange={(_, data) => field.onChange(data.checked)}
@@ -395,7 +394,7 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
                     control={control}
                     render={({ field }) => (
                       <div style={switchRow}>
-                        <Label>{t("Use Clash Proxy")}</Label>
+                        <Label>{t('Use Clash Proxy')}</Label>
                         <FluentSwitch
                           checked={!!field.value}
                           onChange={(_, data) => field.onChange(data.checked)}
@@ -409,7 +408,7 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
                     control={control}
                     render={({ field }) => (
                       <div style={switchRow}>
-                        <Label>{t("Accept Invalid Certs (Danger)")}</Label>
+                        <Label>{t('Accept Invalid Certs (Danger)')}</Label>
                         <FluentSwitch
                           checked={!!field.value}
                           onChange={(_, data) => field.onChange(data.checked)}
@@ -423,6 +422,6 @@ export const ProfileViewer = forwardRef<ProfileViewerRef, Props>(
           )}
         </div>
       </BaseDialog>
-    );
+    )
   },
-);
+)

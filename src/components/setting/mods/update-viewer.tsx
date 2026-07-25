@@ -1,97 +1,98 @@
-import useSWR from "swr";
-import { forwardRef, useImperativeHandle, useState, useMemo } from "react";
-import { useLockFn } from "ahooks";
-import { Box, LinearProgress, Button } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import { relaunch } from "@tauri-apps/plugin-process";
-import { checkUpdateThrottled } from "@/services/update-check";
-import { BaseDialog, DialogRef, Notice } from "@/components/base";
-import { useUpdateState, useSetUpdateState } from "@/services/states";
-import { Event, UnlistenFn } from "@tauri-apps/api/event";
-import { portableFlag } from "@/pages/_layout";
-import { open as openUrl } from "@tauri-apps/plugin-shell";
-import ReactMarkdown from "react-markdown";
-import { useListen } from "@/hooks/use-listen";
+import { Box, LinearProgress, Button } from '@mui/material'
+import { Event, UnlistenFn } from '@tauri-apps/api/event'
+import { relaunch } from '@tauri-apps/plugin-process'
+import { open as openUrl } from '@tauri-apps/plugin-shell'
+import { useLockFn } from 'ahooks'
+import { forwardRef, useImperativeHandle, useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import ReactMarkdown from 'react-markdown'
+import useSWR from 'swr'
 
-let eventListener: UnlistenFn | null = null;
+import { BaseDialog, DialogRef, Notice } from '@/components/base'
+import { useListen } from '@/hooks/use-listen'
+import { portableFlag } from '@/pages/_layout'
+import { useUpdateState, useSetUpdateState } from '@/services/states'
+import { checkUpdateThrottled } from '@/services/update-check'
+
+let eventListener: UnlistenFn | null = null
 
 export const UpdateViewer = forwardRef<DialogRef>((props, ref) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false)
 
-  const updateState = useUpdateState();
-  const setUpdateState = useSetUpdateState();
-  const { addListener } = useListen();
+  const updateState = useUpdateState()
+  const setUpdateState = useSetUpdateState()
+  const { addListener } = useListen()
 
   const { data: updateInfo } = useSWR(
-    "checkUpdate",
+    'checkUpdate',
     () => checkUpdateThrottled(),
     {
       errorRetryCount: 2,
       revalidateIfStale: false,
       focusThrottleInterval: 36e5, // 1 hour
     },
-  );
+  )
 
-  const [downloaded, setDownloaded] = useState(0);
-  const [total, setTotal] = useState(0);
+  const [downloaded, setDownloaded] = useState(0)
+  const [total, setTotal] = useState(0)
 
   useImperativeHandle(ref, () => ({
     open: () => setOpen(true),
     close: () => setOpen(false),
-  }));
+  }))
 
   const markdownContent = useMemo(() => {
     if (!updateInfo?.body) {
-      return "New Version is available";
+      return 'New Version is available'
     }
-    return updateInfo?.body;
-  }, [updateInfo]);
+    return updateInfo?.body
+  }, [updateInfo])
 
   const breakChangeFlag = useMemo(() => {
     if (!updateInfo?.body) {
-      return false;
+      return false
     }
-    return updateInfo?.body.toLowerCase().includes("break change");
-  }, [updateInfo]);
+    return updateInfo?.body.toLowerCase().includes('break change')
+  }, [updateInfo])
 
   const onUpdate = useLockFn(async () => {
     if (portableFlag) {
-      Notice.error(t("Portable Updater Error"));
-      return;
+      Notice.error(t('Portable Updater Error'))
+      return
     }
-    if (!updateInfo?.body) return;
+    if (!updateInfo?.body) return
     if (breakChangeFlag) {
-      Notice.error(t("Break Change Update Error"));
-      return;
+      Notice.error(t('Break Change Update Error'))
+      return
     }
-    if (updateState) return;
-    setUpdateState(true);
+    if (updateState) return
+    setUpdateState(true)
     // Reset progress for a fresh download (avoid stale values when re-opened).
-    setDownloaded(0);
-    setTotal(0);
+    setDownloaded(0)
+    setTotal(0)
     if (eventListener !== null) {
-      eventListener();
+      eventListener()
     }
     eventListener = await addListener(
-      "tauri://update-download-progress",
+      'tauri://update-download-progress',
       (e: Event<any>) => {
         // contentLength only arrives with the "Started" event; keep it once set.
-        const { contentLength, chunkLength } = e.payload ?? {};
-        if (contentLength) setTotal(contentLength);
-        setDownloaded((a) => a + (chunkLength ?? 0));
+        const { contentLength, chunkLength } = e.payload ?? {}
+        if (contentLength) setTotal(contentLength)
+        setDownloaded((a) => a + (chunkLength ?? 0))
       },
-    );
+    )
     try {
-      await updateInfo.downloadAndInstall();
-      await relaunch();
+      await updateInfo.downloadAndInstall()
+      await relaunch()
     } catch (err: any) {
-      Notice.error(err?.message || err.toString());
+      Notice.error(err?.message || err.toString())
     } finally {
-      setUpdateState(false);
+      setUpdateState(false)
     }
-  });
+  })
 
   return (
     <BaseDialog
@@ -106,31 +107,31 @@ export const UpdateViewer = forwardRef<DialogRef>((props, ref) => {
               onClick={() => {
                 openUrl(
                   `https://github.com/solywsh/clash-verge-rev-fluent/releases/tag/v${updateInfo?.version}`,
-                );
+                )
               }}
             >
-              {t("Go to Release Page")}
+              {t('Go to Release Page')}
             </Button>
           </Box>
         </Box>
       }
-      contentSx={{ minWidth: 360, maxWidth: 400, height: "50vh" }}
-      okBtn={t("Update")}
-      cancelBtn={t("Cancel")}
+      contentSx={{ minWidth: 360, maxWidth: 400, height: '50vh' }}
+      okBtn={t('Update')}
+      cancelBtn={t('Cancel')}
       onClose={() => setOpen(false)}
       onCancel={() => setOpen(false)}
       onOk={onUpdate}
     >
-      <Box sx={{ height: "calc(100% - 10px)", overflow: "auto" }}>
+      <Box sx={{ height: 'calc(100% - 10px)', overflow: 'auto' }}>
         <ReactMarkdown
           components={{
             a: ({ node, ...props }) => {
-              const { children } = props;
+              const { children } = props
               return (
                 <a {...props} target="_blank">
                   {children}
                 </a>
-              );
+              )
             },
           }}
         >
@@ -139,11 +140,11 @@ export const UpdateViewer = forwardRef<DialogRef>((props, ref) => {
       </Box>
       {updateState && (
         <LinearProgress
-          variant={total > 0 ? "determinate" : "indeterminate"}
+          variant={total > 0 ? 'determinate' : 'indeterminate'}
           value={total > 0 ? Math.min((downloaded / total) * 100, 100) : 0}
-          sx={{ marginTop: "5px" }}
+          sx={{ marginTop: '5px' }}
         />
       )}
     </BaseDialog>
-  );
-});
+  )
+})

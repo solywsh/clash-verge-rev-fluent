@@ -1,35 +1,35 @@
-import { createContextState } from "foxact/create-context-state";
-import { useLocalStorage } from "foxact/use-local-storage";
+import { createContextState } from 'foxact/create-context-state'
+import { useLocalStorage } from 'foxact/use-local-storage'
 
 const [ThemeModeProvider, useThemeMode, useSetThemeMode] = createContextState<
-  "light" | "dark"
->("light");
+  'light' | 'dark'
+>('light')
 
-export const useEnableLog = () => useLocalStorage("enable-log", false);
+export const useEnableLog = () => useLocalStorage('enable-log', false)
 
 interface IConnectionSetting {
-  layout: "table" | "list";
+  layout: 'table' | 'list'
 }
 
-const defaultConnectionSetting: IConnectionSetting = { layout: "table" };
+const defaultConnectionSetting: IConnectionSetting = { layout: 'table' }
 
 export const useConnectionSetting = () =>
   useLocalStorage<IConnectionSetting>(
-    "connections-setting",
+    'connections-setting',
     defaultConnectionSetting,
     {
       serializer: JSON.stringify,
       deserializer: JSON.parse,
     },
-  );
+  )
 
 // save the state of each profile item loading
 const [LoadingCacheProvider, useLoadingCache, useSetLoadingCache] =
-  createContextState<Record<string, boolean>>({});
+  createContextState<Record<string, boolean>>({})
 
 // save update state
 const [UpdateStateProvider, useUpdateState, useSetUpdateState] =
-  createContextState<boolean>(false);
+  createContextState<boolean>(false)
 
 export {
   ThemeModeProvider,
@@ -41,4 +41,4 @@ export {
   UpdateStateProvider,
   useUpdateState,
   useSetUpdateState,
-};
+}

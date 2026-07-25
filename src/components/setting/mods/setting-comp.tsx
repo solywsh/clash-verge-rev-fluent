@@ -1,4 +1,12 @@
-import React, { ReactNode, useState } from "react";
+import {
+  Body2,
+  Button,
+  Caption1,
+  makeStyles,
+  mergeClasses,
+} from '@fluentui/react-components'
+import { ChevronRightRegular } from '@fluentui/react-icons'
+import { ChevronRightRounded } from '@mui/icons-material'
 import {
   Box,
   List,
@@ -6,56 +14,50 @@ import {
   ListItemButton,
   ListItemText,
   ListSubheader,
-} from "@mui/material";
-import { ChevronRightRounded } from "@mui/icons-material";
-import CircularProgress from "@mui/material/CircularProgress";
-import {
-  Body2,
-  Button,
-  Caption1,
-  makeStyles,
-  mergeClasses,
-} from "@fluentui/react-components";
-import { Expander, ExpanderProps } from "../../fluent/expander";
-import { tokens } from "../../../pages/_fluent_theme";
-import { ChevronRightRegular } from "@fluentui/react-icons";
-import isAsyncFunction from "@/utils/is-async-function";
+} from '@mui/material'
+import CircularProgress from '@mui/material/CircularProgress'
+import React, { ReactNode, useState } from 'react'
+
+import isAsyncFunction from '@/utils/is-async-function'
+
+import { tokens } from '../../../pages/_fluent_theme'
+import { Expander, ExpanderProps } from '../../fluent/expander'
 
 interface ItemProps {
-  label: ReactNode;
-  extra?: ReactNode;
-  children?: ReactNode;
-  secondary?: ReactNode;
-  onClick?: () => void | Promise<any>;
+  label: ReactNode
+  extra?: ReactNode
+  children?: ReactNode
+  secondary?: ReactNode
+  onClick?: () => void | Promise<any>
   // When set, the onClick is surfaced as an explicit action button with this
   // label (e.g. "更改" for a dialog, "打开" for an action) instead of a `>`
   // chevron. The `>` chevron is reserved for true page navigation only.
-  actionLabel?: ReactNode;
-  actionAppearance?: "primary" | "secondary" | "subtle" | "outline";
+  actionLabel?: ReactNode
+  actionAppearance?: 'primary' | 'secondary' | 'subtle' | 'outline'
 }
 
 export const SettingItem: React.FC<ItemProps> = (props) => {
-  const { label, extra, children, secondary, onClick } = props;
-  const clickable = !!onClick;
+  const { label, extra, children, secondary, onClick } = props
+  const clickable = !!onClick
 
   const primary = (
-    <Box sx={{ display: "flex", alignItems: "center", fontSize: "14px" }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', fontSize: '14px' }}>
       <span>{label}</span>
       {extra ? extra : null}
     </Box>
-  );
+  )
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false)
   const handleClick = () => {
     if (onClick) {
       if (isAsyncFunction(onClick)) {
-        setIsLoading(true);
-        onClick()!.finally(() => setIsLoading(false));
+        setIsLoading(true)
+        onClick()!.finally(() => setIsLoading(false))
       } else {
-        onClick();
+        onClick()
       }
     }
-  };
+  }
 
   return clickable ? (
     <ListItem disablePadding>
@@ -69,25 +71,25 @@ export const SettingItem: React.FC<ItemProps> = (props) => {
       </ListItemButton>
     </ListItem>
   ) : (
-    <ListItem sx={{ pt: "5px", pb: "5px" }}>
+    <ListItem sx={{ pt: '5px', pb: '5px' }}>
       <ListItemText primary={primary} secondary={secondary} />
       {children}
     </ListItem>
-  );
-};
+  )
+}
 
 export const SettingList: React.FC<{
-  title: string;
-  children: ReactNode;
+  title: string
+  children: ReactNode
 }> = (props) => (
   <List>
     <ListSubheader
       sx={[
-        { background: "transparent", fontSize: "16px", fontWeight: "700" },
+        { background: 'transparent', fontSize: '16px', fontWeight: '700' },
         ({ palette }) => {
           return {
             color: palette.text.primary,
-          };
+          }
         },
       ]}
       disableSticky
@@ -97,48 +99,48 @@ export const SettingList: React.FC<{
 
     {props.children}
   </List>
-);
+)
 
 const useStyle = makeStyles({
   listContainer: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-    marginTop: "8px",
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    marginTop: '8px',
   },
   titleWrap: {
-    marginBottom: "8px",
+    marginBottom: '8px',
   },
-});
+})
 
 export function FluentSettingList({
   children,
   title,
 }: {
-  children: ReactNode;
-  title?: string;
+  children: ReactNode
+  title?: string
 }) {
-  const { listContainer, titleWrap } = useStyle();
+  const { listContainer, titleWrap } = useStyle()
   return (
     <div>
       {title ? <Body2 className={titleWrap}>{title}</Body2> : null}
       <div className={listContainer}>{children}</div>
     </div>
-  );
+  )
 }
 
 const useGroupStyle = makeStyles({
   groupHeader: {
-    marginTop: "18px",
-    marginBottom: "2px",
-    paddingInlineStart: "4px",
+    marginTop: '18px',
+    marginBottom: '2px',
+    paddingInlineStart: '4px',
     color: tokens.colorNeutralForeground2,
     fontWeight: tokens.fontWeightSemibold,
   },
   first: {
-    marginTop: "2px",
+    marginTop: '2px',
   },
-});
+})
 
 // A small section subheading used inside a settings detail page to group
 // related items (Windows 11 style), staying on the same scrolling page.
@@ -146,50 +148,50 @@ export function FluentSettingGroup({
   title,
   first,
 }: {
-  title: ReactNode;
-  first?: boolean;
+  title: ReactNode
+  first?: boolean
 }) {
-  const classes = useGroupStyle();
+  const classes = useGroupStyle()
   return (
     <Body2
       className={mergeClasses(classes.groupHeader, first && classes.first)}
     >
       {title}
     </Body2>
-  );
+  )
 }
 
 const useItemStyle = makeStyles({
   header: {
-    paddingBlock: "14px",
+    paddingBlock: '14px',
   },
   canClick: {
-    cursor: "pointer",
+    cursor: 'pointer',
     transition: `background-color ${tokens.durationFast} ${tokens.curveEasyEase}`,
-    ":hover": {
+    ':hover': {
       background: tokens.overlay1Hover,
     },
-    ":active": {
+    ':active': {
       background: tokens.overlay1Pressed,
     },
   },
   titleBlock: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1px",
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1px',
     minWidth: 0,
   },
   titleRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
     color: tokens.colorNeutralForeground1,
   },
   description: {
     color: tokens.colorNeutralForeground3,
-    paddingRight: "8px",
+    paddingRight: '8px',
   },
-});
+})
 
 export function FluentSettingItem({
   label,
@@ -203,24 +205,24 @@ export function FluentSettingItem({
   actionLabel,
   actionAppearance,
 }: ItemProps & ExpanderProps) {
-  const classes = useItemStyle();
+  const classes = useItemStyle()
   // Three interaction shapes:
   //  - canExpand → inline expander (down chevron, handled by Expander)
   //  - onClick + actionLabel → explicit action button (dialog / side-effect)
   //  - onClick alone → legacy whole-row navigation with a `>` chevron
-  const hasAction = !!onClick && !!actionLabel && !canExpand;
-  const canClick = !!onClick && !actionLabel && !canExpand;
+  const hasAction = !!onClick && !!actionLabel && !canExpand
+  const canClick = !!onClick && !actionLabel && !canExpand
 
   const right = (
-    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
       <div
-        style={{ display: "flex", alignItems: "center", gap: "8px" }}
+        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
         onClick={(e) => e.stopPropagation()}
       >
         {children}
         {hasAction ? (
           <Button
-            appearance={actionAppearance ?? "secondary"}
+            appearance={actionAppearance ?? 'secondary'}
             onClick={() => onClick?.()}
           >
             {actionLabel}
@@ -231,7 +233,7 @@ export function FluentSettingItem({
         <ChevronRightRegular style={{ fontSize: 20, marginLeft: 4 }} />
       ) : null}
     </div>
-  );
+  )
 
   const left = (
     <div className={classes.titleBlock}>
@@ -243,7 +245,7 @@ export function FluentSettingItem({
         <Caption1 className={classes.description}>{secondary}</Caption1>
       ) : null}
     </div>
-  );
+  )
 
   return (
     <Expander
@@ -257,5 +259,5 @@ export function FluentSettingItem({
       canExpand={canExpand}
       onClick={canClick ? onClick : undefined}
     />
-  );
+  )
 }

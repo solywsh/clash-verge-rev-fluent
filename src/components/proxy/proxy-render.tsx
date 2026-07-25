@@ -1,68 +1,68 @@
-import { tokens } from "../../pages/_fluent_theme";
-import { Expander } from "../fluent/expander";
 import {
   Button,
   makeStyles,
   mergeClasses,
   Spinner,
   Subtitle1,
-  Subtitle2,
-  Title3,
-} from "@fluentui/react-components";
-import { NetworkCheckFilled } from "@fluentui/react-icons";
-import { useTranslation } from "react-i18next";
+} from '@fluentui/react-components'
+import { NetworkCheckFilled } from '@fluentui/react-icons'
 import {
-  alpha,
+  ExpandLessRounded,
+  ExpandMoreRounded,
+  InboxRounded,
+} from '@mui/icons-material'
+import {
   Box,
   ListItemText,
   ListItemButton,
   Typography,
   styled,
-} from "@mui/material";
-import {
-  ExpandLessRounded,
-  ExpandMoreRounded,
-  InboxRounded,
-} from "@mui/icons-material";
-import { HeadState } from "./use-head-state";
-import { FluentProxyHead as ProxyHead } from "./proxy-head";
-import { ProxyItem } from "./proxy-item";
-import { ProxyItemMini } from "./proxy-item-mini";
-import type { IRenderItem } from "./use-render-list";
-import { useVerge } from "@/hooks/use-verge";
-import { useThemeMode } from "@/services/states";
-import { useEffect, useMemo, useState } from "react";
-import { convertFileSrc } from "@tauri-apps/api/core";
-import { downloadIconCache } from "@/services/cmds";
+} from '@mui/material'
+import { convertFileSrc } from '@tauri-apps/api/core'
+import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+
+import { useVerge } from '@/hooks/use-verge'
+import { downloadIconCache } from '@/services/cmds'
+import { useThemeMode } from '@/services/states'
+
+import { tokens } from '../../pages/_fluent_theme'
+import { Expander } from '../fluent/expander'
+
+import { FluentProxyHead as ProxyHead } from './proxy-head'
+import { ProxyItem } from './proxy-item'
+import { ProxyItemMini } from './proxy-item-mini'
+import { HeadState } from './use-head-state'
+import type { IRenderItem } from './use-render-list'
 
 interface RenderProps {
-  item: IRenderItem;
-  indent: boolean;
-  onLocation: (group: IProxyGroupItem) => void;
-  onCheckAll: (groupName: string) => void | Promise<void>;
-  onHeadState: (groupName: string, patch: Partial<HeadState>) => void;
-  onChangeProxy: (group: IProxyGroupItem, proxy: IProxyItem) => void;
-  headState?: HeadState;
-  index: number;
-  renderList: IRenderItem[];
+  item: IRenderItem
+  indent: boolean
+  onLocation: (group: IProxyGroupItem) => void
+  onCheckAll: (groupName: string) => void | Promise<void>
+  onHeadState: (groupName: string, patch: Partial<HeadState>) => void
+  onChangeProxy: (group: IProxyGroupItem, proxy: IProxyItem) => void
+  headState?: HeadState
+  index: number
+  renderList: IRenderItem[]
 }
 
 const useStyle = makeStyles({
   item: {
-    marginTop: "8px",
+    marginTop: '8px',
   },
   noMargin: {
-    marginTop: "0px",
+    marginTop: '0px',
   },
   showBg: {
     background: tokens.surface1,
   },
-});
+})
 
-let currentGroupName = "";
+let currentGroupName = ''
 
 export function resetCurrentGroupName() {
-  currentGroupName = "";
+  currentGroupName = ''
 }
 
 export const ProxyRender = (props: RenderProps) => {
@@ -75,47 +75,47 @@ export const ProxyRender = (props: RenderProps) => {
     onChangeProxy,
     renderList,
     index,
-  } = props;
-  const { type, group, headState, proxy, proxyCol } = item;
-  const { t } = useTranslation();
-  const { verge } = useVerge();
-  const enable_group_icon = verge?.enable_group_icon ?? true;
-  const mode = useThemeMode();
-  const isDark = mode === "light" ? false : true;
-  const itembackgroundcolor = isDark ? "#282A36" : "#ffffff";
-  const [iconCachePath, setIconCachePath] = useState("");
-  const [testing, setTesting] = useState(false);
+  } = props
+  const { type, group, headState, proxy, proxyCol } = item
+  const { t } = useTranslation()
+  const { verge } = useVerge()
+  const enable_group_icon = verge?.enable_group_icon ?? true
+  const mode = useThemeMode()
+  const isDark = mode === 'light' ? false : true
+  const itembackgroundcolor = isDark ? '#282A36' : '#ffffff'
+  const [iconCachePath, setIconCachePath] = useState('')
+  const [testing, setTesting] = useState(false)
 
   const handleCheckDelay = async (e: React.MouseEvent) => {
     // 阻止冒泡，避免触发组头的展开/收起
-    e.stopPropagation();
-    if (testing) return;
-    setTesting(true);
+    e.stopPropagation()
+    if (testing) return
+    setTesting(true)
     try {
-      await onCheckAll(group.name);
+      await onCheckAll(group.name)
     } finally {
-      setTesting(false);
+      setTesting(false)
     }
-  };
+  }
 
   useEffect(() => {
-    initIconCachePath();
-  }, [group]);
+    initIconCachePath()
+  }, [group])
 
   async function initIconCachePath() {
-    if (group.icon && group.icon.trim().startsWith("http")) {
+    if (group.icon && group.icon.trim().startsWith('http')) {
       const fileName =
-        group.name.replaceAll(" ", "") + "-" + getFileName(group.icon);
-      const iconPath = await downloadIconCache(group.icon, fileName);
-      setIconCachePath(convertFileSrc(iconPath));
+        group.name.replaceAll(' ', '') + '-' + getFileName(group.icon)
+      const iconPath = await downloadIconCache(group.icon, fileName)
+      setIconCachePath(convertFileSrc(iconPath))
     }
   }
 
   function getFileName(url: string) {
-    return url.substring(url.lastIndexOf("/") + 1);
+    return url.substring(url.lastIndexOf('/') + 1)
   }
 
-  const classes = useStyle();
+  const classes = useStyle()
 
   if (type === 0 && !group.hidden) {
     return (
@@ -126,14 +126,14 @@ export const ProxyRender = (props: RenderProps) => {
         canExpand
         defaultExpanded={headState?.open}
         onExpandChange={(expanded) => {
-          currentGroupName = group.name;
-          onHeadState(group.name, { open: expanded });
+          currentGroupName = group.name
+          onHeadState(group.name, { open: expanded })
         }}
         right={
           <Button
             appearance="subtle"
             className="fds-subtle"
-            title={t("Delay check")}
+            title={t('Delay check')}
             icon={testing ? <Spinner size="tiny" /> : <NetworkCheckFilled />}
             onClick={handleCheckDelay}
           />
@@ -150,25 +150,25 @@ export const ProxyRender = (props: RenderProps) => {
           <>
             {enable_group_icon &&
               group.icon &&
-              group.icon.trim().startsWith("http") && (
+              group.icon.trim().startsWith('http') && (
                 <img
-                  src={iconCachePath === "" ? group.icon : iconCachePath}
+                  src={iconCachePath === '' ? group.icon : iconCachePath}
                   width="32px"
-                  style={{ marginRight: "12px", borderRadius: "6px" }}
+                  style={{ marginRight: '12px', borderRadius: '6px' }}
                 />
               )}
             {enable_group_icon &&
               group.icon &&
-              group.icon.trim().startsWith("data") && (
+              group.icon.trim().startsWith('data') && (
                 <img
                   src={group.icon}
                   width="32px"
-                  style={{ marginRight: "12px", borderRadius: "6px" }}
+                  style={{ marginRight: '12px', borderRadius: '6px' }}
                 />
               )}
             {enable_group_icon &&
               group.icon &&
-              group.icon.trim().startsWith("<svg") && (
+              group.icon.trim().startsWith('<svg') && (
                 <img
                   src={`data:image/svg+xml;base64,${btoa(group.icon)}`}
                   width="32px"
@@ -179,22 +179,22 @@ export const ProxyRender = (props: RenderProps) => {
               secondary={
                 <ListItemTextChild
                   sx={{
-                    overflow: "hidden",
-                    display: "flex",
-                    alignItems: "center",
-                    pt: "2px",
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    pt: '2px',
                   }}
                 >
-                  <Box sx={{ marginTop: "2px" }}>
+                  <Box sx={{ marginTop: '2px' }}>
                     <StyledTypeBox>{group.type}</StyledTypeBox>
-                    <StyledSubtitle sx={{ color: "text.secondary" }}>
+                    <StyledSubtitle sx={{ color: 'text.secondary' }}>
                       {group.now}
                     </StyledSubtitle>
                   </Box>
                 </ListItemTextChild>
               }
               secondaryTypographyProps={{
-                sx: { display: "flex", alignItems: "center", color: "#ccc" },
+                sx: { display: 'flex', alignItems: 'center', color: '#ccc' },
               }}
             />
           </>
@@ -202,7 +202,7 @@ export const ProxyRender = (props: RenderProps) => {
       >
         {/* {headState?.open ? <ExpandLessRounded /> : <ExpandMoreRounded />} */}
       </Expander>
-    );
+    )
   }
   if (type === 1 && !group.hidden) {
     return (
@@ -214,12 +214,12 @@ export const ProxyRender = (props: RenderProps) => {
           pt: 1,
           bgcolor: tokens.surface1,
           border: `1px solid ${tokens.itemBorderColor1}`,
-          borderTop: indent ? "none" : `1px solid ${tokens.itemBorderColor1}`,
-          borderBottom: "none",
+          borderTop: indent ? 'none' : `1px solid ${tokens.itemBorderColor1}`,
+          borderBottom: 'none',
           ...(!indent
             ? {
-                borderTopLeftRadius: "4px",
-                borderTopRightRadius: "4px",
+                borderTopLeftRadius: '4px',
+                borderTopRightRadius: '4px',
               }
             : {}),
         }}
@@ -228,10 +228,10 @@ export const ProxyRender = (props: RenderProps) => {
         onLocation={() => onLocation(group)}
         onCheckDelay={() => onCheckAll(group.name)}
         onHeadState={(p) => onHeadState(group.name, p)}
-        // @ts-expect-error
-        className={currentGroupName === group.name ? "curve-item-enter" : ""}
+        // @ts-expect-error 该组件的 props 类型未声明 className
+        className={currentGroupName === group.name ? 'curve-item-enter' : ''}
       />
-    );
+    )
   }
   if (type === 2 && !group.hidden) {
     return (
@@ -242,10 +242,10 @@ export const ProxyRender = (props: RenderProps) => {
         showType={headState?.showType}
         sx={{ py: 0, pl: 2, bgcolor: tokens.surface1 }}
         onClick={() => onChangeProxy(group, proxy!)}
-        // @ts-expect-error
-        className={currentGroupName === group.name ? "curve-item-enter" : ""}
+        // @ts-expect-error 该组件的 props 类型未声明 className
+        className={currentGroupName === group.name ? 'curve-item-enter' : ''}
       />
-    );
+    )
   }
   if (type === 3 && !group.hidden) {
     return (
@@ -253,22 +253,22 @@ export const ProxyRender = (props: RenderProps) => {
         sx={{
           py: 2,
           pl: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
           bgcolor: tokens.surface1,
 
           border: `1px solid ${tokens.itemBorderColor1}`,
-          borderTop: "none",
-          borderBottomLeftRadius: "4px",
-          borderBottomRightRadius: "4px",
+          borderTop: 'none',
+          borderBottomLeftRadius: '4px',
+          borderBottomRightRadius: '4px',
         }}
       >
-        <InboxRounded sx={{ fontSize: "2.5em", color: "inherit" }} />
-        <Typography sx={{ color: "inherit" }}>No Proxies</Typography>
+        <InboxRounded sx={{ fontSize: '2.5em', color: 'inherit' }} />
+        <Typography sx={{ color: 'inherit' }}>No Proxies</Typography>
       </Box>
-    );
+    )
   }
   if (type === 4 && !group.hidden) {
     const proxyColItemsMemo = useMemo(() => {
@@ -281,36 +281,36 @@ export const ProxyRender = (props: RenderProps) => {
           showType={headState?.showType}
           onClick={() => onChangeProxy(group, proxy!)}
         />
-      ));
-    }, [proxyCol, group, headState]);
+      ))
+    }, [proxyCol, group, headState])
     return (
       <Box
-        className={currentGroupName === group.name ? "curve-item-enter" : ""}
+        className={currentGroupName === group.name ? 'curve-item-enter' : ''}
         sx={{
           height: 56,
-          display: "grid",
+          display: 'grid',
           gap: 1,
-          pt: "8px",
+          pt: '8px',
           pl: 2,
           pr: 2,
           pb: 1,
           gridTemplateColumns: `repeat(${item.col! || 2}, 1fr)`,
           bgcolor: tokens.surface1,
           border: `1px solid ${tokens.itemBorderColor1}`,
-          borderTop: "none",
-          borderBottom: "none",
+          borderTop: 'none',
+          borderBottom: 'none',
           ...((renderList[index + 1]?.type ?? 0) === 0
             ? {
                 borderBottom: `1px solid ${tokens.itemBorderColor1}`,
-                borderBottomLeftRadius: "4px",
-                borderBottomRightRadius: "4px",
+                borderBottomLeftRadius: '4px',
+                borderBottomRightRadius: '4px',
               }
             : {}),
         }}
       >
         {proxyColItemsMemo}
       </Box>
-    );
+    )
   }
 
   // return null;
@@ -321,33 +321,33 @@ export const ProxyRender = (props: RenderProps) => {
         dense
         style={{
           background: itembackgroundcolor,
-          height: "100%",
-          margin: "8px 8px",
-          borderRadius: "8px",
+          height: '100%',
+          margin: '8px 8px',
+          borderRadius: '8px',
         }}
         onClick={() => onHeadState(group.name, { open: !headState?.open })}
       >
         {enable_group_icon &&
           group.icon &&
-          group.icon.trim().startsWith("http") && (
+          group.icon.trim().startsWith('http') && (
             <img
-              src={iconCachePath === "" ? group.icon : iconCachePath}
+              src={iconCachePath === '' ? group.icon : iconCachePath}
               width="32px"
-              style={{ marginRight: "12px", borderRadius: "6px" }}
+              style={{ marginRight: '12px', borderRadius: '6px' }}
             />
           )}
         {enable_group_icon &&
           group.icon &&
-          group.icon.trim().startsWith("data") && (
+          group.icon.trim().startsWith('data') && (
             <img
               src={group.icon}
               width="32px"
-              style={{ marginRight: "12px", borderRadius: "6px" }}
+              style={{ marginRight: '12px', borderRadius: '6px' }}
             />
           )}
         {enable_group_icon &&
           group.icon &&
-          group.icon.trim().startsWith("<svg") && (
+          group.icon.trim().startsWith('<svg') && (
             <img
               src={`data:image/svg+xml;base64,${btoa(group.icon)}`}
               width="32px"
@@ -358,27 +358,27 @@ export const ProxyRender = (props: RenderProps) => {
           secondary={
             <ListItemTextChild
               sx={{
-                overflow: "hidden",
-                display: "flex",
-                alignItems: "center",
-                pt: "2px",
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                pt: '2px',
               }}
             >
-              <Box sx={{ marginTop: "2px" }}>
+              <Box sx={{ marginTop: '2px' }}>
                 <StyledTypeBox>{group.type}</StyledTypeBox>
-                <StyledSubtitle sx={{ color: "text.secondary" }}>
+                <StyledSubtitle sx={{ color: 'text.secondary' }}>
                   {group.now}
                 </StyledSubtitle>
               </Box>
             </ListItemTextChild>
           }
           secondaryTypographyProps={{
-            sx: { display: "flex", alignItems: "center", color: "#ccc" },
+            sx: { display: 'flex', alignItems: 'center', color: '#ccc' },
           }}
         />
         {headState?.open ? <ExpandLessRounded /> : <ExpandMoreRounded />}
       </ListItemButton>
-    );
+    )
   }
 
   if (type === 1) {
@@ -392,7 +392,7 @@ export const ProxyRender = (props: RenderProps) => {
         onCheckDelay={() => onCheckAll(group.name)}
         onHeadState={(p) => onHeadState(group.name, p)}
       />
-    );
+    )
   }
 
   if (type === 2) {
@@ -405,7 +405,7 @@ export const ProxyRender = (props: RenderProps) => {
         sx={{ py: 0, pl: 2 }}
         onClick={() => onChangeProxy(group, proxy!)}
       />
-    );
+    )
   }
 
   if (type === 3) {
@@ -414,16 +414,16 @@ export const ProxyRender = (props: RenderProps) => {
         sx={{
           py: 2,
           pl: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
-        <InboxRounded sx={{ fontSize: "2.5em", color: "inherit" }} />
-        <Typography sx={{ color: "inherit" }}>No Proxies</Typography>
+        <InboxRounded sx={{ fontSize: '2.5em', color: 'inherit' }} />
+        <Typography sx={{ color: 'inherit' }}>No Proxies</Typography>
       </Box>
-    );
+    )
   }
 
   if (type === 4) {
@@ -437,13 +437,13 @@ export const ProxyRender = (props: RenderProps) => {
           showType={headState?.showType}
           onClick={() => onChangeProxy(group, proxy!)}
         />
-      ));
-    }, [proxyCol, group, headState]);
+      ))
+    }, [proxyCol, group, headState])
     return (
       <Box
         sx={{
           height: 56,
-          display: "grid",
+          display: 'grid',
           gap: 1,
           pl: 2,
           pr: 2,
@@ -453,39 +453,39 @@ export const ProxyRender = (props: RenderProps) => {
       >
         {proxyColItemsMemo}
       </Box>
-    );
+    )
   }
 
-  return null;
-};
+  return null
+}
 
 const StyledPrimary = styled(Subtitle1)`
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-`;
-const StyledSubtitle = styled("span")`
+`
+const StyledSubtitle = styled('span')`
   font-size: 13px;
   overflow: hidden;
   color: text.secondary;
   text-overflow: ellipsis;
   white-space: nowrap;
-`;
+`
 
-const ListItemTextChild = styled("span")`
+const ListItemTextChild = styled('span')`
   display: block;
-`;
+`
 
 const StyledTypeBox = styled(ListItemTextChild)(({ theme }) => ({
-  display: "inline-block",
-  border: "1px solid #ccc",
+  display: 'inline-block',
+  border: '1px solid #ccc',
   // borderColor: alpha(theme.palette.primary.main, 0.5),
   // color: alpha(theme.palette.primary.main, 0.8),
   borderColor: tokens.colorNeutralStroke1,
   color: tokens.colorNeutralForeground4,
   borderRadius: 4,
   fontSize: 10,
-  padding: "0 4px",
+  padding: '0 4px',
   lineHeight: 1.5,
-  marginRight: "8px",
-}));
+  marginRight: '8px',
+}))

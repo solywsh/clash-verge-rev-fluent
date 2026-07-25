@@ -1,12 +1,3 @@
-import { useRef, useState, useEffect } from "react";
-import { useLockFn } from "ahooks";
-import { useTranslation } from "react-i18next";
-import { TextField, Select, MenuItem, Typography } from "@mui/material";
-import {
-  SettingsRounded,
-  ShuffleRounded,
-  LanRounded,
-} from "@mui/icons-material";
 import {
   Menu,
   MenuButton,
@@ -14,32 +5,14 @@ import {
   MenuPopover,
   MenuTrigger,
   Switch as FluentSwitch,
-  MenuItem as FluentMenuItem,
   MenuItemRadio,
   makeStyles,
-  Tooltip,
   Button,
-  Caption1,
   Body2,
   Input,
-} from "@fluentui/react-components";
-import { DialogRef, Notice, Switch } from "@/components/base";
-import { useClash, useClashInfo } from "@/hooks/use-clash";
-import { GuardState } from "./mods/guard-state";
-import { WebUIViewer } from "./mods/web-ui-viewer";
-import { ClashPortViewer } from "./mods/clash-port-viewer";
-import { ControllerViewer } from "./mods/controller-viewer";
-import {
-  SettingList,
-  SettingItem,
-  FluentSettingItem,
-  FluentSettingList,
-  FluentSettingGroup,
-} from "./mods/setting-comp";
-import { useSettingSystemStyle } from "./setting-system";
+} from '@fluentui/react-components'
 import {
   ConnectedRegular,
-  SettingsRegular,
   WifiSettingsRegular,
   NumberSymbolRegular,
   TopSpeedRegular,
@@ -53,63 +26,76 @@ import {
   CubeRegular,
   WrenchRegular,
   MapRegular,
-} from "@fluentui/react-icons";
-import { ClashCoreViewer } from "./mods/clash-core-viewer";
-import { invoke_uwp_tool } from "@/services/cmds";
-import getSystem from "@/utils/get-system";
-import { useVerge } from "@/hooks/use-verge";
-import { updateGeoData } from "@/services/api";
-import {
-  TooltipIcon,
-  FluentTooltipIcon,
-} from "@/components/base/base-tooltip-icon";
-import { NetworkInterfaceViewer } from "./mods/network-interface-viewer";
-import { DnsViewer, buildDefaultDnsConfig } from "./mods/dns-viewer";
+} from '@fluentui/react-icons'
+import { useLockFn } from 'ahooks'
+import { useRef, useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+
+import { DialogRef, Notice } from '@/components/base'
+import { useClash, useClashInfo } from '@/hooks/use-clash'
+import { useVerge } from '@/hooks/use-verge'
+import { updateGeoData } from '@/services/api'
+import { invoke_uwp_tool } from '@/services/cmds'
 import {
   checkDnsConfigExists,
   saveDnsConfig,
   applyDnsConfig,
-} from "@/services/cmds";
-import { TunnelsViewer } from "./mods/tunnels-viewer";
-import { HeaderConfiguration } from "./mods/external-controller-cors";
+} from '@/services/cmds'
+import getSystem from '@/utils/get-system'
+
+import { ClashCoreViewer } from './mods/clash-core-viewer'
+import { ClashPortViewer } from './mods/clash-port-viewer'
+import { ControllerViewer } from './mods/controller-viewer'
+import { DnsViewer, buildDefaultDnsConfig } from './mods/dns-viewer'
+import { HeaderConfiguration } from './mods/external-controller-cors'
+import { GuardState } from './mods/guard-state'
+import { NetworkInterfaceViewer } from './mods/network-interface-viewer'
+import {
+  FluentSettingItem,
+  FluentSettingList,
+  FluentSettingGroup,
+} from './mods/setting-comp'
+import { TunnelsViewer } from './mods/tunnels-viewer'
+import { WebUIViewer } from './mods/web-ui-viewer'
+import { useSettingSystemStyle } from './setting-system'
 
 const useStyles = makeStyles({
   expander: {
-    height: "72px",
+    height: '72px',
   },
-});
+})
 
-const isWIN = getSystem() === "windows";
+const isWIN = getSystem() === 'windows'
 
 interface Props {
-  onError: (err: Error) => void;
-  hideTitle?: boolean;
+  onError: (err: Error) => void
+  hideTitle?: boolean
 }
 
 const SettingClash = ({ onError, hideTitle }: Props) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
-  const { clash, version, mutateClash, patchClash } = useClash();
-  const { verge, mutateVerge, patchVerge } = useVerge();
-  const { clashInfo, patchInfo } = useClashInfo();
+  const { clash, version, mutateClash, patchClash } = useClash()
+  const { verge, mutateVerge, patchVerge } = useVerge()
+  const { clashInfo, patchInfo } = useClashInfo()
 
   const {
     ipv6,
-    "allow-lan": allowLan,
-    "log-level": logLevel,
-    "unified-delay": unifiedDelay,
-  } = clash ?? {};
+    'allow-lan': allowLan,
+    'log-level': logLevel,
+    'unified-delay': unifiedDelay,
+  } = clash ?? {}
 
-  const { enable_random_port = false, verge_mixed_port } = verge ?? {};
+  const { enable_random_port = false, verge_mixed_port } = verge ?? {}
 
   // Quick mixed-port editor surfaced next to the Port Config expander arrow,
   // so the most common port can be changed without opening the expander.
   const [mixedPort, setMixedPort] = useState(
     verge_mixed_port ?? clashInfo?.mixed_port ?? 7897,
-  );
+  )
   useEffect(() => {
-    if (verge_mixed_port) setMixedPort(verge_mixed_port);
-  }, [verge_mixed_port]);
+    if (verge_mixed_port) setMixedPort(verge_mixed_port)
+  }, [verge_mixed_port])
 
   // Quick "DNS Overwrite" master switch surfaced next to the expander arrow.
   // Self-contained (does not depend on the DnsViewer being mounted/expanded):
@@ -117,60 +103,60 @@ const SettingClash = ({ onError, hideTitle }: Props) => {
   // `enable_dns_settings` flag, and applies/reverts immediately.
   const toggleDnsOverwrite = async (enable: boolean) => {
     if (enable) {
-      const exists = await checkDnsConfigExists();
-      if (!exists) await saveDnsConfig(buildDefaultDnsConfig(true));
+      const exists = await checkDnsConfigExists()
+      if (!exists) await saveDnsConfig(buildDefaultDnsConfig(true))
     }
-    await patchVerge({ enable_dns_settings: enable });
-    await applyDnsConfig(enable);
-    mutateClash();
-  };
+    await patchVerge({ enable_dns_settings: enable })
+    await applyDnsConfig(enable)
+    mutateClash()
+  }
 
   const saveMixedPort = useLockFn(async () => {
-    if (mixedPort === (verge_mixed_port ?? clashInfo?.mixed_port)) return;
+    if (mixedPort === (verge_mixed_port ?? clashInfo?.mixed_port)) return
     if (mixedPort < 1 || mixedPort > 65535) {
-      Notice.error(t("Port Conflict"), 3000);
-      setMixedPort(verge_mixed_port ?? clashInfo?.mixed_port ?? 7897);
-      return;
+      Notice.error(t('Port Conflict'), 3000)
+      setMixedPort(verge_mixed_port ?? clashInfo?.mixed_port ?? 7897)
+      return
     }
     try {
-      await patchInfo({ "mixed-port": mixedPort });
-      await patchVerge({ verge_mixed_port: mixedPort });
-      Notice.success(t("Clash Port Modified"), 1000);
+      await patchInfo({ 'mixed-port': mixedPort })
+      await patchVerge({ verge_mixed_port: mixedPort })
+      Notice.success(t('Clash Port Modified'), 1000)
     } catch (err: any) {
-      Notice.error(err.message || err.toString(), 4000);
+      Notice.error(err.message || err.toString(), 4000)
     }
-  });
+  })
 
-  const webRef = useRef<DialogRef>(null);
-  const portRef = useRef<DialogRef>(null);
-  const ctrlRef = useRef<DialogRef>(null);
-  const coreRef = useRef<DialogRef>(null);
-  const networkRef = useRef<DialogRef>(null);
-  const dnsRef = useRef<DialogRef>(null);
-  const tunnelRef = useRef<DialogRef>(null);
-  const corsRef = useRef<DialogRef>(null);
+  const webRef = useRef<DialogRef>(null)
+  const portRef = useRef<DialogRef>(null)
+  const ctrlRef = useRef<DialogRef>(null)
+  const coreRef = useRef<DialogRef>(null)
+  const networkRef = useRef<DialogRef>(null)
+  const dnsRef = useRef<DialogRef>(null)
+  const tunnelRef = useRef<DialogRef>(null)
+  const corsRef = useRef<DialogRef>(null)
 
-  const onSwitchFormat = (_e: any, data: { checked: boolean }) => data.checked;
+  const onSwitchFormat = (_e: any, data: { checked: boolean }) => data.checked
   const onChangeData = (patch: Partial<IConfigData>) => {
-    mutateClash((old) => ({ ...(old! || {}), ...patch }), false);
-  };
+    mutateClash((old) => ({ ...(old! || {}), ...patch }), false)
+  }
   const onChangeVerge = (patch: Partial<IVergeConfig>) => {
-    mutateVerge({ ...verge, ...patch }, false);
-  };
+    mutateVerge({ ...verge, ...patch }, false)
+  }
   const onUpdateGeo = async () => {
     try {
-      await updateGeoData();
-      Notice.success(t("GeoData Updated"));
+      await updateGeoData()
+      Notice.success(t('GeoData Updated'))
     } catch (err: any) {
-      Notice.error(err?.response.data.message || err.toString());
+      Notice.error(err?.response.data.message || err.toString())
     }
-  };
+  }
 
-  const classes = useStyles();
-  const settingsClasses = useSettingSystemStyle();
+  const classes = useStyles()
+  const settingsClasses = useSettingSystemStyle()
 
   return (
-    <FluentSettingList title={hideTitle ? undefined : t("Clash Setting")}>
+    <FluentSettingList title={hideTitle ? undefined : t('Clash Setting')}>
       <WebUIViewer ref={webRef} />
       {/* <ClashPortViewer ref={portRef} /> */}
       <ControllerViewer ref={ctrlRef} />
@@ -202,28 +188,28 @@ const SettingClash = ({ onError, hideTitle }: Props) => {
         </GuardState>
       </SettingItem> */}
 
-      <FluentSettingGroup title={t("group.ports_network")} first />
+      <FluentSettingGroup title={t('group.ports_network')} first />
 
-      <FluentSettingItem icon={<WifiSettingsRegular />} label={t("Allow Lan")}>
+      <FluentSettingItem icon={<WifiSettingsRegular />} label={t('Allow Lan')}>
         <Button
           icon={<ConnectedRegular />}
           appearance="subtle"
           onClick={() => networkRef.current?.open()}
-          title={t("Network Interface")}
+          title={t('Network Interface')}
         />
         <GuardState
           value={allowLan ?? false}
           valueProps="checked"
           onCatch={onError}
           onFormat={onSwitchFormat}
-          onChange={(e) => onChangeData({ "allow-lan": e })}
-          onGuard={(e) => patchClash({ "allow-lan": e })}
+          onChange={(e) => onChangeData({ 'allow-lan': e })}
+          onGuard={(e) => patchClash({ 'allow-lan': e })}
         >
           <FluentSwitch />
         </GuardState>
       </FluentSettingItem>
 
-      <FluentSettingItem icon={<NumberSymbolRegular />} label={t("IPv6")}>
+      <FluentSettingItem icon={<NumberSymbolRegular />} label={t('IPv6')}>
         <GuardState
           value={ipv6 ?? false}
           valueProps="checked"
@@ -238,7 +224,7 @@ const SettingClash = ({ onError, hideTitle }: Props) => {
 
       <FluentSettingItem
         icon={<PlugConnectedRegular />}
-        label={t("Port Config")}
+        label={t('Port Config')}
         canExpand
         content={<ClashPortViewer ref={portRef} />}
       >
@@ -247,20 +233,20 @@ const SettingClash = ({ onError, hideTitle }: Props) => {
           style={{ width: 110 }}
           value={String(mixedPort)}
           disabled={enable_random_port}
-          title={t("Mixed Port")}
+          title={t('Mixed Port')}
           onChange={(_, data) =>
-            setMixedPort(+data.value.replace(/\D+/g, "").slice(0, 5))
+            setMixedPort(+data.value.replace(/\D+/g, '').slice(0, 5))
           }
           onBlur={saveMixedPort}
           onKeyDown={(e) => {
-            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+            if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
           }}
         />
       </FluentSettingItem>
 
       <FluentSettingItem
         icon={<GlobeSearchRegular />}
-        label={t("DNS Overwrite")}
+        label={t('DNS Overwrite')}
         canExpand
         content={<DnsViewer ref={dnsRef} />}
       >
@@ -278,23 +264,23 @@ const SettingClash = ({ onError, hideTitle }: Props) => {
 
       <FluentSettingItem
         icon={<FlowRegular />}
-        label={t("Tunnels")}
+        label={t('Tunnels')}
         canExpand
         content={<TunnelsViewer ref={tunnelRef} />}
       />
 
-      <FluentSettingGroup title={t("group.external_control")} />
+      <FluentSettingGroup title={t('group.external_control')} />
 
       <FluentSettingItem
         icon={<ServerRegular />}
         onClick={() => ctrlRef.current?.open()}
-        label={t("External")}
-        actionLabel={t("Change")}
+        label={t('External')}
+        actionLabel={t('Change')}
       />
 
       <FluentSettingItem
         icon={<GlobeShieldRegular />}
-        label={t("External Controller CORS")}
+        label={t('External Controller CORS')}
         canExpand
         content={<HeaderConfiguration ref={corsRef} />}
       />
@@ -302,24 +288,24 @@ const SettingClash = ({ onError, hideTitle }: Props) => {
       <FluentSettingItem
         icon={<WindowRegular />}
         onClick={() => webRef.current?.open()}
-        label={t("Web UI")}
-        actionLabel={t("Change")}
+        label={t('Web UI')}
+        actionLabel={t('Change')}
       />
 
-      <FluentSettingGroup title={t("group.core_data")} />
+      <FluentSettingGroup title={t('group.core_data')} />
 
       <FluentSettingItem
         icon={<TopSpeedRegular />}
-        label={t("Unified Delay")}
-        secondary={t("Unified Delay Info")}
+        label={t('Unified Delay')}
+        secondary={t('Unified Delay Info')}
       >
         <GuardState
           value={unifiedDelay ?? false}
           valueProps="checked"
           onCatch={onError}
           onFormat={onSwitchFormat}
-          onChange={(e) => onChangeData({ "unified-delay": e })}
-          onGuard={(e) => patchClash({ "unified-delay": e })}
+          onChange={(e) => onChangeData({ 'unified-delay': e })}
+          onGuard={(e) => patchClash({ 'unified-delay': e })}
         >
           <FluentSwitch />
         </GuardState>
@@ -327,17 +313,17 @@ const SettingClash = ({ onError, hideTitle }: Props) => {
 
       <FluentSettingItem
         icon={<TextBulletListLtrRegular />}
-        label={t("Log Level")}
-        secondary={t("Log Level Info")}
+        label={t('Log Level')}
+        secondary={t('Log Level Info')}
       >
         <GuardState
           value={{
-            level: [logLevel === "warn" ? "warning" : (logLevel ?? "info")],
+            level: [logLevel === 'warn' ? 'warning' : (logLevel ?? 'info')],
           }}
           onCatch={onError}
           onFormat={(_, data) => data.checkedItems[0]}
-          onChange={(e) => onChangeData({ "log-level": e })}
-          onGuard={(e) => patchClash({ "log-level": e })}
+          onChange={(e) => onChangeData({ 'log-level': e })}
+          onGuard={(e) => patchClash({ 'log-level': e })}
           onChangeProps="onCheckedValueChange"
           valueProps="checkedValues"
         >
@@ -370,9 +356,9 @@ const SettingClash = ({ onError, hideTitle }: Props) => {
 
       <FluentSettingItem
         icon={<CubeRegular />}
-        label={t("Clash Core")}
+        label={t('Clash Core')}
         onClick={() => coreRef.current?.open()}
-        actionLabel={t("Change")}
+        actionLabel={t('Change')}
       >
         <Body2>{version}</Body2>
       </FluentSettingItem>
@@ -381,20 +367,20 @@ const SettingClash = ({ onError, hideTitle }: Props) => {
         <FluentSettingItem
           icon={<WrenchRegular />}
           onClick={invoke_uwp_tool}
-          label={t("Open UWP tool")}
-          secondary={t("Open UWP tool Info")}
-          actionLabel={t("Open")}
+          label={t('Open UWP tool')}
+          secondary={t('Open UWP tool Info')}
+          actionLabel={t('Open')}
         />
       )}
 
       <FluentSettingItem
         icon={<MapRegular />}
         onClick={onUpdateGeo}
-        label={t("Update GeoData")}
-        actionLabel={t("Update")}
+        label={t('Update GeoData')}
+        actionLabel={t('Update')}
       />
     </FluentSettingList>
-  );
-};
+  )
+}
 
-export default SettingClash;
+export default SettingClash

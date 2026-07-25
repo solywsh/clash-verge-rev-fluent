@@ -1,7 +1,3 @@
-import { useEffect, useMemo, useState } from "react";
-import { useLockFn } from "ahooks";
-import yaml from "js-yaml";
-import { useTranslation } from "react-i18next";
 import {
   DndContext,
   closestCenter,
@@ -10,11 +6,8 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-} from "@dnd-kit/sortable";
+} from '@dnd-kit/core'
+import { SortableContext, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import {
   Button,
   Dialog,
@@ -28,155 +21,161 @@ import {
   Label,
   Option,
   Switch as FluentSwitch,
-} from "@fluentui/react-components";
+} from '@fluentui/react-components'
 import {
   VerticalAlignTopRounded,
   VerticalAlignBottomRounded,
-} from "@mui/icons-material";
-import { GroupItem } from "@/components/profile/group-item";
+} from '@mui/icons-material'
+import { useLockFn } from 'ahooks'
+import yaml from 'js-yaml'
+import { useEffect, useMemo, useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
+import MonacoEditor from 'react-monaco-editor'
+import { Virtuoso } from 'react-virtuoso'
+
+import { Notice } from '@/components/base'
+import { GroupItem } from '@/components/profile/group-item'
 import {
   getNetworkInterfaces,
   readProfileFile,
   saveProfileFile,
-} from "@/services/cmds";
-import { Notice } from "@/components/base";
-import getSystem from "@/utils/get-system";
-import { FluentBaseSearchBox as BaseSearchBox } from "../base/base-search-box";
-import { Virtuoso } from "react-virtuoso";
-import MonacoEditor from "react-monaco-editor";
-import { useThemeMode } from "@/services/states";
-import { Controller, useForm } from "react-hook-form";
+} from '@/services/cmds'
+import { useThemeMode } from '@/services/states'
+import getSystem from '@/utils/get-system'
+
+import { FluentBaseSearchBox as BaseSearchBox } from '../base/base-search-box'
 
 interface Props {
-  proxiesUid: string;
-  mergeUid: string;
-  profileUid: string;
-  property: string;
-  open: boolean;
-  onClose: () => void;
-  onSave?: (prev?: string, curr?: string) => void;
+  proxiesUid: string
+  mergeUid: string
+  profileUid: string
+  property: string
+  open: boolean
+  onClose: () => void
+  onSave?: (prev?: string, curr?: string) => void
 }
 
-const builtinProxyPolicies = ["DIRECT", "REJECT", "REJECT-DROP", "PASS"];
+const builtinProxyPolicies = ['DIRECT', 'REJECT', 'REJECT-DROP', 'PASS']
 
 export const GroupsEditorViewer = (props: Props) => {
   const { mergeUid, proxiesUid, profileUid, property, open, onClose, onSave } =
-    props;
-  const { t } = useTranslation();
-  const themeMode = useThemeMode();
-  const [prevData, setPrevData] = useState("");
-  const [currData, setCurrData] = useState("");
-  const [visualization, setVisualization] = useState(true);
-  const [match, setMatch] = useState(() => (_: string) => true);
-  const [interfaceNameList, setInterfaceNameList] = useState<string[]>([]);
+    props
+  const { t } = useTranslation()
+  const themeMode = useThemeMode()
+  const [prevData, setPrevData] = useState('')
+  const [currData, setCurrData] = useState('')
+  const [visualization, setVisualization] = useState(true)
+  const [match, setMatch] = useState(() => (_: string) => true)
+  const [interfaceNameList, setInterfaceNameList] = useState<string[]>([])
   const { control, watch, register, ...formIns } = useForm<IProxyGroupConfig>({
     defaultValues: {
-      type: "select",
-      name: "",
+      type: 'select',
+      name: '',
       interval: 300,
       timeout: 5000,
-      "max-failed-times": 5,
+      'max-failed-times': 5,
       lazy: true,
     },
-  });
-  const [groupList, setGroupList] = useState<IProxyGroupConfig[]>([]);
-  const [proxyPolicyList, setProxyPolicyList] = useState<string[]>([]);
-  const [proxyProviderList, setProxyProviderList] = useState<string[]>([]);
-  const [prependSeq, setPrependSeq] = useState<IProxyGroupConfig[]>([]);
-  const [appendSeq, setAppendSeq] = useState<IProxyGroupConfig[]>([]);
-  const [deleteSeq, setDeleteSeq] = useState<string[]>([]);
+  })
+  const [groupList, setGroupList] = useState<IProxyGroupConfig[]>([])
+  const [proxyPolicyList, setProxyPolicyList] = useState<string[]>([])
+  const [proxyProviderList, setProxyProviderList] = useState<string[]>([])
+  const [prependSeq, setPrependSeq] = useState<IProxyGroupConfig[]>([])
+  const [appendSeq, setAppendSeq] = useState<IProxyGroupConfig[]>([])
+  const [deleteSeq, setDeleteSeq] = useState<string[]>([])
 
   const filteredPrependSeq = useMemo(
     () => prependSeq.filter((group) => match(group.name)),
     [prependSeq, match],
-  );
+  )
   const filteredGroupList = useMemo(
     () => groupList.filter((group) => match(group.name)),
     [groupList, match],
-  );
+  )
   const filteredAppendSeq = useMemo(
     () => appendSeq.filter((group) => match(group.name)),
     [appendSeq, match],
-  );
+  )
 
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
-  );
+  )
   const reorder = (
     list: IProxyGroupConfig[],
     startIndex: number,
     endIndex: number,
   ) => {
-    const result = Array.from(list);
-    const [removed] = result.splice(startIndex, 1);
-    result.splice(endIndex, 0, removed);
-    return result;
-  };
+    const result = Array.from(list)
+    const [removed] = result.splice(startIndex, 1)
+    result.splice(endIndex, 0, removed)
+    return result
+  }
   const onPrependDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
+    const { active, over } = event
     if (over) {
       if (active.id !== over.id) {
-        let activeIndex = 0;
-        let overIndex = 0;
+        let activeIndex = 0
+        let overIndex = 0
         prependSeq.forEach((item, index) => {
           if (item.name === active.id) {
-            activeIndex = index;
+            activeIndex = index
           }
           if (item.name === over.id) {
-            overIndex = index;
+            overIndex = index
           }
-        });
+        })
 
-        setPrependSeq(reorder(prependSeq, activeIndex, overIndex));
+        setPrependSeq(reorder(prependSeq, activeIndex, overIndex))
       }
     }
-  };
+  }
   const onAppendDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
+    const { active, over } = event
     if (over) {
       if (active.id !== over.id) {
-        let activeIndex = 0;
-        let overIndex = 0;
+        let activeIndex = 0
+        let overIndex = 0
         appendSeq.forEach((item, index) => {
           if (item.name === active.id) {
-            activeIndex = index;
+            activeIndex = index
           }
           if (item.name === over.id) {
-            overIndex = index;
+            overIndex = index
           }
-        });
-        setAppendSeq(reorder(appendSeq, activeIndex, overIndex));
+        })
+        setAppendSeq(reorder(appendSeq, activeIndex, overIndex))
       }
     }
-  };
+  }
   const fetchContent = async () => {
-    let data = await readProfileFile(property);
-    let obj = yaml.load(data) as ISeqProfileConfig | null;
+    const data = await readProfileFile(property)
+    const obj = yaml.load(data) as ISeqProfileConfig | null
 
-    setPrependSeq(obj?.prepend || []);
-    setAppendSeq(obj?.append || []);
-    setDeleteSeq(obj?.delete || []);
+    setPrependSeq(obj?.prepend || [])
+    setAppendSeq(obj?.append || [])
+    setDeleteSeq(obj?.delete || [])
 
-    setPrevData(data);
-    setCurrData(data);
-  };
+    setPrevData(data)
+    setCurrData(data)
+  }
 
   useEffect(() => {
-    if (currData === "") return;
-    if (visualization !== true) return;
+    if (currData === '') return
+    if (visualization !== true) return
 
-    let obj = yaml.load(currData) as {
-      prepend: [];
-      append: [];
-      delete: [];
-    } | null;
-    setPrependSeq(obj?.prepend || []);
-    setAppendSeq(obj?.append || []);
-    setDeleteSeq(obj?.delete || []);
-  }, [visualization]);
+    const obj = yaml.load(currData) as {
+      prepend: []
+      append: []
+      delete: []
+    } | null
+    setPrependSeq(obj?.prepend || [])
+    setAppendSeq(obj?.append || [])
+    setDeleteSeq(obj?.delete || [])
+  }, [visualization])
 
   useEffect(() => {
     if (prependSeq && appendSeq && deleteSeq)
@@ -187,160 +186,162 @@ export const GroupsEditorViewer = (props: Props) => {
             forceQuotes: true,
           },
         ),
-      );
-  }, [prependSeq, appendSeq, deleteSeq]);
+      )
+  }, [prependSeq, appendSeq, deleteSeq])
 
   const fetchProxyPolicy = async () => {
-    let data = await readProfileFile(profileUid);
-    let proxiesData = await readProfileFile(proxiesUid);
-    let originGroupsObj = yaml.load(data) as {
-      "proxy-groups": IProxyGroupConfig[];
-    } | null;
+    const data = await readProfileFile(profileUid)
+    const proxiesData = await readProfileFile(proxiesUid)
+    const originGroupsObj = yaml.load(data) as {
+      'proxy-groups': IProxyGroupConfig[]
+    } | null
 
-    let originProxiesObj = yaml.load(data) as { proxies: [] } | null;
-    let originProxies = originProxiesObj?.proxies || [];
-    let moreProxiesObj = yaml.load(proxiesData) as ISeqProfileConfig | null;
-    let morePrependProxies = moreProxiesObj?.prepend || [];
-    let moreAppendProxies = moreProxiesObj?.append || [];
-    let moreDeleteProxies =
-      moreProxiesObj?.delete || ([] as string[] | { name: string }[]);
+    const originProxiesObj = yaml.load(data) as { proxies: [] } | null
+    const originProxies = originProxiesObj?.proxies || []
+    const moreProxiesObj = yaml.load(proxiesData) as ISeqProfileConfig | null
+    const morePrependProxies = moreProxiesObj?.prepend || []
+    const moreAppendProxies = moreProxiesObj?.append || []
+    const moreDeleteProxies =
+      moreProxiesObj?.delete || ([] as string[] | { name: string }[])
 
-    let proxies = morePrependProxies.concat(
+    const proxies = morePrependProxies.concat(
       originProxies.filter((proxy: any) => {
         if (proxy.name) {
-          return !moreDeleteProxies.includes(proxy.name);
+          return !moreDeleteProxies.includes(proxy.name)
         } else {
-          return !moreDeleteProxies.includes(proxy);
+          return !moreDeleteProxies.includes(proxy)
         }
       }),
       moreAppendProxies,
-    );
+    )
 
     setProxyPolicyList(
       builtinProxyPolicies.concat(
         prependSeq.map((group: IProxyGroupConfig) => group.name),
-        originGroupsObj?.["proxy-groups"]
+        originGroupsObj?.['proxy-groups']
           .map((group: IProxyGroupConfig) => group.name)
           .filter((name) => !deleteSeq.includes(name)) || [],
         appendSeq.map((group: IProxyGroupConfig) => group.name),
         proxies.map((proxy: any) => proxy.name),
       ),
-    );
-  };
+    )
+  }
   const fetchProfile = async () => {
-    let data = await readProfileFile(profileUid);
-    let mergeData = await readProfileFile(mergeUid);
-    let globalMergeData = await readProfileFile("Merge");
+    const data = await readProfileFile(profileUid)
+    const mergeData = await readProfileFile(mergeUid)
+    const globalMergeData = await readProfileFile('Merge')
 
-    let originGroupsObj = yaml.load(data) as {
-      "proxy-groups": IProxyGroupConfig[];
-    } | null;
+    const originGroupsObj = yaml.load(data) as {
+      'proxy-groups': IProxyGroupConfig[]
+    } | null
 
-    let originProviderObj = yaml.load(data) as { "proxy-providers": {} } | null;
-    let originProvider = originProviderObj?.["proxy-providers"] || {};
+    const originProviderObj = yaml.load(data) as {
+      'proxy-providers': Record<string, unknown>
+    } | null
+    const originProvider = originProviderObj?.['proxy-providers'] || {}
 
-    let moreProviderObj = yaml.load(mergeData) as {
-      "proxy-providers": {};
-    } | null;
-    let moreProvider = moreProviderObj?.["proxy-providers"] || {};
+    const moreProviderObj = yaml.load(mergeData) as {
+      'proxy-providers': Record<string, unknown>
+    } | null
+    const moreProvider = moreProviderObj?.['proxy-providers'] || {}
 
-    let globalProviderObj = yaml.load(globalMergeData) as {
-      "proxy-providers": {};
-    } | null;
-    let globalProvider = globalProviderObj?.["proxy-providers"] || {};
+    const globalProviderObj = yaml.load(globalMergeData) as {
+      'proxy-providers': Record<string, unknown>
+    } | null
+    const globalProvider = globalProviderObj?.['proxy-providers'] || {}
 
-    let provider = Object.assign(
+    const provider = Object.assign(
       {},
       originProvider,
       moreProvider,
       globalProvider,
-    );
+    )
 
-    setProxyProviderList(Object.keys(provider));
-    setGroupList(originGroupsObj?.["proxy-groups"] || []);
-  };
+    setProxyProviderList(Object.keys(provider))
+    setGroupList(originGroupsObj?.['proxy-groups'] || [])
+  }
   const getInterfaceNameList = async () => {
-    let list = await getNetworkInterfaces();
-    setInterfaceNameList(list);
-  };
+    const list = await getNetworkInterfaces()
+    setInterfaceNameList(list)
+  }
   useEffect(() => {
-    fetchProxyPolicy();
-  }, [prependSeq, appendSeq, deleteSeq]);
+    fetchProxyPolicy()
+  }, [prependSeq, appendSeq, deleteSeq])
   useEffect(() => {
-    if (!open) return;
-    fetchContent();
-    fetchProxyPolicy();
-    fetchProfile();
-    getInterfaceNameList();
-  }, [open]);
+    if (!open) return
+    fetchContent()
+    fetchProxyPolicy()
+    fetchProfile()
+    getInterfaceNameList()
+  }, [open])
 
   const validateGroup = () => {
-    let group = formIns.getValues();
-    if (group.name === "") {
-      throw new Error(t("Group Name Required"));
+    const group = formIns.getValues()
+    if (group.name === '') {
+      throw new Error(t('Group Name Required'))
     }
-  };
+  }
 
   const handleSave = useLockFn(async () => {
     try {
-      await saveProfileFile(property, currData);
-      onSave?.(prevData, currData);
-      onClose();
+      await saveProfileFile(property, currData)
+      onSave?.(prevData, currData)
+      onClose()
     } catch (err: any) {
-      Notice.error(err.message || err.toString());
+      Notice.error(err.message || err.toString())
     }
-  });
+  })
 
   return (
     <Dialog
       open={open}
       onOpenChange={(_, data) => {
-        if (!data.open) onClose();
+        if (!data.open) onClose()
       }}
     >
       <DialogSurface
-        style={{ maxWidth: "90vw", width: "90vw", maxHeight: "92vh" }}
+        style={{ maxWidth: '90vw', width: '90vw', maxHeight: '92vh' }}
       >
-        <DialogBody style={{ maxHeight: "none" }}>
+        <DialogBody style={{ maxHeight: 'none' }}>
           <DialogTitle>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              {t("Edit Groups")}
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              {t('Edit Groups')}
               <Button
                 appearance="primary"
                 size="small"
                 onClick={() => {
-                  setVisualization((prev) => !prev);
+                  setVisualization((prev) => !prev)
                 }}
               >
-                {visualization ? t("Advanced") : t("Visualization")}
+                {visualization ? t('Advanced') : t('Visualization')}
               </Button>
             </div>
           </DialogTitle>
 
           <DialogContent
             style={{
-              display: "flex",
-              width: "auto",
-              height: "calc(100vh - 185px)",
+              display: 'flex',
+              width: 'auto',
+              height: 'calc(100vh - 185px)',
             }}
           >
             {visualization ? (
               <>
                 <div
                   style={{
-                    width: "50%",
-                    padding: "0 10px",
-                    display: "flex",
-                    flexDirection: "column",
+                    width: '50%',
+                    padding: '0 10px',
+                    display: 'flex',
+                    flexDirection: 'column',
                     gap: 8,
                   }}
                 >
                   <div
                     style={{
-                      height: "calc(100% - 80px)",
-                      overflowY: "auto",
-                      display: "flex",
-                      flexDirection: "column",
+                      height: 'calc(100% - 80px)',
+                      overflowY: 'auto',
+                      display: 'flex',
+                      flexDirection: 'column',
                       gap: 8,
                     }}
                   >
@@ -349,22 +350,22 @@ export const GroupsEditorViewer = (props: Props) => {
                       control={control}
                       render={({ field }) => (
                         <div style={rowStyle}>
-                          <Label>{t("Group Type")}</Label>
+                          <Label>{t('Group Type')}</Label>
                           <Dropdown
                             style={fieldStyle}
                             selectedOptions={field.value ? [field.value] : []}
-                            value={field.value ?? ""}
+                            value={field.value ?? ''}
                             onOptionSelect={(_, data) =>
                               data.optionValue &&
                               field.onChange(data.optionValue)
                             }
                           >
                             {[
-                              "select",
-                              "url-test",
-                              "fallback",
-                              "load-balance",
-                              "relay",
+                              'select',
+                              'url-test',
+                              'fallback',
+                              'load-balance',
+                              'relay',
                             ].map((option) => (
                               <Option key={option} value={option} text={option}>
                                 {option}
@@ -379,11 +380,11 @@ export const GroupsEditorViewer = (props: Props) => {
                       control={control}
                       render={({ field }) => (
                         <div style={rowStyle}>
-                          <Label>{t("Group Name")}</Label>
+                          <Label>{t('Group Name')}</Label>
                           <Input
                             autoComplete="new-password"
                             style={fieldStyle}
-                            value={field.value ?? ""}
+                            value={field.value ?? ''}
                             name={field.name}
                             onBlur={field.onBlur}
                             onChange={(_, data) => field.onChange(data.value)}
@@ -397,11 +398,11 @@ export const GroupsEditorViewer = (props: Props) => {
                       control={control}
                       render={({ field }) => (
                         <div style={rowStyle}>
-                          <Label>{t("Proxy Group Icon")}</Label>
+                          <Label>{t('Proxy Group Icon')}</Label>
                           <Input
                             autoComplete="new-password"
                             style={fieldStyle}
-                            value={field.value ?? ""}
+                            value={field.value ?? ''}
                             name={field.name}
                             onBlur={field.onBlur}
                             onChange={(_, data) => field.onChange(data.value)}
@@ -414,12 +415,12 @@ export const GroupsEditorViewer = (props: Props) => {
                       control={control}
                       render={({ field }) => (
                         <div style={rowStyle}>
-                          <Label>{t("Use Proxies")}</Label>
+                          <Label>{t('Use Proxies')}</Label>
                           <Dropdown
                             multiselect
                             style={fieldStyle}
                             selectedOptions={field.value ?? []}
-                            value={(field.value ?? []).join(", ")}
+                            value={(field.value ?? []).join(', ')}
                             onOptionSelect={(_, data) =>
                               field.onChange(data.selectedOptions)
                             }
@@ -438,12 +439,12 @@ export const GroupsEditorViewer = (props: Props) => {
                       control={control}
                       render={({ field }) => (
                         <div style={rowStyle}>
-                          <Label>{t("Use Provider")}</Label>
+                          <Label>{t('Use Provider')}</Label>
                           <Dropdown
                             multiselect
                             style={fieldStyle}
                             selectedOptions={field.value ?? []}
-                            value={(field.value ?? []).join(", ")}
+                            value={(field.value ?? []).join(', ')}
                             onOptionSelect={(_, data) =>
                               field.onChange(data.selectedOptions)
                             }
@@ -462,12 +463,12 @@ export const GroupsEditorViewer = (props: Props) => {
                       control={control}
                       render={({ field }) => (
                         <div style={rowStyle}>
-                          <Label>{t("Health Check Url")}</Label>
+                          <Label>{t('Health Check Url')}</Label>
                           <Input
                             autoComplete="new-password"
                             placeholder="https://www.gstatic.com/generate_204"
                             style={fieldStyle}
-                            value={field.value ?? ""}
+                            value={field.value ?? ''}
                             name={field.name}
                             onBlur={field.onBlur}
                             onChange={(_, data) => field.onChange(data.value)}
@@ -480,7 +481,7 @@ export const GroupsEditorViewer = (props: Props) => {
                       control={control}
                       render={({ field }) => (
                         <div style={rowStyle}>
-                          <Label>{t("Expected Status")}</Label>
+                          <Label>{t('Expected Status')}</Label>
                           <Input
                             autoComplete="new-password"
                             placeholder="*"
@@ -497,13 +498,13 @@ export const GroupsEditorViewer = (props: Props) => {
                       control={control}
                       render={({ field }) => (
                         <div style={rowStyle}>
-                          <Label>{t("Interval")}</Label>
+                          <Label>{t('Interval')}</Label>
                           <Input
                             autoComplete="new-password"
                             placeholder="300"
                             type="number"
                             style={fieldStyle}
-                            contentAfter={t("seconds")}
+                            contentAfter={t('seconds')}
                             onChange={(_, data) =>
                               field.onChange(parseInt(data.value))
                             }
@@ -516,13 +517,13 @@ export const GroupsEditorViewer = (props: Props) => {
                       control={control}
                       render={({ field }) => (
                         <div style={rowStyle}>
-                          <Label>{t("Timeout")}</Label>
+                          <Label>{t('Timeout')}</Label>
                           <Input
                             autoComplete="new-password"
                             placeholder="5000"
                             type="number"
                             style={fieldStyle}
-                            contentAfter={t("millis")}
+                            contentAfter={t('millis')}
                             onChange={(_, data) =>
                               field.onChange(parseInt(data.value))
                             }
@@ -535,7 +536,7 @@ export const GroupsEditorViewer = (props: Props) => {
                       control={control}
                       render={({ field }) => (
                         <div style={rowStyle}>
-                          <Label>{t("Max Failed Times")}</Label>
+                          <Label>{t('Max Failed Times')}</Label>
                           <Input
                             autoComplete="new-password"
                             placeholder="5"
@@ -553,11 +554,11 @@ export const GroupsEditorViewer = (props: Props) => {
                       control={control}
                       render={({ field }) => (
                         <div style={rowStyle}>
-                          <Label>{t("Interface Name")}</Label>
+                          <Label>{t('Interface Name')}</Label>
                           <Dropdown
                             style={fieldStyle}
                             selectedOptions={field.value ? [field.value] : []}
-                            value={field.value ?? ""}
+                            value={field.value ?? ''}
                             onOptionSelect={(_, data) =>
                               data.optionValue &&
                               field.onChange(data.optionValue)
@@ -577,7 +578,7 @@ export const GroupsEditorViewer = (props: Props) => {
                       control={control}
                       render={({ field }) => (
                         <div style={rowStyle}>
-                          <Label>{t("Routing Mark")}</Label>
+                          <Label>{t('Routing Mark')}</Label>
                           <Input
                             autoComplete="new-password"
                             type="number"
@@ -594,11 +595,11 @@ export const GroupsEditorViewer = (props: Props) => {
                       control={control}
                       render={({ field }) => (
                         <div style={rowStyle}>
-                          <Label>{t("Filter")}</Label>
+                          <Label>{t('Filter')}</Label>
                           <Input
                             autoComplete="new-password"
                             style={fieldStyle}
-                            value={field.value ?? ""}
+                            value={field.value ?? ''}
                             name={field.name}
                             onBlur={field.onBlur}
                             onChange={(_, data) => field.onChange(data.value)}
@@ -611,11 +612,11 @@ export const GroupsEditorViewer = (props: Props) => {
                       control={control}
                       render={({ field }) => (
                         <div style={rowStyle}>
-                          <Label>{t("Exclude Filter")}</Label>
+                          <Label>{t('Exclude Filter')}</Label>
                           <Input
                             autoComplete="new-password"
                             style={fieldStyle}
-                            value={field.value ?? ""}
+                            value={field.value ?? ''}
                             name={field.name}
                             onBlur={field.onBlur}
                             onChange={(_, data) => field.onChange(data.value)}
@@ -628,46 +629,46 @@ export const GroupsEditorViewer = (props: Props) => {
                       control={control}
                       render={({ field }) => (
                         <div style={rowStyle}>
-                          <Label>{t("Exclude Type")}</Label>
+                          <Label>{t('Exclude Type')}</Label>
                           <Dropdown
                             multiselect
                             style={fieldStyle}
                             selectedOptions={
-                              field.value ? field.value.split("|") : []
+                              field.value ? field.value.split('|') : []
                             }
                             value={(field.value
-                              ? field.value.split("|")
+                              ? field.value.split('|')
                               : []
-                            ).join(", ")}
+                            ).join(', ')}
                             onOptionSelect={(_, data) =>
-                              field.onChange(data.selectedOptions.join("|"))
+                              field.onChange(data.selectedOptions.join('|'))
                             }
                           >
                             {[
-                              "Direct",
-                              "Reject",
-                              "RejectDrop",
-                              "Compatible",
-                              "Pass",
-                              "Dns",
-                              "Shadowsocks",
-                              "ShadowsocksR",
-                              "Snell",
-                              "Socks5",
-                              "Http",
-                              "Vmess",
-                              "Vless",
-                              "Trojan",
-                              "Hysteria",
-                              "Hysteria2",
-                              "WireGuard",
-                              "Tuic",
-                              "Relay",
-                              "Selector",
-                              "Fallback",
-                              "URLTest",
-                              "LoadBalance",
-                              "Ssh",
+                              'Direct',
+                              'Reject',
+                              'RejectDrop',
+                              'Compatible',
+                              'Pass',
+                              'Dns',
+                              'Shadowsocks',
+                              'ShadowsocksR',
+                              'Snell',
+                              'Socks5',
+                              'Http',
+                              'Vmess',
+                              'Vless',
+                              'Trojan',
+                              'Hysteria',
+                              'Hysteria2',
+                              'WireGuard',
+                              'Tuic',
+                              'Relay',
+                              'Selector',
+                              'Fallback',
+                              'URLTest',
+                              'LoadBalance',
+                              'Ssh',
                             ].map((option) => (
                               <Option key={option} value={option} text={option}>
                                 {option}
@@ -682,7 +683,7 @@ export const GroupsEditorViewer = (props: Props) => {
                       control={control}
                       render={({ field }) => (
                         <div style={rowStyle}>
-                          <Label>{t("Include All")}</Label>
+                          <Label>{t('Include All')}</Label>
                           <FluentSwitch
                             checked={field.value ?? false}
                             onChange={(_, data) => field.onChange(data.checked)}
@@ -695,7 +696,7 @@ export const GroupsEditorViewer = (props: Props) => {
                       control={control}
                       render={({ field }) => (
                         <div style={rowStyle}>
-                          <Label>{t("Include All Proxies")}</Label>
+                          <Label>{t('Include All Proxies')}</Label>
                           <FluentSwitch
                             checked={field.value ?? false}
                             onChange={(_, data) => field.onChange(data.checked)}
@@ -708,7 +709,7 @@ export const GroupsEditorViewer = (props: Props) => {
                       control={control}
                       render={({ field }) => (
                         <div style={rowStyle}>
-                          <Label>{t("Include All Providers")}</Label>
+                          <Label>{t('Include All Providers')}</Label>
                           <FluentSwitch
                             checked={field.value ?? false}
                             onChange={(_, data) => field.onChange(data.checked)}
@@ -721,7 +722,7 @@ export const GroupsEditorViewer = (props: Props) => {
                       control={control}
                       render={({ field }) => (
                         <div style={rowStyle}>
-                          <Label>{t("Lazy")}</Label>
+                          <Label>{t('Lazy')}</Label>
                           <FluentSwitch
                             checked={field.value ?? false}
                             onChange={(_, data) => field.onChange(data.checked)}
@@ -734,7 +735,7 @@ export const GroupsEditorViewer = (props: Props) => {
                       control={control}
                       render={({ field }) => (
                         <div style={rowStyle}>
-                          <Label>{t("Disable UDP")}</Label>
+                          <Label>{t('Disable UDP')}</Label>
                           <FluentSwitch
                             checked={field.value ?? false}
                             onChange={(_, data) => field.onChange(data.checked)}
@@ -747,7 +748,7 @@ export const GroupsEditorViewer = (props: Props) => {
                       control={control}
                       render={({ field }) => (
                         <div style={rowStyle}>
-                          <Label>{t("Hidden")}</Label>
+                          <Label>{t('Hidden')}</Label>
                           <FluentSwitch
                             checked={field.value ?? false}
                             onChange={(_, data) => field.onChange(data.checked)}
@@ -757,56 +758,56 @@ export const GroupsEditorViewer = (props: Props) => {
                     />
                   </div>
                   <Button
-                    style={{ width: "100%" }}
+                    style={{ width: '100%' }}
                     appearance="primary"
                     icon={<VerticalAlignTopRounded />}
                     onClick={() => {
                       try {
-                        validateGroup();
+                        validateGroup()
                         for (const item of [...prependSeq, ...groupList]) {
                           if (item.name === formIns.getValues().name) {
-                            throw new Error(t("Group Name Already Exists"));
+                            throw new Error(t('Group Name Already Exists'))
                           }
                         }
-                        setPrependSeq([formIns.getValues(), ...prependSeq]);
+                        setPrependSeq([formIns.getValues(), ...prependSeq])
                       } catch (err: any) {
-                        Notice.error(err.message || err.toString());
+                        Notice.error(err.message || err.toString())
                       }
                     }}
                   >
-                    {t("Prepend Group")}
+                    {t('Prepend Group')}
                   </Button>
                   <Button
-                    style={{ width: "100%" }}
+                    style={{ width: '100%' }}
                     appearance="primary"
                     icon={<VerticalAlignBottomRounded />}
                     onClick={() => {
                       try {
-                        validateGroup();
+                        validateGroup()
                         for (const item of [...appendSeq, ...groupList]) {
                           if (item.name === formIns.getValues().name) {
-                            throw new Error(t("Group Name Already Exists"));
+                            throw new Error(t('Group Name Already Exists'))
                           }
                         }
-                        setAppendSeq([...appendSeq, formIns.getValues()]);
+                        setAppendSeq([...appendSeq, formIns.getValues()])
                       } catch (err: any) {
-                        Notice.error(err.message || err.toString());
+                        Notice.error(err.message || err.toString())
                       }
                     }}
                   >
-                    {t("Append Group")}
+                    {t('Append Group')}
                   </Button>
                 </div>
 
                 <div
                   style={{
-                    width: "50%",
-                    padding: "0 10px",
+                    width: '50%',
+                    padding: '0 10px',
                   }}
                 >
                   <BaseSearchBox onSearch={(match) => setMatch(() => match)} />
                   <Virtuoso
-                    style={{ height: "calc(100% - 24px)", marginTop: "8px" }}
+                    style={{ height: 'calc(100% - 24px)', marginTop: '8px' }}
                     totalCount={
                       filteredGroupList.length +
                       (filteredPrependSeq.length > 0 ? 1 : 0) +
@@ -814,7 +815,7 @@ export const GroupsEditorViewer = (props: Props) => {
                     }
                     increaseViewportBy={256}
                     itemContent={(index) => {
-                      let shift = filteredPrependSeq.length > 0 ? 1 : 0;
+                      const shift = filteredPrependSeq.length > 0 ? 1 : 0
                       if (filteredPrependSeq.length > 0 && index === 0) {
                         return (
                           <DndContext
@@ -824,7 +825,7 @@ export const GroupsEditorViewer = (props: Props) => {
                           >
                             <SortableContext
                               items={filteredPrependSeq.map((x) => {
-                                return x.name;
+                                return x.name
                               })}
                             >
                               {filteredPrependSeq.map((item, index) => {
@@ -838,16 +839,16 @@ export const GroupsEditorViewer = (props: Props) => {
                                         prependSeq.filter(
                                           (v) => v.name !== item.name,
                                         ),
-                                      );
+                                      )
                                     }}
                                   />
-                                );
+                                )
                               })}
                             </SortableContext>
                           </DndContext>
-                        );
+                        )
                       } else if (index < filteredGroupList.length + shift) {
-                        let newIndex = index - shift;
+                        const newIndex = index - shift
                         return (
                           <GroupItem
                             key={`${filteredGroupList[newIndex].name}-${index}`}
@@ -855,8 +856,8 @@ export const GroupsEditorViewer = (props: Props) => {
                               deleteSeq.includes(
                                 filteredGroupList[newIndex].name,
                               )
-                                ? "delete"
-                                : "original"
+                                ? 'delete'
+                                : 'original'
                             }
                             group={filteredGroupList[newIndex]}
                             onDelete={() => {
@@ -870,16 +871,16 @@ export const GroupsEditorViewer = (props: Props) => {
                                     (v) =>
                                       v !== filteredGroupList[newIndex].name,
                                   ),
-                                );
+                                )
                               } else {
                                 setDeleteSeq((prev) => [
                                   ...prev,
                                   filteredGroupList[newIndex].name,
-                                ]);
+                                ])
                               }
                             }}
                           />
-                        );
+                        )
                       } else {
                         return (
                           <DndContext
@@ -889,7 +890,7 @@ export const GroupsEditorViewer = (props: Props) => {
                           >
                             <SortableContext
                               items={filteredAppendSeq.map((x) => {
-                                return x.name;
+                                return x.name
                               })}
                             >
                               {filteredAppendSeq.map((item, index) => {
@@ -903,14 +904,14 @@ export const GroupsEditorViewer = (props: Props) => {
                                         appendSeq.filter(
                                           (v) => v.name !== item.name,
                                         ),
-                                      );
+                                      )
                                     }}
                                   />
-                                );
+                                )
                               })}
                             </SortableContext>
                           </DndContext>
-                        );
+                        )
                       }
                     }}
                   />
@@ -921,7 +922,7 @@ export const GroupsEditorViewer = (props: Props) => {
                 height="100%"
                 language="yaml"
                 value={currData}
-                theme={themeMode === "light" ? "vs" : "vs-dark"}
+                theme={themeMode === 'light' ? 'vs' : 'vs-dark'}
                 options={{
                   tabSize: 2, // 根据语言类型设置缩进大小
                   minimap: {
@@ -937,7 +938,7 @@ export const GroupsEditorViewer = (props: Props) => {
                     top: 33, // 顶部padding防止遮挡snippets
                   },
                   fontFamily: `Fira Code, JetBrains Mono, Roboto Mono, "Source Code Pro", Consolas, Menlo, Monaco, monospace, "Courier New", "Apple Color Emoji"${
-                    getSystem() === "windows" ? ", twemoji mozilla" : ""
+                    getSystem() === 'windows' ? ', twemoji mozilla' : ''
                   }`,
                   fontLigatures: true, // 连字符
                   smoothScrolling: true, // 平滑滚动
@@ -949,27 +950,27 @@ export const GroupsEditorViewer = (props: Props) => {
 
           <DialogActions>
             <Button onClick={onClose} appearance="outline">
-              {t("Cancel")}
+              {t('Cancel')}
             </Button>
 
             <Button onClick={handleSave} appearance="primary">
-              {t("Save")}
+              {t('Save')}
             </Button>
           </DialogActions>
         </DialogBody>
       </DialogSurface>
     </Dialog>
-  );
-};
+  )
+}
 
 const rowStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
   gap: 12,
-  padding: "5px 2px",
-};
+  padding: '5px 2px',
+}
 
 const fieldStyle: React.CSSProperties = {
-  width: "calc(100% - 150px)",
-};
+  width: 'calc(100% - 150px)',
+}

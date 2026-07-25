@@ -1,13 +1,13 @@
-import { BrandVariants } from "@fluentui/react-components";
-import { Palette, hexColorsFromPalette, hex_to_LCH } from "./colors";
-import { sRGB_to_hex } from "./colors/palettes";
-import { rgbToHex } from "@mui/material";
+import { BrandVariants } from '@fluentui/react-components'
+import { rgbToHex } from '@mui/material'
+
+import { Palette, hexColorsFromPalette, hex_to_LCH } from './colors'
 
 type Options = {
-  darkCp?: number;
-  lightCp?: number;
-  hueTorsion?: number;
-};
+  darkCp?: number
+  lightCp?: number
+  hueTorsion?: number
+}
 
 /**
  * A palette is represented as a continuous curve through LAB space, made of two quadratic bezier curves that start at
@@ -28,18 +28,18 @@ export function getBrandTokensFromPalette(
   keyColor: string,
   options: Options = {},
 ) {
-  const { darkCp = 2 / 3, lightCp = 1 / 3, hueTorsion = 0 } = options;
-  const isRGB = keyColor.startsWith("rgb");
-  keyColor = isRGB ? rgbToHex(keyColor) : keyColor;
+  const { darkCp = 2 / 3, lightCp = 1 / 3, hueTorsion = 0 } = options
+  const isRGB = keyColor.startsWith('rgb')
+  keyColor = isRGB ? rgbToHex(keyColor) : keyColor
   const brandPalette: Palette = {
     keyColor: hex_to_LCH(keyColor),
     darkCp,
     lightCp,
     hueTorsion,
-  };
-  const hexColors = hexColorsFromPalette(keyColor, brandPalette, 16, 1);
+  }
+  const hexColors = hexColorsFromPalette(keyColor, brandPalette, 16, 1)
   return hexColors.reduce((acc: Record<string, string>, hexColor, h) => {
-    acc[`${(h + 1) * 10}`] = hexColor;
-    return acc;
-  }, {}) as BrandVariants;
+    acc[`${(h + 1) * 10}`] = hexColor
+    return acc
+  }, {}) as BrandVariants
 }

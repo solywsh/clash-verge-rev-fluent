@@ -1,35 +1,35 @@
 export function hexToHue(hexColor: string) {
   // Parse the hex color string into its red, green, and blue components
-  const red = parseInt(hexColor.substring(1, 3), 16);
-  const green = parseInt(hexColor.substring(3, 5), 16);
-  const blue = parseInt(hexColor.substring(5, 7), 16);
+  const red = parseInt(hexColor.substring(1, 3), 16)
+  const green = parseInt(hexColor.substring(3, 5), 16)
+  const blue = parseInt(hexColor.substring(5, 7), 16)
 
   // Convert the RGB color to HSL color space
-  const r = red / 255;
-  const g = green / 255;
-  const b = blue / 255;
-  const cmax = Math.max(r, g, b);
-  const cmin = Math.min(r, g, b);
-  const delta = cmax - cmin;
-  let hue;
+  const r = red / 255
+  const g = green / 255
+  const b = blue / 255
+  const cmax = Math.max(r, g, b)
+  const cmin = Math.min(r, g, b)
+  const delta = cmax - cmin
+  let hue
 
   // Calculate the hue value based on the RGB color values
   if (delta === 0) {
-    hue = 0;
+    hue = 0
   } else if (cmax === r) {
-    hue = ((g - b) / delta) % 6;
+    hue = ((g - b) / delta) % 6
   } else if (cmax === g) {
-    hue = (b - r) / delta + 2;
+    hue = (b - r) / delta + 2
   } else {
-    hue = (r - g) / delta + 4;
+    hue = (r - g) / delta + 4
   }
 
   // Convert the hue value to degrees and return it
-  hue = Math.round(hue * 60);
+  hue = Math.round(hue * 60)
   if (hue < 0) {
-    hue += 360;
+    hue += 360
   }
-  return hue;
+  return hue
 }
 
 // map of hue to [min, center, max], generated from Arman
@@ -394,4 +394,4 @@ export const hueToSnappingPointsMap = [
   [0.00855156, 0.1485156, 0.8585156],
   [0.00855108, 0.1485108, 0.8585108],
   [0.00855072, 0.1485072, 0.8585072],
-];
+]

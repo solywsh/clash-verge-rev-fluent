@@ -1,27 +1,27 @@
-import { useState } from "react";
-import {
-  Divider,
-  IconButton,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
 import {
   CheckRounded,
   CloseRounded,
   DeleteRounded,
   EditRounded,
   OpenInNewRounded,
-} from "@mui/icons-material";
-import { useTranslation } from "react-i18next";
+} from '@mui/icons-material'
+import {
+  Divider,
+  IconButton,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface Props {
-  value?: string;
-  onlyEdit?: boolean;
-  onChange: (value?: string) => void;
-  onOpenUrl?: (value?: string) => void;
-  onDelete?: () => void;
-  onCancel?: () => void;
+  value?: string
+  onlyEdit?: boolean
+  onChange: (value?: string) => void
+  onOpenUrl?: (value?: string) => void
+  onDelete?: () => void
+  onCancel?: () => void
 }
 
 export const WebUIItem = (props: Props) => {
@@ -32,11 +32,11 @@ export const WebUIItem = (props: Props) => {
     onDelete,
     onOpenUrl,
     onCancel,
-  } = props;
+  } = props
 
-  const [editing, setEditing] = useState(false);
-  const [editValue, setEditValue] = useState(value);
-  const { t } = useTranslation();
+  const [editing, setEditing] = useState(false)
+  const [editValue, setEditValue] = useState(value)
+  const { t } = useTranslation()
 
   if (editing || onlyEdit) {
     return (
@@ -48,26 +48,26 @@ export const WebUIItem = (props: Props) => {
             size="small"
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
-            placeholder={t("Support %host, %port, %secret")}
+            placeholder={t('Support %host, %port, %secret')}
           />
           <IconButton
             size="small"
-            title={t("Save")}
+            title={t('Save')}
             color="inherit"
             onClick={() => {
-              onChange(editValue);
-              setEditing(false);
+              onChange(editValue)
+              setEditing(false)
             }}
           >
             <CheckRounded fontSize="inherit" />
           </IconButton>
           <IconButton
             size="small"
-            title={t("Cancel")}
+            title={t('Cancel')}
             color="inherit"
             onClick={() => {
-              onCancel?.();
-              setEditing(false);
+              onCancel?.()
+              setEditing(false)
             }}
           >
             <CloseRounded fontSize="inherit" />
@@ -75,13 +75,13 @@ export const WebUIItem = (props: Props) => {
         </Stack>
         <Divider />
       </>
-    );
+    )
   }
 
   const html = value
-    ?.replace("%host", "<span>%host</span>")
-    .replace("%port", "<span>%port</span>")
-    .replace("%secret", "<span>%secret</span>");
+    ?.replace('%host', '<span>%host</span>')
+    .replace('%port', '<span>%port</span>')
+    .replace('%secret', '<span>%secret</span>')
 
   return (
     <>
@@ -90,19 +90,19 @@ export const WebUIItem = (props: Props) => {
           component="div"
           width="100%"
           title={value}
-          color={value ? "text.primary" : "text.secondary"}
+          color={value ? 'text.primary' : 'text.secondary'}
           sx={({ palette }) => ({
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            "> span": {
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            '> span': {
               color: palette.primary.main,
             },
           })}
-          dangerouslySetInnerHTML={{ __html: html || "NULL" }}
+          dangerouslySetInnerHTML={{ __html: html || 'NULL' }}
         />
         <IconButton
           size="small"
-          title={t("Open URL")}
+          title={t('Open URL')}
           color="inherit"
           onClick={() => onOpenUrl?.(value)}
         >
@@ -110,18 +110,18 @@ export const WebUIItem = (props: Props) => {
         </IconButton>
         <IconButton
           size="small"
-          title={t("Edit")}
+          title={t('Edit')}
           color="inherit"
           onClick={() => {
-            setEditing(true);
-            setEditValue(value);
+            setEditing(true)
+            setEditValue(value)
           }}
         >
           <EditRounded fontSize="inherit" />
         </IconButton>
         <IconButton
           size="small"
-          title={t("Delete")}
+          title={t('Delete')}
           color="inherit"
           onClick={onDelete}
         >
@@ -130,5 +130,5 @@ export const WebUIItem = (props: Props) => {
       </Stack>
       <Divider />
     </>
-  );
-};
+  )
+}

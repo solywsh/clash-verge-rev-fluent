@@ -1,67 +1,64 @@
-import useSWR, { mutate } from "swr";
-import {
-  getProfiles,
-  patchProfile,
-  patchProfilesConfig,
-} from "@/services/cmds";
-import { getProxies, updateProxy } from "@/services/api";
+import useSWR, { mutate } from 'swr'
+
+import { getProxies, updateProxy } from '@/services/api'
+import { getProfiles, patchProfile, patchProfilesConfig } from '@/services/cmds'
 
 export const useProfiles = () => {
   const { data: profiles, mutate: mutateProfiles } = useSWR(
-    "getProfiles",
-    getProfiles
-  );
+    'getProfiles',
+    getProfiles,
+  )
 
   const patchProfiles = async (value: Partial<IProfilesConfig>) => {
-    await patchProfilesConfig(value);
-    mutateProfiles();
-  };
+    await patchProfilesConfig(value)
+    mutateProfiles()
+  }
 
   const patchCurrent = async (value: Partial<IProfileItem>) => {
     if (profiles?.current) {
-      await patchProfile(profiles.current, value);
-      mutateProfiles();
+      await patchProfile(profiles.current, value)
+      mutateProfiles()
     }
-  };
+  }
 
   // 根据selected的节点选择
   const activateSelected = async () => {
-    const proxiesData = await getProxies();
-    const profileData = await getProfiles();
+    const proxiesData = await getProxies()
+    const profileData = await getProfiles()
 
-    if (!profileData || !proxiesData) return;
+    if (!profileData || !proxiesData) return
 
     const current = profileData.items?.find(
-      (e) => e && e.uid === profileData.current
-    );
+      (e) => e && e.uid === profileData.current,
+    )
 
-    if (!current) return;
+    if (!current) return
 
     // init selected array
-    const { selected = [] } = current;
+    const { selected = [] } = current
     const selectedMap = Object.fromEntries(
-      selected.map((each) => [each.name!, each.now!])
-    );
+      selected.map((each) => [each.name!, each.now!]),
+    )
 
-    let hasChange = false;
+    let hasChange = false
 
-    const newSelected: typeof selected = [];
-    const { global, groups } = proxiesData;
+    const newSelected: typeof selected = []
+    const { global, groups } = proxiesData
 
-    [global, ...groups].forEach(({ type, name, now }) => {
-      if (!now || type !== "Selector") return;
+    ;[global, ...groups].forEach(({ type, name, now }) => {
+      if (!now || type !== 'Selector') return
       if (selectedMap[name] != null && selectedMap[name] !== now) {
-        hasChange = true;
-        updateProxy(name, selectedMap[name]);
+        hasChange = true
+        updateProxy(name, selectedMap[name])
       }
-      newSelected.push({ name, now: selectedMap[name] });
-    });
+      newSelected.push({ name, now: selectedMap[name] })
+    })
 
     if (hasChange) {
-      patchProfile(profileData.current!, { selected: newSelected });
-      mutate("getProxies", getProxies());
+      patchProfile(profileData.current!, { selected: newSelected })
+      mutate('getProxies', getProxies())
     }
-  };
+  }
 
   return {
     profiles,
@@ -70,5 +67,5 @@ export const useProfiles = () => {
     patchProfiles,
     patchCurrent,
     mutateProfiles,
-  };
-};
+  }
+}

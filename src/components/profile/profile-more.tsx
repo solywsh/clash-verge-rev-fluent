@@ -1,82 +1,76 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useLockFn } from "ahooks";
-import {
-  Box,
-  Badge,
-  Chip,
-  Typography,
-  MenuItem,
-  Menu,
-  IconButton,
-} from "@mui/material";
-import { FeaturedPlayListRounded } from "@mui/icons-material";
-import { viewProfile, readProfileFile, saveProfileFile } from "@/services/cmds";
-import { Notice } from "@/components/base";
-import { EditorViewer } from "@/components/profile/editor-viewer";
-import { ProfileBox } from "./profile-box";
-import { LogViewer } from "./log-viewer";
-import { Subtitle1, Tag, Title1, Title3 } from "@fluentui/react-components";
+import { Subtitle1, Tag } from '@fluentui/react-components'
+import { FeaturedPlayListRounded } from '@mui/icons-material'
+import { Box, Badge, MenuItem, Menu, IconButton } from '@mui/material'
+import { useLockFn } from 'ahooks'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+
+import { Notice } from '@/components/base'
+import { EditorViewer } from '@/components/profile/editor-viewer'
+import { viewProfile, readProfileFile, saveProfileFile } from '@/services/cmds'
+
+import { LogViewer } from './log-viewer'
+import { ProfileBox } from './profile-box'
 
 interface Props {
-  logInfo?: [string, string][];
-  id: "Merge" | "Script";
-  onSave?: (prev?: string, curr?: string) => void;
+  logInfo?: [string, string][]
+  id: 'Merge' | 'Script'
+  onSave?: (prev?: string, curr?: string) => void
 }
 
 // profile enhanced item
 export const ProfileMore = (props: Props) => {
-  const { id, logInfo = [], onSave } = props;
+  const { id, logInfo = [], onSave } = props
 
-  const { t } = useTranslation();
-  const [anchorEl, setAnchorEl] = useState<any>(null);
-  const [position, setPosition] = useState({ left: 0, top: 0 });
-  const [fileOpen, setFileOpen] = useState(false);
-  const [logOpen, setLogOpen] = useState(false);
+  const { t } = useTranslation()
+  const [anchorEl, setAnchorEl] = useState<any>(null)
+  const [position, setPosition] = useState({ left: 0, top: 0 })
+  const [fileOpen, setFileOpen] = useState(false)
+  const [logOpen, setLogOpen] = useState(false)
 
   const onEditFile = () => {
-    setAnchorEl(null);
-    setFileOpen(true);
-  };
+    setAnchorEl(null)
+    setFileOpen(true)
+  }
 
   const onOpenFile = useLockFn(async () => {
-    setAnchorEl(null);
+    setAnchorEl(null)
     try {
-      await viewProfile(id);
+      await viewProfile(id)
     } catch (err: any) {
-      Notice.error(err?.message || err.toString());
+      Notice.error(err?.message || err.toString())
     }
-  });
+  })
 
   const fnWrapper = (fn: () => void) => () => {
-    setAnchorEl(null);
-    return fn();
-  };
+    setAnchorEl(null)
+    return fn()
+  }
 
-  const hasError = !!logInfo.find((e) => e[0] === "exception");
+  const hasError = !!logInfo.find((e) => e[0] === 'exception')
 
   const itemMenu = [
-    { label: "Edit File", handler: onEditFile },
-    { label: "Open File", handler: onOpenFile },
-  ];
+    { label: 'Edit File', handler: onEditFile },
+    { label: 'Open File', handler: onOpenFile },
+  ]
 
   const boxStyle = {
     height: 26,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     lineHeight: 1,
-  };
+  }
 
   return (
     <>
       <ProfileBox
         onDoubleClick={onEditFile}
         onContextMenu={(event) => {
-          const { clientX, clientY } = event;
-          setPosition({ top: clientY, left: clientX });
-          setAnchorEl(event.currentTarget);
-          event.preventDefault();
+          const { clientX, clientY } = event
+          setPosition({ top: clientY, left: clientX })
+          setAnchorEl(event.currentTarget)
+          event.preventDefault()
         }}
       >
         <Box
@@ -108,14 +102,14 @@ export const ProfileMore = (props: Props) => {
         </Box>
 
         <Box sx={boxStyle}>
-          {id === "Script" &&
+          {id === 'Script' &&
             (hasError ? (
               <Badge color="error" variant="dot" overlap="circular">
                 <IconButton
                   size="small"
                   edge="start"
                   color="error"
-                  title={t("Script Console")}
+                  title={t('Script Console')}
                   onClick={() => setLogOpen(true)}
                 >
                   <FeaturedPlayListRounded fontSize="inherit" />
@@ -126,7 +120,7 @@ export const ProfileMore = (props: Props) => {
                 size="small"
                 edge="start"
                 color="inherit"
-                title={t("Script Console")}
+                title={t('Script Console')}
                 onClick={() => setLogOpen(true)}
               >
                 <FeaturedPlayListRounded fontSize="inherit" />
@@ -144,8 +138,8 @@ export const ProfileMore = (props: Props) => {
         transitionDuration={225}
         MenuListProps={{ sx: { py: 0.5 } }}
         onContextMenu={(e) => {
-          setAnchorEl(null);
-          e.preventDefault();
+          setAnchorEl(null)
+          e.preventDefault()
         }}
       >
         {itemMenu
@@ -159,10 +153,10 @@ export const ProfileMore = (props: Props) => {
                 (theme) => {
                   return {
                     color:
-                      item.label === "Delete"
+                      item.label === 'Delete'
                         ? theme.palette.error.main
                         : undefined,
-                  };
+                  }
                 },
               ]}
               dense
@@ -174,13 +168,13 @@ export const ProfileMore = (props: Props) => {
       {fileOpen && (
         <EditorViewer
           open={true}
-          title={`${t("Global " + id)}`}
+          title={`${t('Global ' + id)}`}
           initialData={readProfileFile(id)}
-          language={id === "Merge" ? "yaml" : "javascript"}
-          schema={id === "Merge" ? "clash" : undefined}
+          language={id === 'Merge' ? 'yaml' : 'javascript'}
+          schema={id === 'Merge' ? 'clash' : undefined}
           onSave={async (prev, curr) => {
-            await saveProfileFile(id, curr ?? "");
-            onSave && onSave(prev, curr);
+            await saveProfileFile(id, curr ?? '')
+            onSave?.(prev, curr)
           }}
           onClose={() => setFileOpen(false)}
         />
@@ -193,5 +187,5 @@ export const ProfileMore = (props: Props) => {
         />
       )}
     </>
-  );
-};
+  )
+}

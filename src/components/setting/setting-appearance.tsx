@@ -1,23 +1,3 @@
-import { useCallback, useRef } from "react";
-import { useTranslation } from "react-i18next";
-import { open } from "@tauri-apps/plugin-dialog";
-import { Input } from "@mui/material";
-import { copyClashEnv } from "@/services/cmds";
-import { useVerge } from "@/hooks/use-verge";
-import { DialogRef, Notice } from "@/components/base";
-import {
-  FluentSettingList,
-  FluentSettingItem,
-  FluentSettingGroup,
-} from "./mods/setting-comp";
-import { HotkeyViewer } from "./mods/hotkey-viewer";
-import { MiscViewer } from "./mods/misc-viewer";
-import { ThemeViewer } from "./mods/theme-viewer";
-import { GuardState } from "./mods/guard-state";
-import { LayoutViewer } from "./mods/layout-viewer";
-import getSystem from "@/utils/get-system";
-import { routers } from "@/pages/_routers";
-import { languages } from "@/services/i18n";
 import {
   Button as FluentButton,
   Menu,
@@ -26,7 +6,7 @@ import {
   MenuList,
   MenuPopover,
   MenuTrigger,
-} from "@fluentui/react-components";
+} from '@fluentui/react-components'
 import {
   CopyRegular,
   LocalLanguageRegular,
@@ -39,32 +19,54 @@ import {
   DocumentRegular,
   KeyboardRegular,
   OptionsRegular,
-} from "@fluentui/react-icons";
+} from '@fluentui/react-icons'
+import { Input } from '@mui/material'
+import { open } from '@tauri-apps/plugin-dialog'
+import { useCallback, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+
+import { DialogRef, Notice } from '@/components/base'
+import { useVerge } from '@/hooks/use-verge'
+import { routers } from '@/pages/_routers'
+import { copyClashEnv } from '@/services/cmds'
+import { languages } from '@/services/i18n'
+import getSystem from '@/utils/get-system'
+
+import { GuardState } from './mods/guard-state'
+import { HotkeyViewer } from './mods/hotkey-viewer'
+import { LayoutViewer } from './mods/layout-viewer'
+import { MiscViewer } from './mods/misc-viewer'
+import {
+  FluentSettingList,
+  FluentSettingItem,
+  FluentSettingGroup,
+} from './mods/setting-comp'
+import { ThemeViewer } from './mods/theme-viewer'
 
 interface Props {
-  onError?: (err: Error) => void;
-  hideTitle?: boolean;
+  onError?: (err: Error) => void
+  hideTitle?: boolean
 }
 
-const OS = getSystem();
+const OS = getSystem()
 
 const languageOptions = Object.entries(languages).map(([code, _]) => {
   const labels: { [key: string]: string } = {
-    en: "English",
-    ru: "Русский",
-    zh: "中文",
-    fa: "فارسی",
-    tt: "Татар",
-    id: "Bahasa Indonesia",
-    ar: "العربية",
-  };
-  return { code, label: labels[code] };
-});
+    en: 'English',
+    ru: 'Русский',
+    zh: '中文',
+    fa: 'فارسی',
+    tt: 'Татар',
+    id: 'Bahasa Indonesia',
+    ar: 'العربية',
+  }
+  return { code, label: labels[code] }
+})
 
 const SettingAppearance = ({ onError, hideTitle }: Props) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
-  const { verge, patchVerge, mutateVerge } = useVerge();
+  const { verge, patchVerge, mutateVerge } = useVerge()
   const {
     theme_mode,
     language,
@@ -72,41 +74,41 @@ const SettingAppearance = ({ onError, hideTitle }: Props) => {
     env_type,
     startup_script,
     start_page,
-  } = verge ?? {};
-  const themeRef = useRef<DialogRef>(null);
-  const layoutRef = useRef<DialogRef>(null);
-  const miscRef = useRef<DialogRef>(null);
-  const hotkeyRef = useRef<DialogRef>(null);
+  } = verge ?? {}
+  const themeRef = useRef<DialogRef>(null)
+  const layoutRef = useRef<DialogRef>(null)
+  const miscRef = useRef<DialogRef>(null)
+  const hotkeyRef = useRef<DialogRef>(null)
 
   const onChangeData = (patch: Partial<IVergeConfig>) => {
-    mutateVerge({ ...verge, ...patch }, false);
-  };
+    mutateVerge({ ...verge, ...patch }, false)
+  }
 
   const onCopyClashEnv = useCallback(async () => {
-    await copyClashEnv();
-    Notice.success(t("Copy Success"), 1000);
-  }, []);
+    await copyClashEnv()
+    Notice.success(t('Copy Success'), 1000)
+  }, [])
 
   const fluentGuardStateProps = {
     onFormat: (_: any, data: any) => data.checkedItems[0],
-    onChangeProps: "onCheckedValueChange",
-    valueProps: "checkedValues",
-  } as const;
+    onChangeProps: 'onCheckedValueChange',
+    valueProps: 'checkedValues',
+  } as const
 
   return (
     <FluentSettingList
-      title={hideTitle ? undefined : t("Appearance & Behavior")}
+      title={hideTitle ? undefined : t('Appearance & Behavior')}
     >
       <ThemeViewer ref={themeRef} />
       <MiscViewer ref={miscRef} />
       <LayoutViewer ref={layoutRef} />
       <HotkeyViewer ref={hotkeyRef} />
 
-      <FluentSettingGroup title={t("group.appearance")} first />
+      <FluentSettingGroup title={t('group.appearance')} first />
 
-      <FluentSettingItem icon={<LocalLanguageRegular />} label={t("Language")}>
+      <FluentSettingItem icon={<LocalLanguageRegular />} label={t('Language')}>
         <GuardState
-          value={{ language: language ?? "en" }}
+          value={{ language: language ?? 'en' }}
           onCatch={onError}
           {...fluentGuardStateProps}
           onChange={(e) => onChangeData({ language: e })}
@@ -131,9 +133,9 @@ const SettingAppearance = ({ onError, hideTitle }: Props) => {
         </GuardState>
       </FluentSettingItem>
 
-      <FluentSettingItem icon={<DarkThemeRegular />} label={t("Theme Mode")}>
+      <FluentSettingItem icon={<DarkThemeRegular />} label={t('Theme Mode')}>
         <GuardState
-          value={{ theme: theme_mode ?? "system" }}
+          value={{ theme: theme_mode ?? 'system' }}
           onCatch={onError}
           {...fluentGuardStateProps}
           onChange={(e) => onChangeData({ theme_mode: e })}
@@ -144,23 +146,23 @@ const SettingAppearance = ({ onError, hideTitle }: Props) => {
               <MenuButton>
                 {
                   {
-                    light: t("theme.light"),
-                    dark: t("theme.dark"),
-                    system: t("theme.system"),
-                  }[theme_mode ?? "system"]
+                    light: t('theme.light'),
+                    dark: t('theme.dark'),
+                    system: t('theme.system'),
+                  }[theme_mode ?? 'system']
                 }
               </MenuButton>
             </MenuTrigger>
             <MenuPopover>
               <MenuList>
                 <MenuItemRadio name="theme" value="light">
-                  {t("theme.light")}
+                  {t('theme.light')}
                 </MenuItemRadio>
                 <MenuItemRadio name="theme" value="dark">
-                  {t("theme.dark")}
+                  {t('theme.dark')}
                 </MenuItemRadio>
                 <MenuItemRadio name="theme" value="system">
-                  {t("theme.system")}
+                  {t('theme.system')}
                 </MenuItemRadio>
               </MenuList>
             </MenuPopover>
@@ -171,26 +173,26 @@ const SettingAppearance = ({ onError, hideTitle }: Props) => {
       <FluentSettingItem
         icon={<PaintBrushRegular />}
         onClick={() => themeRef.current?.open()}
-        label={t("Theme Setting")}
-        actionLabel={t("Change")}
+        label={t('Theme Setting')}
+        actionLabel={t('Change')}
       />
 
       <FluentSettingItem
         icon={<LayoutColumnTwoRegular />}
         onClick={() => layoutRef.current?.open()}
-        label={t("Layout Setting")}
-        actionLabel={t("Change")}
+        label={t('Layout Setting')}
+        actionLabel={t('Change')}
       />
 
-      <FluentSettingGroup title={t("group.behavior")} />
+      <FluentSettingGroup title={t('group.behavior')} />
 
-      {OS !== "linux" && (
+      {OS !== 'linux' && (
         <FluentSettingItem
           icon={<CursorClickRegular />}
-          label={t("Tray Click Event")}
+          label={t('Tray Click Event')}
         >
           <GuardState
-            value={{ tray: tray_event ?? "main_window" }}
+            value={{ tray: tray_event ?? 'main_window' }}
             onCatch={onError}
             {...fluentGuardStateProps}
             onChange={(e) => onChangeData({ tray_event: e })}
@@ -201,27 +203,27 @@ const SettingAppearance = ({ onError, hideTitle }: Props) => {
                 <MenuButton>
                   {
                     {
-                      main_window: t("Show Main Window"),
-                      system_proxy: t("System Proxy"),
-                      tun_mode: t("Tun Mode"),
-                      disable: t("Disable"),
-                    }[tray_event ?? "main_window"]
+                      main_window: t('Show Main Window'),
+                      system_proxy: t('System Proxy'),
+                      tun_mode: t('Tun Mode'),
+                      disable: t('Disable'),
+                    }[tray_event ?? 'main_window']
                   }
                 </MenuButton>
               </MenuTrigger>
               <MenuPopover>
                 <MenuList>
                   <MenuItemRadio name="tray" value="main_window">
-                    {t("Show Main Window")}
+                    {t('Show Main Window')}
                   </MenuItemRadio>
                   <MenuItemRadio name="tray" value="system_proxy">
-                    {t("System Proxy")}
+                    {t('System Proxy')}
                   </MenuItemRadio>
                   <MenuItemRadio name="tray" value="tun_mode">
-                    {t("Tun Mode")}
+                    {t('Tun Mode')}
                   </MenuItemRadio>
                   <MenuItemRadio name="tray" value="disable">
-                    {t("Disable")}
+                    {t('Disable')}
                   </MenuItemRadio>
                 </MenuList>
               </MenuPopover>
@@ -230,10 +232,10 @@ const SettingAppearance = ({ onError, hideTitle }: Props) => {
         </FluentSettingItem>
       )}
 
-      <FluentSettingItem icon={<CodeRegular />} label={t("Copy Env Type")}>
+      <FluentSettingItem icon={<CodeRegular />} label={t('Copy Env Type')}>
         <GuardState
           value={{
-            env_type: env_type ?? (OS === "windows" ? "powershell" : "bash"),
+            env_type: env_type ?? (OS === 'windows' ? 'powershell' : 'bash'),
           }}
           onCatch={onError}
           {...fluentGuardStateProps}
@@ -267,9 +269,9 @@ const SettingAppearance = ({ onError, hideTitle }: Props) => {
         ></FluentButton>
       </FluentSettingItem>
 
-      <FluentSettingItem icon={<HomeRegular />} label={t("Start Page")}>
+      <FluentSettingItem icon={<HomeRegular />} label={t('Start Page')}>
         <GuardState
-          value={{ start_page: start_page ?? "/" }}
+          value={{ start_page: start_page ?? '/' }}
           onCatch={onError}
           {...fluentGuardStateProps}
           onChange={(e) => onChangeData({ start_page: e })}
@@ -279,7 +281,7 @@ const SettingAppearance = ({ onError, hideTitle }: Props) => {
             <MenuTrigger>
               <MenuButton>
                 {t(
-                  routers.find((item) => item.path === (start_page ?? "/"))!
+                  routers.find((item) => item.path === (start_page ?? '/'))!
                     .label,
                 )}
               </MenuButton>
@@ -295,7 +297,7 @@ const SettingAppearance = ({ onError, hideTitle }: Props) => {
                     >
                       {t(page.label)}
                     </MenuItemRadio>
-                  );
+                  )
                 })}
               </MenuList>
             </MenuPopover>
@@ -303,9 +305,9 @@ const SettingAppearance = ({ onError, hideTitle }: Props) => {
         </GuardState>
       </FluentSettingItem>
 
-      <FluentSettingItem icon={<DocumentRegular />} label={t("Startup Script")}>
+      <FluentSettingItem icon={<DocumentRegular />} label={t('Startup Script')}>
         <GuardState
-          value={startup_script ?? ""}
+          value={startup_script ?? ''}
           onCatch={onError}
           onFormat={(e: any) => e.target.value}
           onChange={(e) => onChangeData({ startup_script: e })}
@@ -325,28 +327,28 @@ const SettingAppearance = ({ onError, hideTitle }: Props) => {
                       multiple: false,
                       filters: [
                         {
-                          name: "Shell Script",
-                          extensions: ["sh", "bat", "ps1"],
+                          name: 'Shell Script',
+                          extensions: ['sh', 'bat', 'ps1'],
                         },
                       ],
-                    });
+                    })
                     if (selected) {
-                      onChangeData({ startup_script: `${selected}` });
-                      patchVerge({ startup_script: `${selected}` });
+                      onChangeData({ startup_script: `${selected}` })
+                      patchVerge({ startup_script: `${selected}` })
                     }
                   }}
                 >
-                  {t("Browse")}
+                  {t('Browse')}
                 </FluentButton>
                 {startup_script && (
                   <FluentButton
                     appearance="transparent"
                     onClick={async () => {
-                      onChangeData({ startup_script: "" });
-                      patchVerge({ startup_script: "" });
+                      onChangeData({ startup_script: '' })
+                      patchVerge({ startup_script: '' })
                     }}
                   >
-                    {t("Clear")}
+                    {t('Clear')}
                   </FluentButton>
                 )}
               </>
@@ -355,23 +357,23 @@ const SettingAppearance = ({ onError, hideTitle }: Props) => {
         </GuardState>
       </FluentSettingItem>
 
-      <FluentSettingGroup title={t("group.advanced")} />
+      <FluentSettingGroup title={t('group.advanced')} />
 
       <FluentSettingItem
         icon={<KeyboardRegular />}
         onClick={() => hotkeyRef.current?.open()}
-        label={t("Hotkey Setting")}
-        actionLabel={t("Change")}
+        label={t('Hotkey Setting')}
+        actionLabel={t('Change')}
       />
 
       <FluentSettingItem
         icon={<OptionsRegular />}
         onClick={() => miscRef.current?.open()}
-        label={t("Miscellaneous")}
-        actionLabel={t("Change")}
+        label={t('Miscellaneous')}
+        actionLabel={t('Change')}
       />
     </FluentSettingList>
-  );
-};
+  )
+}
 
-export default SettingAppearance;
+export default SettingAppearance

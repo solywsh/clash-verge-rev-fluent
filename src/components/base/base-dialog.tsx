@@ -1,5 +1,3 @@
-import { ReactNode } from "react";
-import { Box, type SxProps, type Theme } from "@mui/material";
 import {
   Button,
   Dialog,
@@ -9,30 +7,32 @@ import {
   DialogSurface,
   DialogTitle,
   Spinner,
-} from "@fluentui/react-components";
+} from '@fluentui/react-components'
+import { Box, type SxProps, type Theme } from '@mui/material'
+import { ReactNode } from 'react'
 
 interface Props {
-  title: ReactNode;
-  open: boolean;
-  okBtn?: ReactNode;
-  cancelBtn?: ReactNode;
-  disableOk?: boolean;
-  disableCancel?: boolean;
-  disableFooter?: boolean;
+  title: ReactNode
+  open: boolean
+  okBtn?: ReactNode
+  cancelBtn?: ReactNode
+  disableOk?: boolean
+  disableCancel?: boolean
+  disableFooter?: boolean
   // Kept for source compatibility with the ~22 existing callers: applied to a
   // wrapper inside the Fluent surface so per-dialog sizing/scroll is preserved.
   // To be removed as each viewer's inner controls are migrated to Fluent.
-  contentSx?: SxProps<Theme>;
-  children?: ReactNode;
-  loading?: boolean;
-  onOk?: () => void;
-  onCancel?: () => void;
-  onClose?: () => void;
+  contentSx?: SxProps<Theme>
+  children?: ReactNode
+  loading?: boolean
+  onOk?: () => void
+  onCancel?: () => void
+  onClose?: () => void
 }
 
 export interface DialogRef {
-  open: () => void;
-  close: () => void;
+  open: () => void
+  close: () => void
 }
 
 export const BaseDialog: React.FC<Props> = (props) => {
@@ -47,20 +47,20 @@ export const BaseDialog: React.FC<Props> = (props) => {
     disableOk,
     disableFooter,
     loading,
-  } = props;
+  } = props
 
   return (
     <Dialog
       open={open}
       onOpenChange={(_, data) => {
-        if (!data.open) props.onClose?.();
+        if (!data.open) props.onClose?.()
       }}
     >
       <DialogSurface
         style={{
-          width: "fit-content",
+          width: 'fit-content',
           minWidth: 360,
-          maxWidth: "min(92vw, 680px)",
+          maxWidth: 'min(92vw, 680px)',
         }}
       >
         <DialogBody>
@@ -92,5 +92,5 @@ export const BaseDialog: React.FC<Props> = (props) => {
         </DialogBody>
       </DialogSurface>
     </Dialog>
-  );
-};
+  )
+}

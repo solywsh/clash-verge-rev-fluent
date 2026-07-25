@@ -1,77 +1,79 @@
-import useSWR from "swr";
-import { useEffect, useMemo } from "react";
-import { getProxies } from "@/services/api";
-import { useVerge } from "@/hooks/use-verge";
-import { filterSort } from "./use-filter-sort";
-import { useWindowWidth } from "./use-window-width";
+import { useEffect, useMemo } from 'react'
+import useSWR from 'swr'
+
+import { useVerge } from '@/hooks/use-verge'
+import { getProxies } from '@/services/api'
+
+import { filterSort } from './use-filter-sort'
 import {
   useHeadStateNew,
   DEFAULT_STATE,
   type HeadState,
-} from "./use-head-state";
+} from './use-head-state'
+import { useWindowWidth } from './use-window-width'
 
 export interface IRenderItem {
   // 组 ｜ head ｜ item ｜ empty | item col
-  type: 0 | 1 | 2 | 3 | 4;
-  key: string;
-  group: IProxyGroupItem;
-  proxy?: IProxyItem;
-  col?: number;
-  proxyCol?: IProxyItem[];
-  headState?: HeadState;
+  type: 0 | 1 | 2 | 3 | 4
+  key: string
+  group: IProxyGroupItem
+  proxy?: IProxyItem
+  col?: number
+  proxyCol?: IProxyItem[]
+  headState?: HeadState
 }
 
 export const useRenderList = (mode: string) => {
   const { data: proxiesData, mutate: mutateProxies } = useSWR(
-    "getProxies",
+    'getProxies',
     getProxies,
     { refreshInterval: 45000 },
-  );
+  )
 
-  const { verge } = useVerge();
-  const { width } = useWindowWidth();
+  const { verge } = useVerge()
+  const { width } = useWindowWidth()
 
-  let col = Math.floor(verge?.proxy_layout_column || 6);
+  let col = Math.floor(verge?.proxy_layout_column || 6)
 
   // 自适应
   if (col >= 6 || col <= 0) {
-    if (width > 1450) col = 4;
-    else if (width > 1024) col = 3;
-    else if (width > 900) col = 2;
-    else if (width >= 600) col = 2;
-    else col = 1;
+    if (width > 1450) col = 4
+    else if (width > 1024) col = 3
+    else if (width > 900) col = 2
+    else if (width >= 600) col = 2
+    else col = 1
   }
 
-  const [headStates, setHeadState] = useHeadStateNew();
+  const [headStates, setHeadState] = useHeadStateNew()
 
   // make sure that fetch the proxies successfully
   useEffect(() => {
-    if (!proxiesData) return;
-    const { groups, proxies } = proxiesData;
+    if (!proxiesData) return
+    const { groups, proxies } = proxiesData
 
     if (
-      (mode === "rule" && !groups.length) ||
-      (mode === "global" && proxies.length < 2)
+      (mode === 'rule' && !groups.length) ||
+      (mode === 'global' && proxies.length < 2)
     ) {
-      setTimeout(() => mutateProxies(), 500);
+      setTimeout(() => mutateProxies(), 500)
     }
-  }, [proxiesData, mode]);
+  }, [proxiesData, mode])
 
   const renderList: IRenderItem[] = useMemo(() => {
-    if (!proxiesData) return [];
+    if (!proxiesData) return []
 
     // global 和 direct 使用展开的样式
-    const useRule = mode === "rule" || mode === "script";
+    const useRule = mode === 'rule' || mode === 'script'
     const renderGroups =
       (useRule && proxiesData.groups.length
         ? proxiesData.groups
-        : [proxiesData.global!]) || [];
+        : [proxiesData.global!]) || []
 
     const retList = renderGroups.flatMap((group) => {
-      const headState = headStates[group.name] || DEFAULT_STATE;
+      const headState = headStates[group.name] || DEFAULT_STATE
       const ret: IRenderItem[] = [
         { type: 0, key: group.name, group, headState },
-      ];
+      ]
 
       if (headState?.open || !useRule) {
         const proxies = filterSort(
@@ -79,12 +81,12 @@ export const useRenderList = (mode: string) => {
           group.name,
           headState.filterText,
           headState.sortType,
-        );
+        )
 
         // 控制条(定位/测速/排序/过滤)已移除，改由组头右侧的测速按钮承担测速。
 
         if (!proxies.length) {
-          ret.push({ type: 3, key: `empty-${group.name}`, group, headState });
+          ret.push({ type: 3, key: `empty-${group.name}`, group, headState })
         }
 
         // 支持多列布局
@@ -98,7 +100,7 @@ export const useRenderList = (mode: string) => {
               col,
               proxyCol,
             })),
-          );
+          )
         }
 
         return ret.concat(
@@ -109,33 +111,33 @@ export const useRenderList = (mode: string) => {
             proxy,
             headState,
           })),
-        );
+        )
       }
-      return ret;
-    });
+      return ret
+    })
 
-    if (!useRule) return retList.slice(1);
-    return retList.filter((item) => item.group.hidden !== true);
-  }, [headStates, proxiesData, mode, col]);
+    if (!useRule) return retList.slice(1)
+    return retList.filter((item) => item.group.hidden !== true)
+  }, [headStates, proxiesData, mode, col])
 
   return {
     renderList,
     onProxies: mutateProxies,
     onHeadState: setHeadState,
-  };
-};
+  }
+}
 
 function groupList<T = any>(list: T[], size: number): T[][] {
   return list.reduce((p, n) => {
-    if (!p.length) return [[n]];
+    if (!p.length) return [[n]]
 
-    const i = p.length - 1;
+    const i = p.length - 1
     if (p[i].length < size) {
-      p[i].push(n);
-      return p;
+      p[i].push(n)
+      return p
     }
 
-    p.push([n]);
-    return p;
-  }, [] as T[][]);
+    p.push([n])
+    return p
+  }, [] as T[][])
 }

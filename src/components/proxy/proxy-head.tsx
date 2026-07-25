@@ -1,26 +1,17 @@
-import { Button, Input } from "@fluentui/react-components";
+import { Button, Input } from '@fluentui/react-components'
 import {
-  ArrowSortDownLinesFilled,
   ArrowSortDownLinesRegular,
   ClockRegular,
   EyeFilled,
   EyeOffFilled,
-  EyeOffRegular,
-  EyeRegular,
   FilterAddRegular,
   FilterDismissRegular,
-  FilterRegular,
   LiveOffRegular,
   LiveRegular,
-  MyLocationFilled,
   MyLocationRegular,
   NetworkCheckFilled,
-  TextSortAscendingFilled,
   TextSortAscendingRegular,
-} from "@fluentui/react-icons";
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Box, IconButton, TextField, SxProps } from "@mui/material";
+} from '@fluentui/react-icons'
 import {
   AccessTimeRounded,
   MyLocationRounded,
@@ -33,51 +24,56 @@ import {
   WifiTetheringOffRounded,
   SortByAlphaRounded,
   SortRounded,
-} from "@mui/icons-material";
-import { useVerge } from "@/hooks/use-verge";
-import type { HeadState } from "./use-head-state";
-import type { ProxySortType } from "./use-filter-sort";
-import delayManager from "@/services/delay";
+} from '@mui/icons-material'
+import { Box, IconButton, TextField, SxProps } from '@mui/material'
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+
+import { useVerge } from '@/hooks/use-verge'
+import delayManager from '@/services/delay'
+
+import type { ProxySortType } from './use-filter-sort'
+import type { HeadState } from './use-head-state'
 
 interface Props {
-  sx?: SxProps;
-  url?: string;
-  groupName: string;
-  headState: HeadState;
-  onLocation: () => void;
-  onCheckDelay: () => void;
-  onHeadState: (val: Partial<HeadState>) => void;
+  sx?: SxProps
+  url?: string
+  groupName: string
+  headState: HeadState
+  onLocation: () => void
+  onCheckDelay: () => void
+  onHeadState: (val: Partial<HeadState>) => void
 }
 
 export const ProxyHead = (props: Props) => {
-  const { sx = {}, url, groupName, headState, onHeadState } = props;
+  const { sx = {}, url, groupName, headState, onHeadState } = props
 
-  const { showType, sortType, filterText, textState, testUrl } = headState;
+  const { showType, sortType, filterText, textState, testUrl } = headState
 
-  const { t } = useTranslation();
-  const [autoFocus, setAutoFocus] = useState(false);
+  const { t } = useTranslation()
+  const [autoFocus, setAutoFocus] = useState(false)
 
   useEffect(() => {
     // fix the focus conflict
-    const timer = setTimeout(() => setAutoFocus(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
+    const timer = setTimeout(() => setAutoFocus(true), 100)
+    return () => clearTimeout(timer)
+  }, [])
 
-  const { verge } = useVerge();
+  const { verge } = useVerge()
 
   useEffect(() => {
     delayManager.setUrl(
       groupName,
-      testUrl || url || verge?.default_latency_test!,
-    );
-  }, [groupName, testUrl, verge?.default_latency_test]);
+      testUrl || url || verge?.default_latency_test || '',
+    )
+  }, [groupName, testUrl, verge?.default_latency_test])
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, ...sx }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ...sx }}>
       <IconButton
         size="small"
         color="inherit"
-        title={t("Location")}
+        title={t('Location')}
         onClick={props.onLocation}
       >
         <MyLocationRounded />
@@ -86,13 +82,13 @@ export const ProxyHead = (props: Props) => {
       <IconButton
         size="small"
         color="inherit"
-        title={t("Delay check")}
+        title={t('Delay check')}
         onClick={() => {
           // Remind the user that it is custom test url
-          if (testUrl?.trim() && textState !== "filter") {
-            onHeadState({ textState: "url" });
+          if (testUrl?.trim() && textState !== 'filter') {
+            onHeadState({ textState: 'url' })
           }
-          props.onCheckDelay();
+          props.onCheckDelay()
         }}
       >
         <NetworkCheckRounded />
@@ -102,7 +98,7 @@ export const ProxyHead = (props: Props) => {
         size="small"
         color="inherit"
         title={
-          [t("Sort by default"), t("Sort by delay"), t("Sort by name")][
+          [t('Sort by default'), t('Sort by delay'), t('Sort by name')][
             sortType
           ]
         }
@@ -118,12 +114,12 @@ export const ProxyHead = (props: Props) => {
       <IconButton
         size="small"
         color="inherit"
-        title={t("Delay check URL")}
+        title={t('Delay check URL')}
         onClick={() =>
-          onHeadState({ textState: textState === "url" ? null : "url" })
+          onHeadState({ textState: textState === 'url' ? null : 'url' })
         }
       >
-        {textState === "url" ? (
+        {textState === 'url' ? (
           <WifiTetheringRounded />
         ) : (
           <WifiTetheringOffRounded />
@@ -133,7 +129,7 @@ export const ProxyHead = (props: Props) => {
       <IconButton
         size="small"
         color="inherit"
-        title={showType ? t("Proxy basic") : t("Proxy detail")}
+        title={showType ? t('Proxy basic') : t('Proxy detail')}
         onClick={() => onHeadState({ showType: !showType })}
       >
         {showType ? <VisibilityRounded /> : <VisibilityOffRounded />}
@@ -142,19 +138,19 @@ export const ProxyHead = (props: Props) => {
       <IconButton
         size="small"
         color="inherit"
-        title={t("Filter")}
+        title={t('Filter')}
         onClick={() =>
-          onHeadState({ textState: textState === "filter" ? null : "filter" })
+          onHeadState({ textState: textState === 'filter' ? null : 'filter' })
         }
       >
-        {textState === "filter" ? (
+        {textState === 'filter' ? (
           <FilterAltRounded />
         ) : (
           <FilterAltOffRounded />
         )}
       </IconButton>
 
-      {textState === "filter" && (
+      {textState === 'filter' && (
         <TextField
           autoComplete="new-password"
           autoFocus={autoFocus}
@@ -162,13 +158,13 @@ export const ProxyHead = (props: Props) => {
           value={filterText}
           size="small"
           variant="outlined"
-          placeholder={t("Filter conditions")}
+          placeholder={t('Filter conditions')}
           onChange={(e) => onHeadState({ filterText: e.target.value })}
-          sx={{ ml: 0.5, flex: "1 1 auto", input: { py: 0.65, px: 1 } }}
+          sx={{ ml: 0.5, flex: '1 1 auto', input: { py: 0.65, px: 1 } }}
         />
       )}
 
-      {textState === "url" && (
+      {textState === 'url' && (
         <TextField
           autoComplete="new-password"
           autoFocus={autoFocus}
@@ -177,38 +173,38 @@ export const ProxyHead = (props: Props) => {
           value={testUrl}
           size="small"
           variant="outlined"
-          placeholder={t("Delay check URL")}
+          placeholder={t('Delay check URL')}
           onChange={(e) => onHeadState({ testUrl: e.target.value })}
-          sx={{ ml: 0.5, flex: "1 1 auto", input: { py: 0.65, px: 1 } }}
+          sx={{ ml: 0.5, flex: '1 1 auto', input: { py: 0.65, px: 1 } }}
         />
       )}
     </Box>
-  );
-};
+  )
+}
 
 export const FluentProxyHead = (props: Props) => {
-  const { sx = {}, groupName, headState, onHeadState } = props;
+  const { sx = {}, groupName, headState, onHeadState } = props
 
-  const { showType, sortType, filterText, textState, testUrl } = headState;
+  const { showType, sortType, filterText, textState, testUrl } = headState
 
-  const { t } = useTranslation();
-  const [autoFocus, setAutoFocus] = useState(false);
+  const { t } = useTranslation()
+  const [autoFocus, setAutoFocus] = useState(false)
 
   useEffect(() => {
     // fix the focus conflict
-    const timer = setTimeout(() => setAutoFocus(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
+    const timer = setTimeout(() => setAutoFocus(true), 100)
+    return () => clearTimeout(timer)
+  }, [])
 
-  const { verge } = useVerge();
+  const { verge } = useVerge()
 
   useEffect(() => {
-    delayManager.setUrl(groupName, testUrl || verge?.default_latency_test!);
-  }, [groupName, testUrl, verge?.default_latency_test]);
+    delayManager.setUrl(groupName, testUrl || verge?.default_latency_test || '')
+  }, [groupName, testUrl, verge?.default_latency_test])
 
   return (
     <Box
-      sx={{ display: "flex", alignItems: "center", gap: 0.5, ...sx }}
+      sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ...sx }}
       aria-label="proxy-content"
       className={(props as any).className}
     >
@@ -216,7 +212,7 @@ export const FluentProxyHead = (props: Props) => {
         className="fds-subtle"
         size="small"
         color="inherit"
-        title={t("Location")}
+        title={t('Location')}
         onClick={props.onLocation}
         icon={<MyLocationRegular />}
         appearance="subtle"
@@ -226,13 +222,13 @@ export const FluentProxyHead = (props: Props) => {
         className="fds-subtle"
         size="small"
         color="inherit"
-        title={t("Delay check")}
+        title={t('Delay check')}
         onClick={() => {
           // Remind the user that it is custom test url
-          if (testUrl?.trim() && textState !== "filter") {
-            onHeadState({ textState: "url" });
+          if (testUrl?.trim() && textState !== 'filter') {
+            onHeadState({ textState: 'url' })
           }
-          props.onCheckDelay();
+          props.onCheckDelay()
         }}
         icon={<NetworkCheckFilled />}
         appearance="subtle"
@@ -243,7 +239,7 @@ export const FluentProxyHead = (props: Props) => {
         size="small"
         color="inherit"
         title={
-          [t("Sort by default"), t("Sort by delay"), t("Sort by name")][
+          [t('Sort by default'), t('Sort by delay'), t('Sort by name')][
             sortType
           ]
         }
@@ -263,18 +259,18 @@ export const FluentProxyHead = (props: Props) => {
       <Button
         className="fds-subtle"
         color="inherit"
-        title={t("Delay check URL")}
+        title={t('Delay check URL')}
         onClick={() =>
-          onHeadState({ textState: textState === "url" ? null : "url" })
+          onHeadState({ textState: textState === 'url' ? null : 'url' })
         }
-        icon={textState === "url" ? <LiveRegular /> : <LiveOffRegular />}
+        icon={textState === 'url' ? <LiveRegular /> : <LiveOffRegular />}
         appearance="subtle"
       />
 
       <Button
         className="fds-subtle"
         color="inherit"
-        title={showType ? t("Proxy basic") : t("Proxy detail")}
+        title={showType ? t('Proxy basic') : t('Proxy detail')}
         onClick={() => onHeadState({ showType: !showType })}
         icon={showType ? <EyeFilled /> : <EyeOffFilled />}
         appearance="subtle"
@@ -283,12 +279,12 @@ export const FluentProxyHead = (props: Props) => {
       <Button
         className="fds-subtle"
         color="inherit"
-        title={t("Filter")}
+        title={t('Filter')}
         onClick={() =>
-          onHeadState({ textState: textState === "filter" ? null : "filter" })
+          onHeadState({ textState: textState === 'filter' ? null : 'filter' })
         }
         icon={
-          textState === "filter" ? (
+          textState === 'filter' ? (
             <FilterDismissRegular />
           ) : (
             <FilterAddRegular />
@@ -297,32 +293,32 @@ export const FluentProxyHead = (props: Props) => {
         appearance="subtle"
       />
 
-      {textState === "filter" && (
+      {textState === 'filter' && (
         <Input
           autoComplete="new-password"
           autoFocus={autoFocus}
           value={filterText}
           // size="small"
-          placeholder={t("Filter conditions")}
+          placeholder={t('Filter conditions')}
           onChange={(e) => onHeadState({ filterText: e.target.value })}
           // sx={{ ml: 0.5, flex: "1 1 auto", input: { py: 0.65, px: 1 } }}
           appearance="outline"
-          style={{ flex: "1 1 auto", marginLeft: "0.5rem" }}
+          style={{ flex: '1 1 auto', marginLeft: '0.5rem' }}
         />
       )}
 
-      {textState === "url" && (
+      {textState === 'url' && (
         <Input
           autoComplete="new-password"
           autoFocus={autoFocus}
           autoSave="off"
           value={testUrl}
           appearance="outline"
-          placeholder={t("Delay check URL")}
+          placeholder={t('Delay check URL')}
           onChange={(e) => onHeadState({ testUrl: e.target.value })}
-          style={{ flex: "1 1 auto", marginLeft: "0.5rem" }}
+          style={{ flex: '1 1 auto', marginLeft: '0.5rem' }}
         />
       )}
     </Box>
-  );
-};
+  )
+}

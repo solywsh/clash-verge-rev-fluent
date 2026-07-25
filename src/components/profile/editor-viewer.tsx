@@ -1,6 +1,3 @@
-import { ReactNode, useEffect, useRef, useState } from "react";
-import { useLockFn } from "ahooks";
-import { useTranslation } from "react-i18next";
 import {
   Button,
   Dialog,
@@ -9,52 +6,55 @@ import {
   DialogContent,
   DialogSurface,
   DialogTitle,
-} from "@fluentui/react-components";
+} from '@fluentui/react-components'
 import {
   FormatPaintRounded,
   OpenInFullRounded,
   CloseFullscreenRounded,
-} from "@mui/icons-material";
-import { useThemeMode } from "@/services/states";
-import { tokens } from "@/pages/_fluent_theme";
-import { Notice } from "@/components/base";
-import { nanoid } from "nanoid";
-import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
-import getSystem from "@/utils/get-system";
-import debounce from "@/utils/debounce";
+} from '@mui/icons-material'
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
+import { useLockFn } from 'ahooks'
+import { type JSONSchema7 } from 'json-schema'
+import mergeSchema from 'meta-json-schema/schemas/clash-verge-merge-json-schema.json'
+import metaSchema from 'meta-json-schema/schemas/meta-json-schema.json'
+import * as monaco from 'monaco-editor'
+import { configureMonacoYaml } from 'monaco-yaml'
+import { nanoid } from 'nanoid'
+import { ReactNode, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import MonacoEditor from 'react-monaco-editor'
+import pac from 'types-pac/pac.d.ts?raw'
 
-import * as monaco from "monaco-editor";
-import MonacoEditor from "react-monaco-editor";
-import { configureMonacoYaml } from "monaco-yaml";
-import { type JSONSchema7 } from "json-schema";
-import metaSchema from "meta-json-schema/schemas/meta-json-schema.json";
-import mergeSchema from "meta-json-schema/schemas/clash-verge-merge-json-schema.json";
-import pac from "types-pac/pac.d.ts?raw";
-const appWindow = getCurrentWebviewWindow();
+import { Notice } from '@/components/base'
+import { tokens } from '@/pages/_fluent_theme'
+import { useThemeMode } from '@/services/states'
+import debounce from '@/utils/debounce'
+import getSystem from '@/utils/get-system'
+const appWindow = getCurrentWebviewWindow()
 
-type Language = "yaml" | "javascript" | "css";
-type Schema<T extends Language> = LanguageSchemaMap[T];
+type Language = 'yaml' | 'javascript' | 'css'
+type Schema<T extends Language> = LanguageSchemaMap[T]
 interface LanguageSchemaMap {
-  yaml: "clash" | "merge";
-  javascript: never;
-  css: never;
+  yaml: 'clash' | 'merge'
+  javascript: never
+  css: never
 }
 
 interface Props<T extends Language> {
-  open: boolean;
-  title?: string | ReactNode;
-  initialData: Promise<string>;
-  readOnly?: boolean;
-  language: T;
-  schema?: Schema<T>;
-  onChange?: (prev?: string, curr?: string) => void;
-  onSave?: (prev?: string, curr?: string) => void;
-  onClose: () => void;
+  open: boolean
+  title?: string | ReactNode
+  initialData: Promise<string>
+  readOnly?: boolean
+  language: T
+  schema?: Schema<T>
+  onChange?: (prev?: string, curr?: string) => void
+  onSave?: (prev?: string, curr?: string) => void
+  onClose: () => void
 }
 
-let initialized = false;
+let initialized = false
 const monacoInitialization = () => {
-  if (initialized) return;
+  if (initialized) return
 
   // configure yaml worker
   configureMonacoYaml(monaco, {
@@ -62,140 +62,140 @@ const monacoInitialization = () => {
     enableSchemaRequest: true,
     schemas: [
       {
-        uri: "http://example.com/meta-json-schema.json",
-        fileMatch: ["**/*.clash.yaml"],
-        // @ts-ignore
+        uri: 'http://example.com/meta-json-schema.json',
+        fileMatch: ['**/*.clash.yaml'],
+        // @ts-expect-error monaco-yaml 的 schema 类型与 JSONSchema7 不完全兼容
         schema: metaSchema as JSONSchema7,
       },
       {
-        uri: "http://example.com/clash-verge-merge-json-schema.json",
-        fileMatch: ["**/*.merge.yaml"],
-        // @ts-ignore
+        uri: 'http://example.com/clash-verge-merge-json-schema.json',
+        fileMatch: ['**/*.merge.yaml'],
+        // @ts-expect-error monaco-yaml 的 schema 类型与 JSONSchema7 不完全兼容
         schema: mergeSchema as JSONSchema7,
       },
     ],
-  });
+  })
   // configure PAC definition
-  monaco.languages.typescript.javascriptDefaults.addExtraLib(pac, "pac.d.ts");
+  monaco.languages.typescript.javascriptDefaults.addExtraLib(pac, 'pac.d.ts')
 
-  initialized = true;
-};
+  initialized = true
+}
 
 export const EditorViewer = <T extends Language>(props: Props<T>) => {
-  const { t } = useTranslation();
-  const themeMode = useThemeMode();
-  const [isMaximized, setIsMaximized] = useState(false);
+  const { t } = useTranslation()
+  const themeMode = useThemeMode()
+  const [isMaximized, setIsMaximized] = useState(false)
 
   const {
     open = false,
-    title = t("Edit File"),
-    initialData = Promise.resolve(""),
+    title = t('Edit File'),
+    initialData = Promise.resolve(''),
     readOnly = false,
-    language = "yaml",
+    language = 'yaml',
     schema,
     onChange,
     onSave,
     onClose,
-  } = props;
+  } = props
 
-  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor>();
-  const prevData = useRef<string | undefined>("");
-  const currData = useRef<string | undefined>("");
+  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor>()
+  const prevData = useRef<string | undefined>('')
+  const currData = useRef<string | undefined>('')
 
   const editorWillMount = () => {
-    monacoInitialization(); // initialize monaco
-  };
+    monacoInitialization() // initialize monaco
+  }
 
   const editorDidMount = async (
     editor: monaco.editor.IStandaloneCodeEditor,
   ) => {
-    editorRef.current = editor;
+    editorRef.current = editor
 
     // retrieve initial data
     await initialData.then((data) => {
-      prevData.current = data;
-      currData.current = data;
+      prevData.current = data
+      currData.current = data
 
       // create and set model
-      const uri = monaco.Uri.parse(`${nanoid()}.${schema}.${language}`);
-      const model = monaco.editor.createModel(data, language, uri);
-      editorRef.current?.setModel(model);
-    });
-  };
+      const uri = monaco.Uri.parse(`${nanoid()}.${schema}.${language}`)
+      const model = monaco.editor.createModel(data, language, uri)
+      editorRef.current?.setModel(model)
+    })
+  }
 
   const handleChange = useLockFn(async (value: string | undefined) => {
     try {
-      currData.current = value;
-      onChange?.(prevData.current, currData.current);
+      currData.current = value
+      onChange?.(prevData.current, currData.current)
     } catch (err: any) {
-      Notice.error(err.message || err.toString());
+      Notice.error(err.message || err.toString())
     }
-  });
+  })
 
   const handleSave = useLockFn(async () => {
     try {
-      !readOnly && onSave?.(prevData.current, currData.current);
-      onClose();
+      if (!readOnly) onSave?.(prevData.current, currData.current)
+      onClose()
     } catch (err: any) {
-      Notice.error(err.message || err.toString());
+      Notice.error(err.message || err.toString())
     }
-  });
+  })
 
   const handleClose = useLockFn(async () => {
     try {
-      onClose();
+      onClose()
     } catch (err: any) {
-      Notice.error(err.message || err.toString());
+      Notice.error(err.message || err.toString())
     }
-  });
+  })
 
   const editorResize = debounce(() => {
-    editorRef.current?.layout();
-    setTimeout(() => editorRef.current?.layout(), 500);
-  }, 100);
+    editorRef.current?.layout()
+    setTimeout(() => editorRef.current?.layout(), 500)
+  }, 100)
 
   useEffect(() => {
     const onResized = debounce(() => {
-      editorResize();
+      editorResize()
       appWindow.isMaximized().then((maximized) => {
-        setIsMaximized(() => maximized);
-      });
-    }, 100);
-    const unlistenResized = appWindow.onResized(onResized);
+        setIsMaximized(() => maximized)
+      })
+    }, 100)
+    const unlistenResized = appWindow.onResized(onResized)
 
     return () => {
-      unlistenResized.then((fn) => fn());
-      editorRef.current?.dispose();
-      editorRef.current = undefined;
-    };
-  }, []);
+      unlistenResized.then((fn) => fn())
+      editorRef.current?.dispose()
+      editorRef.current = undefined
+    }
+  }, [])
 
   return (
     <Dialog
       open={open}
       onOpenChange={(_, data) => {
-        if (!data.open) onClose();
+        if (!data.open) onClose()
       }}
     >
       <DialogSurface
-        style={{ maxWidth: "90vw", width: "90vw", maxHeight: "92vh" }}
+        style={{ maxWidth: '90vw', width: '90vw', maxHeight: '92vh' }}
       >
-        <DialogBody style={{ maxHeight: "none" }}>
+        <DialogBody style={{ maxHeight: 'none' }}>
           <DialogTitle>{title}</DialogTitle>
 
           <DialogContent
             style={{
-              position: "relative",
-              width: "auto",
-              height: "calc(100vh - 185px)",
-              overflow: "hidden",
+              position: 'relative',
+              width: 'auto',
+              height: 'calc(100vh - 185px)',
+              overflow: 'hidden',
             }}
           >
             <MonacoEditor
               language={language}
-              theme={themeMode === "light" ? "vs" : "vs-dark"}
+              theme={themeMode === 'light' ? 'vs' : 'vs-dark'}
               options={{
-                tabSize: ["yaml", "javascript", "css"].includes(language)
+                tabSize: ['yaml', 'javascript', 'css'].includes(language)
                   ? 2
                   : 4, // 根据语言类型设置缩进大小
                 minimap: {
@@ -203,8 +203,8 @@ export const EditorViewer = <T extends Language>(props: Props<T>) => {
                 },
                 mouseWheelZoom: true, // 按住Ctrl滚轮调节缩放比例
                 readOnly: readOnly, // 只读模式
-                readOnlyMessage: { value: t("ReadOnlyMessage") }, // 只读模式尝试编辑时的提示信息
-                renderValidationDecorations: "on", // 只读模式下显示校验信息
+                readOnlyMessage: { value: t('ReadOnlyMessage') }, // 只读模式尝试编辑时的提示信息
+                renderValidationDecorations: 'on', // 只读模式下显示校验信息
                 quickSuggestions: {
                   strings: true, // 字符串类型的建议
                   comments: true, // 注释类型的建议
@@ -214,7 +214,7 @@ export const EditorViewer = <T extends Language>(props: Props<T>) => {
                   top: 33, // 顶部padding防止遮挡snippets
                 },
                 fontFamily: `Fira Code, JetBrains Mono, Roboto Mono, "Source Code Pro", Consolas, Menlo, Monaco, monospace, "Courier New", "Apple Color Emoji"${
-                  getSystem() === "windows" ? ", twemoji mozilla" : ""
+                  getSystem() === 'windows' ? ', twemoji mozilla' : ''
                 }`,
                 fontLigatures: false, // 连字符
                 smoothScrolling: true, // 平滑滚动
@@ -226,12 +226,12 @@ export const EditorViewer = <T extends Language>(props: Props<T>) => {
 
             <div
               style={{
-                position: "absolute",
-                left: "14px",
-                bottom: "8px",
-                display: "flex",
-                gap: "4px",
-                padding: "2px",
+                position: 'absolute',
+                left: '14px',
+                bottom: '8px',
+                display: 'flex',
+                gap: '4px',
+                padding: '2px',
                 borderRadius: tokens.borderRadiusMedium,
                 background: tokens.colorNeutralBackground1,
                 boxShadow: tokens.shadow4,
@@ -240,18 +240,18 @@ export const EditorViewer = <T extends Language>(props: Props<T>) => {
               {!readOnly && (
                 <Button
                   appearance="subtle"
-                  title={t("Format document")}
+                  title={t('Format document')}
                   icon={<FormatPaintRounded fontSize="inherit" />}
                   onClick={() =>
                     editorRef.current
-                      ?.getAction("editor.action.formatDocument")
+                      ?.getAction('editor.action.formatDocument')
                       ?.run()
                   }
                 />
               )}
               <Button
                 appearance="subtle"
-                title={t(isMaximized ? "Minimize" : "Maximize")}
+                title={t(isMaximized ? 'Minimize' : 'Maximize')}
                 icon={
                   isMaximized ? (
                     <CloseFullscreenRounded />
@@ -266,16 +266,16 @@ export const EditorViewer = <T extends Language>(props: Props<T>) => {
 
           <DialogActions>
             <Button appearance="secondary" onClick={handleClose}>
-              {t(readOnly ? "Close" : "Cancel")}
+              {t(readOnly ? 'Close' : 'Cancel')}
             </Button>
             {!readOnly && (
               <Button appearance="primary" onClick={handleSave}>
-                {t("Save")}
+                {t('Save')}
               </Button>
             )}
           </DialogActions>
         </DialogBody>
       </DialogSurface>
     </Dialog>
-  );
-};
+  )
+}

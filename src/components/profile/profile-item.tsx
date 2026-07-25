@@ -1,10 +1,7 @@
-import dayjs from "dayjs";
-import { mutate } from "swr";
-import { useEffect, useRef, useState } from "react";
-import { useLockFn } from "ahooks";
-import { useTranslation } from "react-i18next";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { Subtitle1 } from '@fluentui/react-components'
+import { RefreshRounded, DragIndicatorRounded } from '@mui/icons-material'
 import {
   Box,
   Typography,
@@ -14,46 +11,51 @@ import {
   MenuItem,
   Menu,
   CircularProgress,
-} from "@mui/material";
-import { RefreshRounded, DragIndicatorRounded } from "@mui/icons-material";
-import { useLoadingCache, useSetLoadingCache } from "@/services/states";
+} from '@mui/material'
+import { open } from '@tauri-apps/plugin-shell'
+import { useLockFn } from 'ahooks'
+import dayjs from 'dayjs'
+import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { mutate } from 'swr'
+
+import { Notice } from '@/components/base'
+import { ConfirmViewer } from '@/components/profile/confirm-viewer'
+import { EditorViewer } from '@/components/profile/editor-viewer'
+import { GroupsEditorViewer } from '@/components/profile/groups-editor-viewer'
+import { RulesEditorViewer } from '@/components/profile/rules-editor-viewer'
 import {
   viewProfile,
   readProfileFile,
   updateProfile,
   saveProfileFile,
   openProfileDir,
-} from "@/services/cmds";
-import { Notice } from "@/components/base";
-import { GroupsEditorViewer } from "@/components/profile/groups-editor-viewer";
-import { RulesEditorViewer } from "@/components/profile/rules-editor-viewer";
-import { EditorViewer } from "@/components/profile/editor-viewer";
-import { ProfileBox } from "./profile-box";
-import parseTraffic from "@/utils/parse-traffic";
-import { ConfirmViewer } from "@/components/profile/confirm-viewer";
-import { tokens } from "../../pages/_fluent_theme";
-import { open } from "@tauri-apps/plugin-shell";
-import { ProxiesEditorViewer } from "./proxies-editor-viewer";
-import { Subtitle1, Subtitle2 } from "@fluentui/react-components";
+} from '@/services/cmds'
+import { useLoadingCache, useSetLoadingCache } from '@/services/states'
+import parseTraffic from '@/utils/parse-traffic'
+
+import { ProfileBox } from './profile-box'
+import { ProxiesEditorViewer } from './proxies-editor-viewer'
+
 const round = keyframes`
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
-`;
+`
 
 interface Props {
-  id: string;
-  selected: boolean;
-  activating: boolean;
-  itemData: IProfileItem;
-  onSelect: (force: boolean) => void;
-  onEdit: () => void;
-  onSave?: (prev?: string, curr?: string) => void;
-  onDelete: () => void;
+  id: string
+  selected: boolean
+  activating: boolean
+  itemData: IProfileItem
+  onSelect: (force: boolean) => void
+  onEdit: () => void
+  onSave?: (prev?: string, curr?: string) => void
+  onDelete: () => void
 }
 
 export const ProfileItem = (props: Props) => {
   const { selected, activating, itemData, onSelect, onEdit, onSave, onDelete } =
-    props;
+    props
   const {
     attributes,
     listeners,
@@ -61,338 +63,336 @@ export const ProfileItem = (props: Props) => {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: props.id });
+  } = useSortable({ id: props.id })
 
-  const { t } = useTranslation();
-  const [anchorEl, setAnchorEl] = useState<any>(null);
-  const [position, setPosition] = useState({ left: 0, top: 0 });
-  const loadingCache = useLoadingCache();
-  const setLoadingCache = useSetLoadingCache();
+  const { t } = useTranslation()
+  const [anchorEl, setAnchorEl] = useState<any>(null)
+  const [position, setPosition] = useState({ left: 0, top: 0 })
+  const loadingCache = useLoadingCache()
+  const setLoadingCache = useSetLoadingCache()
 
-  const { uid, name = "Profile", extra, updated = 0, option } = itemData;
+  const { uid, name = 'Profile', extra, updated = 0, option } = itemData
 
   // local file mode
   // remote file mode
   // remote file mode
-  const hasUrl = !!itemData.url;
-  const hasExtra = !!extra; // only subscription url has extra info
-  const hasHome = !!itemData.home; // only subscription url has home page
+  const hasUrl = !!itemData.url
+  const hasExtra = !!extra // only subscription url has extra info
+  const hasHome = !!itemData.home // only subscription url has home page
 
-  const { upload = 0, download = 0, total = 0 } = extra ?? {};
-  const from = parseUrl(itemData.url);
-  const description = itemData.desc;
-  const expire = parseExpire(extra?.expire);
+  const { upload = 0, download = 0, total = 0 } = extra ?? {}
+  const from = parseUrl(itemData.url)
+  const description = itemData.desc
+  const expire = parseExpire(extra?.expire)
   const progress = Math.min(
     Math.round(((download + upload) * 100) / (total + 0.01)) + 1,
     100,
-  );
+  )
 
-  const loading = loadingCache[itemData.uid] ?? false;
+  const loading = loadingCache[itemData.uid] ?? false
 
   // interval update fromNow field
-  const [, setRefresh] = useState({});
+  const [, setRefresh] = useState({})
   useEffect(() => {
-    if (!hasUrl) return;
+    if (!hasUrl) return
 
-    let timer: any = null;
+    let timer: any = null
 
     const handler = () => {
-      const now = Date.now();
-      const lastUpdate = updated * 1000;
+      const now = Date.now()
+      const lastUpdate = updated * 1000
       // 大于一天的不管
-      if (now - lastUpdate >= 24 * 36e5) return;
+      if (now - lastUpdate >= 24 * 36e5) return
 
-      const wait = now - lastUpdate >= 36e5 ? 30e5 : 5e4;
+      const wait = now - lastUpdate >= 36e5 ? 30e5 : 5e4
 
       timer = setTimeout(() => {
-        setRefresh({});
-        handler();
-      }, wait);
-    };
+        setRefresh({})
+        handler()
+      }, wait)
+    }
 
-    handler();
+    handler()
 
     return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [hasUrl, updated]);
+      if (timer) clearTimeout(timer)
+    }
+  }, [hasUrl, updated])
 
-  const [fileOpen, setFileOpen] = useState(false);
-  const [rulesOpen, setRulesOpen] = useState(false);
-  const [proxiesOpen, setProxiesOpen] = useState(false);
-  const [groupsOpen, setGroupsOpen] = useState(false);
-  const [mergeOpen, setMergeOpen] = useState(false);
-  const [scriptOpen, setScriptOpen] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [fileOpen, setFileOpen] = useState(false)
+  const [rulesOpen, setRulesOpen] = useState(false)
+  const [proxiesOpen, setProxiesOpen] = useState(false)
+  const [groupsOpen, setGroupsOpen] = useState(false)
+  const [mergeOpen, setMergeOpen] = useState(false)
+  const [scriptOpen, setScriptOpen] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
   const onOpenHome = () => {
-    setAnchorEl(null);
-    open(itemData.home ?? "");
-  };
+    setAnchorEl(null)
+    open(itemData.home ?? '')
+  }
 
   const onEditInfo = () => {
-    setAnchorEl(null);
-    onEdit();
-  };
+    setAnchorEl(null)
+    onEdit()
+  }
 
   const onEditFile = () => {
-    setAnchorEl(null);
-    setFileOpen(true);
-  };
+    setAnchorEl(null)
+    setFileOpen(true)
+  }
 
   const onEditRules = () => {
-    setAnchorEl(null);
-    setRulesOpen(true);
-  };
+    setAnchorEl(null)
+    setRulesOpen(true)
+  }
 
   const onEditProxies = () => {
-    setAnchorEl(null);
-    setProxiesOpen(true);
-  };
+    setAnchorEl(null)
+    setProxiesOpen(true)
+  }
 
   const onEditGroups = () => {
-    setAnchorEl(null);
-    setGroupsOpen(true);
-  };
+    setAnchorEl(null)
+    setGroupsOpen(true)
+  }
 
   const onEditMerge = () => {
-    setAnchorEl(null);
-    setMergeOpen(true);
-  };
+    setAnchorEl(null)
+    setMergeOpen(true)
+  }
 
   const onEditScript = () => {
-    setAnchorEl(null);
-    setScriptOpen(true);
-  };
+    setAnchorEl(null)
+    setScriptOpen(true)
+  }
 
   const onForceSelect = () => {
-    setAnchorEl(null);
-    onSelect(true);
-  };
+    setAnchorEl(null)
+    onSelect(true)
+  }
 
   const onOpenFile = useLockFn(async () => {
-    setAnchorEl(null);
+    setAnchorEl(null)
     try {
-      await viewProfile(itemData.uid);
+      await viewProfile(itemData.uid)
     } catch (err: any) {
-      Notice.error(err?.message || err.toString());
+      Notice.error(err?.message || err.toString())
     }
-  });
+  })
 
   const onOpenDir = useLockFn(async () => {
-    setAnchorEl(null);
+    setAnchorEl(null)
     try {
-      await openProfileDir(itemData.uid);
+      await openProfileDir(itemData.uid)
     } catch (err: any) {
-      Notice.error(err?.message || err.toString());
+      Notice.error(err?.message || err.toString())
     }
-  });
+  })
 
   /// 0 不使用任何代理
   /// 1 使用订阅好的代理
   /// 2 至少使用一个代理，根据订阅，如果没订阅，默认使用系统代理
   const onUpdate = useLockFn(async (type: 0 | 1 | 2) => {
-    setAnchorEl(null);
-    setLoadingCache((cache) => ({ ...cache, [itemData.uid]: true }));
+    setAnchorEl(null)
+    setLoadingCache((cache) => ({ ...cache, [itemData.uid]: true }))
 
-    const option: Partial<IProfileOption> = {};
+    const option: Partial<IProfileOption> = {}
 
     if (type === 0) {
-      option.with_proxy = false;
-      option.self_proxy = false;
+      option.with_proxy = false
+      option.self_proxy = false
     } else if (type === 1) {
       // nothing
     } else if (type === 2) {
       if (itemData.option?.self_proxy) {
-        option.with_proxy = false;
-        option.self_proxy = true;
+        option.with_proxy = false
+        option.self_proxy = true
       } else {
-        option.with_proxy = true;
-        option.self_proxy = false;
+        option.with_proxy = true
+        option.self_proxy = false
       }
     }
 
     try {
-      await updateProfile(itemData.uid, option);
-      mutate("getProfiles");
+      await updateProfile(itemData.uid, option)
+      mutate('getProfiles')
     } catch (err: any) {
-      const errmsg = err?.message || err.toString();
-      Notice.error(
-        errmsg.replace(/error sending request for url (\S+?): /, ""),
-      );
+      const errmsg = err?.message || err.toString()
+      Notice.error(errmsg.replace(/error sending request for url (\S+?): /, ''))
     } finally {
-      setLoadingCache((cache) => ({ ...cache, [itemData.uid]: false }));
+      setLoadingCache((cache) => ({ ...cache, [itemData.uid]: false }))
     }
-  });
+  })
 
   // Local profiles have no remote source — "update" means re-pick a file and
   // overwrite the stored content.
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const onReimportLocal = () => {
-    setAnchorEl(null);
-    fileInputRef.current?.click();
-  };
+    setAnchorEl(null)
+    fileInputRef.current?.click()
+  }
   const onLocalFileChange = useLockFn(async (e: any) => {
-    const file = e.target.files?.[0] as File | undefined;
-    e.target.value = "";
-    if (!file) return;
-    setLoadingCache((cache) => ({ ...cache, [uid]: true }));
+    const file = e.target.files?.[0] as File | undefined
+    e.target.value = ''
+    if (!file) return
+    setLoadingCache((cache) => ({ ...cache, [uid]: true }))
     try {
-      const content = await file.text();
-      await saveProfileFile(uid, content);
-      Notice.success(t("Profile Imported Successfully"), 1000);
-      mutate("getProfiles");
-      onSave?.("", content);
+      const content = await file.text()
+      await saveProfileFile(uid, content)
+      Notice.success(t('Profile Imported Successfully'), 1000)
+      mutate('getProfiles')
+      onSave?.('', content)
     } catch (err: any) {
-      Notice.error(err?.message || err.toString());
+      Notice.error(err?.message || err.toString())
     } finally {
-      setLoadingCache((cache) => ({ ...cache, [uid]: false }));
+      setLoadingCache((cache) => ({ ...cache, [uid]: false }))
     }
-  });
+  })
 
   const urlModeMenu = (
-    hasHome ? [{ label: "Home", handler: onOpenHome, disabled: false }] : []
+    hasHome ? [{ label: 'Home', handler: onOpenHome, disabled: false }] : []
   ).concat([
-    { label: "Select", handler: onForceSelect, disabled: false },
-    { label: "Edit Info", handler: onEditInfo, disabled: false },
-    { label: "Edit File", handler: onEditFile, disabled: false },
+    { label: 'Select', handler: onForceSelect, disabled: false },
+    { label: 'Edit Info', handler: onEditInfo, disabled: false },
+    { label: 'Edit File', handler: onEditFile, disabled: false },
     {
-      label: "Edit Rules",
+      label: 'Edit Rules',
       handler: onEditRules,
       disabled: !option?.rules,
     },
     {
-      label: "Edit Proxies",
+      label: 'Edit Proxies',
       handler: onEditProxies,
       disabled: !option?.proxies,
     },
     {
-      label: "Edit Groups",
+      label: 'Edit Groups',
       handler: onEditGroups,
       disabled: !option?.groups,
     },
     {
-      label: "Extend Config",
+      label: 'Extend Config',
       handler: onEditMerge,
       disabled: !option?.merge,
     },
     {
-      label: "Extend Script",
+      label: 'Extend Script',
       handler: onEditScript,
       disabled: !option?.script,
     },
-    { label: "Open File", handler: onOpenFile, disabled: false },
-    { label: "Open Dir", handler: onOpenDir, disabled: false },
-    { label: "Update", handler: () => onUpdate(0), disabled: false },
-    { label: "Update(Proxy)", handler: () => onUpdate(2), disabled: false },
+    { label: 'Open File', handler: onOpenFile, disabled: false },
+    { label: 'Open Dir', handler: onOpenDir, disabled: false },
+    { label: 'Update', handler: () => onUpdate(0), disabled: false },
+    { label: 'Update(Proxy)', handler: () => onUpdate(2), disabled: false },
     {
-      label: "Delete",
+      label: 'Delete',
       handler: () => {
-        setAnchorEl(null);
-        setConfirmOpen(true);
+        setAnchorEl(null)
+        setConfirmOpen(true)
       },
       disabled: false,
     },
-  ]);
+  ])
   const fileModeMenu = [
-    { label: "Select", handler: onForceSelect, disabled: false },
-    { label: "Edit Info", handler: onEditInfo, disabled: false },
-    { label: "Edit File", handler: onEditFile, disabled: false },
+    { label: 'Select', handler: onForceSelect, disabled: false },
+    { label: 'Edit Info', handler: onEditInfo, disabled: false },
+    { label: 'Edit File', handler: onEditFile, disabled: false },
     {
-      label: "Edit Rules",
+      label: 'Edit Rules',
       handler: onEditRules,
       disabled: !option?.rules,
     },
     {
-      label: "Edit Proxies",
+      label: 'Edit Proxies',
       handler: onEditProxies,
       disabled: !option?.proxies,
     },
     {
-      label: "Edit Groups",
+      label: 'Edit Groups',
       handler: onEditGroups,
       disabled: !option?.groups,
     },
     {
-      label: "Extend Config",
+      label: 'Extend Config',
       handler: onEditMerge,
       disabled: !option?.merge,
     },
     {
-      label: "Extend Script",
+      label: 'Extend Script',
       handler: onEditScript,
       disabled: !option?.script,
     },
-    { label: "Open File", handler: onOpenFile, disabled: false },
-    { label: "Open Dir", handler: onOpenDir, disabled: false },
-    { label: "Update", handler: onReimportLocal, disabled: false },
+    { label: 'Open File', handler: onOpenFile, disabled: false },
+    { label: 'Open Dir', handler: onOpenDir, disabled: false },
+    { label: 'Update', handler: onReimportLocal, disabled: false },
     {
-      label: "Delete",
+      label: 'Delete',
       handler: () => {
-        setAnchorEl(null);
-        setConfirmOpen(true);
+        setAnchorEl(null)
+        setConfirmOpen(true)
       },
       disabled: false,
     },
-  ];
+  ]
 
   const boxStyle = {
     height: 26,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-  };
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  }
 
   return (
     <Box
       sx={{
-        position: "relative",
+        position: 'relative',
         transform: CSS.Transform.toString(transform),
         transition,
-        zIndex: isDragging ? "calc(infinity)" : undefined,
+        zIndex: isDragging ? 'calc(infinity)' : undefined,
       }}
     >
       <ProfileBox
         aria-selected={selected}
         onClick={() => onSelect(false)}
         onContextMenu={(event) => {
-          const { clientX, clientY } = event;
-          setPosition({ top: clientY, left: clientX });
-          setAnchorEl(event.currentTarget);
-          event.preventDefault();
+          const { clientX, clientY } = event
+          setPosition({ top: clientY, left: clientX })
+          setAnchorEl(event.currentTarget)
+          event.preventDefault()
         }}
       >
         {activating && (
           <Box
             sx={{
-              position: "absolute",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
+              position: 'absolute',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
               top: 10,
               left: 10,
               right: 10,
               bottom: 2,
               zIndex: 10,
-              backdropFilter: "blur(2px)",
+              backdropFilter: 'blur(2px)',
             }}
           >
-            <CircularProgress color={"inherit"} size={20} />
+            <CircularProgress color={'inherit'} size={20} />
           </Box>
         )}
         <Box position="relative">
-          <Box sx={{ display: "flex", justifyContent: "start" }}>
+          <Box sx={{ display: 'flex', justifyContent: 'start' }}>
             <Box
               ref={setNodeRef}
-              sx={{ display: "flex", margin: "auto 0" }}
+              sx={{ display: 'flex', margin: 'auto 0' }}
               {...attributes}
               {...listeners}
             >
               <DragIndicatorRounded
                 sx={[
-                  { cursor: "move", marginLeft: "-6px" },
+                  { cursor: 'move', marginLeft: '-6px' },
                   ({ palette: { text } }) => {
-                    return { color: text.primary };
+                    return { color: text.primary }
                   },
                 ]}
               />
@@ -404,7 +404,7 @@ export const ProfileItem = (props: Props) => {
               // variant="h6"
               // component="h2"
               // noWrap
-              style={{ width: "calc(100% - 36px)" }}
+              style={{ width: 'calc(100% - 36px)' }}
               title={name}
             >
               {name}
@@ -413,20 +413,21 @@ export const ProfileItem = (props: Props) => {
 
           {/* remote: pull from URL; local: re-pick a file to overwrite */}
           <IconButton
-            title={hasUrl ? t("Refresh") : t("Update")}
+            title={hasUrl ? t('Refresh') : t('Update')}
             sx={{
-              position: "absolute",
-              p: "3px",
+              position: 'absolute',
+              p: '3px',
               top: -1,
               right: -5,
-              animation: loading ? `1s linear infinite ${round}` : "none",
+              animation: loading ? `1s linear infinite ${round}` : 'none',
             }}
             size="small"
             color="inherit"
             disabled={loading}
             onClick={(e) => {
-              e.stopPropagation();
-              hasUrl ? onUpdate(1) : onReimportLocal();
+              e.stopPropagation()
+              if (hasUrl) onUpdate(1)
+              else onReimportLocal()
             }}
           >
             <RefreshRounded color="inherit" />
@@ -440,13 +441,13 @@ export const ProfileItem = (props: Props) => {
                 <Typography
                   noWrap
                   title={description}
-                  sx={{ fontSize: "14px" }}
+                  sx={{ fontSize: '14px' }}
                 >
                   {description}
                 </Typography>
               ) : (
                 hasUrl && (
-                  <Typography noWrap title={`${t("From")} ${from}`}>
+                  <Typography noWrap title={`${t('From')} ${from}`}>
                     {from}
                   </Typography>
                 )
@@ -457,9 +458,9 @@ export const ProfileItem = (props: Props) => {
                   flex="1 0 auto"
                   fontSize={14}
                   textAlign="right"
-                  title={`${t("Update Time")}: ${parseExpire(updated)}`}
+                  title={`${t('Update Time')}: ${parseExpire(updated)}`}
                 >
-                  {updated > 0 ? dayjs(updated * 1000).fromNow() : ""}
+                  {updated > 0 ? dayjs(updated * 1000).fromNow() : ''}
                 </Typography>
               )}
             </>
@@ -468,14 +469,14 @@ export const ProfileItem = (props: Props) => {
         {/* the third line show extra info or last updated time */}
         {hasExtra ? (
           <Box sx={{ ...boxStyle, fontSize: 14 }}>
-            <span title={t("Used / Total")}>
+            <span title={t('Used / Total')}>
               {parseTraffic(upload + download)} / {parseTraffic(total)}
             </span>
-            <span title={t("Expire Time")}>{expire}</span>
+            <span title={t('Expire Time')}>{expire}</span>
           </Box>
         ) : (
-          <Box sx={{ ...boxStyle, fontSize: 12, justifyContent: "flex-end" }}>
-            <span title={t("Update Time")}>{parseExpire(updated)}</span>
+          <Box sx={{ ...boxStyle, fontSize: 12, justifyContent: 'flex-end' }}>
+            <span title={t('Update Time')}>{parseExpire(updated)}</span>
           </Box>
         )}
         <LinearProgress
@@ -494,8 +495,8 @@ export const ProfileItem = (props: Props) => {
         transitionDuration={225}
         MenuListProps={{ sx: { py: 0.5 } }}
         onContextMenu={(e) => {
-          setAnchorEl(null);
-          e.preventDefault();
+          setAnchorEl(null)
+          e.preventDefault()
         }}
       >
         {(hasUrl ? urlModeMenu : fileModeMenu).map((item) => (
@@ -510,10 +511,10 @@ export const ProfileItem = (props: Props) => {
               (theme) => {
                 return {
                   color:
-                    item.label === "Delete"
+                    item.label === 'Delete'
                       ? theme.palette.error.main
                       : undefined,
-                };
+                }
               },
             ]}
             dense
@@ -526,7 +527,7 @@ export const ProfileItem = (props: Props) => {
         type="file"
         accept=".yaml,.yml"
         ref={fileInputRef}
-        style={{ display: "none" }}
+        style={{ display: 'none' }}
         onChange={onLocalFileChange}
       />
       {fileOpen && (
@@ -536,18 +537,18 @@ export const ProfileItem = (props: Props) => {
           language="yaml"
           schema="clash"
           onSave={async (prev, curr) => {
-            await saveProfileFile(uid, curr ?? "");
-            onSave && onSave(prev, curr);
+            await saveProfileFile(uid, curr ?? '')
+            onSave?.(prev, curr)
           }}
           onClose={() => setFileOpen(false)}
         />
       )}
       {rulesOpen && (
         <RulesEditorViewer
-          groupsUid={option?.groups ?? ""}
-          mergeUid={option?.merge ?? ""}
+          groupsUid={option?.groups ?? ''}
+          mergeUid={option?.merge ?? ''}
           profileUid={uid}
-          property={option?.rules ?? ""}
+          property={option?.rules ?? ''}
           open={true}
           onSave={onSave}
           onClose={() => setRulesOpen(false)}
@@ -556,7 +557,7 @@ export const ProfileItem = (props: Props) => {
       {proxiesOpen && (
         <ProxiesEditorViewer
           profileUid={uid}
-          property={option?.proxies ?? ""}
+          property={option?.proxies ?? ''}
           open={true}
           onSave={onSave}
           onClose={() => setProxiesOpen(false)}
@@ -564,26 +565,26 @@ export const ProfileItem = (props: Props) => {
       )}
       {groupsOpen && (
         <GroupsEditorViewer
-          mergeUid={option?.merge ?? ""}
-          proxiesUid={option?.proxies ?? ""}
+          mergeUid={option?.merge ?? ''}
+          proxiesUid={option?.proxies ?? ''}
           profileUid={uid}
-          property={option?.groups ?? ""}
+          property={option?.groups ?? ''}
           open={true}
           onSave={onSave}
           onClose={() => {
-            setGroupsOpen(false);
+            setGroupsOpen(false)
           }}
         />
       )}
       {mergeOpen && (
         <EditorViewer
           open={true}
-          initialData={readProfileFile(option?.merge ?? "")}
+          initialData={readProfileFile(option?.merge ?? '')}
           language="yaml"
           schema="clash"
           onSave={async (prev, curr) => {
-            await saveProfileFile(option?.merge ?? "", curr ?? "");
-            onSave && onSave(prev, curr);
+            await saveProfileFile(option?.merge ?? '', curr ?? '')
+            onSave?.(prev, curr)
           }}
           onClose={() => setMergeOpen(false)}
         />
@@ -591,38 +592,38 @@ export const ProfileItem = (props: Props) => {
       {scriptOpen && (
         <EditorViewer
           open={true}
-          initialData={readProfileFile(option?.script ?? "")}
+          initialData={readProfileFile(option?.script ?? '')}
           language="javascript"
           onSave={async (prev, curr) => {
-            await saveProfileFile(option?.script ?? "", curr ?? "");
-            onSave && onSave(prev, curr);
+            await saveProfileFile(option?.script ?? '', curr ?? '')
+            onSave?.(prev, curr)
           }}
           onClose={() => setScriptOpen(false)}
         />
       )}
 
       <ConfirmViewer
-        title={t("Confirm deletion")}
-        message={t("This operation is not reversible")}
+        title={t('Confirm deletion')}
+        message={t('This operation is not reversible')}
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={() => {
-          onDelete();
-          setConfirmOpen(false);
+          onDelete()
+          setConfirmOpen(false)
         }}
       />
     </Box>
-  );
-};
+  )
+}
 
 function parseUrl(url?: string) {
-  if (!url) return "";
-  const regex = /https?:\/\/(.+?)\//;
-  const result = url.match(regex);
-  return result ? result[1] : "local file";
+  if (!url) return ''
+  const regex = /https?:\/\/(.+?)\//
+  const result = url.match(regex)
+  return result ? result[1] : 'local file'
 }
 
 function parseExpire(expire?: number) {
-  if (!expire) return "-";
-  return dayjs(expire * 1000).format("YYYY-MM-DD");
+  if (!expire) return '-'
+  return dayjs(expire * 1000).format('YYYY-MM-DD')
 }

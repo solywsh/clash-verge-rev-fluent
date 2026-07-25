@@ -1,88 +1,90 @@
-import { forwardRef, useImperativeHandle, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useLockFn } from "ahooks";
-import { styled, Typography } from "@mui/material";
-import { useVerge } from "@/hooks/use-verge";
-import { BaseDialog, DialogRef, Notice } from "@/components/base";
-import { HotkeyInput } from "./hotkey-input";
+import { styled, Typography } from '@mui/material'
+import { useLockFn } from 'ahooks'
+import { forwardRef, useImperativeHandle, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
-const ItemWrapper = styled("div")`
+import { BaseDialog, DialogRef, Notice } from '@/components/base'
+import { useVerge } from '@/hooks/use-verge'
+
+import { HotkeyInput } from './hotkey-input'
+
+const ItemWrapper = styled('div')`
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 8px;
-`;
+`
 
 const HOTKEY_FUNC = [
-  "open_or_close_dashboard",
-  "clash_mode_rule",
-  "clash_mode_global",
-  "clash_mode_direct",
-  "toggle_system_proxy",
-  "toggle_tun_mode",
-];
+  'open_or_close_dashboard',
+  'clash_mode_rule',
+  'clash_mode_global',
+  'clash_mode_direct',
+  'toggle_system_proxy',
+  'toggle_tun_mode',
+]
 
 export const HotkeyViewer = forwardRef<DialogRef>((props, ref) => {
-  const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
 
-  const { verge, patchVerge } = useVerge();
+  const { verge, patchVerge } = useVerge()
 
-  const [hotkeyMap, setHotkeyMap] = useState<Record<string, string[]>>({});
+  const [hotkeyMap, setHotkeyMap] = useState<Record<string, string[]>>({})
 
   useImperativeHandle(ref, () => ({
     open: () => {
-      setOpen(true);
+      setOpen(true)
 
-      const map = {} as typeof hotkeyMap;
+      const map = {} as typeof hotkeyMap
 
       verge?.hotkeys?.forEach((text) => {
-        const [func, key] = text.split(",").map((e) => e.trim());
+        const [func, key] = text.split(',').map((e) => e.trim())
 
-        if (!func || !key) return;
+        if (!func || !key) return
 
         map[func] = key
-          .split("+")
+          .split('+')
           .map((e) => e.trim())
-          .map((k) => (k === "PLUS" ? "+" : k));
-      });
+          .map((k) => (k === 'PLUS' ? '+' : k))
+      })
 
-      setHotkeyMap(map);
+      setHotkeyMap(map)
     },
     close: () => setOpen(false),
-  }));
+  }))
 
   const onSave = useLockFn(async () => {
     const hotkeys = Object.entries(hotkeyMap)
       .map(([func, keys]) => {
-        if (!func || !keys?.length) return "";
+        if (!func || !keys?.length) return ''
 
         const key = keys
           .map((k) => k.trim())
           .filter(Boolean)
-          .map((k) => (k === "+" ? "PLUS" : k))
-          .join("+");
+          .map((k) => (k === '+' ? 'PLUS' : k))
+          .join('+')
 
-        if (!key) return "";
-        return `${func},${key}`;
+        if (!key) return ''
+        return `${func},${key}`
       })
-      .filter(Boolean);
+      .filter(Boolean)
 
     try {
-      await patchVerge({ hotkeys });
-      setOpen(false);
+      await patchVerge({ hotkeys })
+      setOpen(false)
     } catch (err: any) {
-      Notice.error(err.message || err.toString());
+      Notice.error(err.message || err.toString())
     }
-  });
+  })
 
   return (
     <BaseDialog
       open={open}
-      title={t("Hotkey Setting")}
+      title={t('Hotkey Setting')}
       contentSx={{ width: 450, maxHeight: 330 }}
-      okBtn={t("Save")}
-      cancelBtn={t("Cancel")}
+      okBtn={t('Save')}
+      cancelBtn={t('Cancel')}
       onClose={() => setOpen(false)}
       onCancel={() => setOpen(false)}
       onOk={onSave}
@@ -97,5 +99,5 @@ export const HotkeyViewer = forwardRef<DialogRef>((props, ref) => {
         </ItemWrapper>
       ))}
     </BaseDialog>
-  );
-});
+  )
+})

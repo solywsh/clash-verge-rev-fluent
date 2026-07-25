@@ -1,79 +1,80 @@
-import dayjs from "dayjs";
-import { useMemo, useState } from "react";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { useThemeMode } from "@/services/states";
-import { truncateStr } from "@/utils/truncate-str";
-import parseTraffic from "@/utils/parse-traffic";
-import { t } from "i18next";
+import { DataGrid, GridColDef } from '@mui/x-data-grid'
+import dayjs from 'dayjs'
+import { t } from 'i18next'
+import { useMemo, useState } from 'react'
+
+import { useThemeMode } from '@/services/states'
+import parseTraffic from '@/utils/parse-traffic'
+import { truncateStr } from '@/utils/truncate-str'
 
 interface Props {
-  connections: IConnectionsItem[];
-  onShowDetail: (data: IConnectionsItem) => void;
+  connections: IConnectionsItem[]
+  onShowDetail: (data: IConnectionsItem) => void
 }
 
 export const ConnectionTable = (props: Props) => {
-  const { connections, onShowDetail } = props;
-  const mode = useThemeMode();
-  const isDark = mode === "light" ? false : true;
-  const backgroundColor = isDark ? "#282A36" : "#ffffff";
+  const { connections, onShowDetail } = props
+  const mode = useThemeMode()
+  const isDark = mode === 'light' ? false : true
+  const backgroundColor = isDark ? '#282A36' : '#ffffff'
 
   const [columnVisible, setColumnVisible] = useState<
     Partial<Record<keyof IConnectionsItem, boolean>>
-  >({});
+  >({})
 
   const [columns] = useState<GridColDef[]>([
-    { field: "host", headerName: t("Host"), flex: 220, minWidth: 220 },
+    { field: 'host', headerName: t('Host'), flex: 220, minWidth: 220 },
     {
-      field: "download",
-      headerName: t("Downloaded"),
+      field: 'download',
+      headerName: t('Downloaded'),
       width: 88,
-      valueFormatter: (value: number) => parseTraffic(value).join(" "),
+      valueFormatter: (value: number) => parseTraffic(value).join(' '),
     },
     {
-      field: "upload",
-      headerName: t("Uploaded"),
+      field: 'upload',
+      headerName: t('Uploaded'),
       width: 88,
-      valueFormatter: (value: number) => parseTraffic(value).join(" "),
+      valueFormatter: (value: number) => parseTraffic(value).join(' '),
     },
     {
-      field: "dlSpeed",
-      headerName: t("DL Speed"),
+      field: 'dlSpeed',
+      headerName: t('DL Speed'),
       width: 88,
-      valueFormatter: (value: number) => parseTraffic(value).join(" ") + "/s",
+      valueFormatter: (value: number) => parseTraffic(value).join(' ') + '/s',
     },
     {
-      field: "ulSpeed",
-      headerName: t("UL Speed"),
+      field: 'ulSpeed',
+      headerName: t('UL Speed'),
       width: 88,
-      valueFormatter: (value: number) => parseTraffic(value).join(" ") + "/s",
+      valueFormatter: (value: number) => parseTraffic(value).join(' ') + '/s',
     },
-    { field: "chains", headerName: t("Chains"), flex: 360, minWidth: 360 },
-    { field: "rule", headerName: t("Rule"), flex: 300, minWidth: 250 },
-    { field: "process", headerName: t("Process"), flex: 240, minWidth: 120 },
+    { field: 'chains', headerName: t('Chains'), flex: 360, minWidth: 360 },
+    { field: 'rule', headerName: t('Rule'), flex: 300, minWidth: 250 },
+    { field: 'process', headerName: t('Process'), flex: 240, minWidth: 120 },
     {
-      field: "time",
-      headerName: t("Time"),
+      field: 'time',
+      headerName: t('Time'),
       flex: 120,
       minWidth: 100,
       sortComparator: (v1: string, v2: string) =>
         new Date(v2).getTime() - new Date(v1).getTime(),
       valueFormatter: (value: number) => dayjs(value).fromNow(),
     },
-    { field: "source", headerName: t("Source"), flex: 200, minWidth: 130 },
+    { field: 'source', headerName: t('Source'), flex: 200, minWidth: 130 },
     {
-      field: "destinationIP",
-      headerName: t("Destination IP"),
+      field: 'destinationIP',
+      headerName: t('Destination IP'),
       flex: 200,
       minWidth: 130,
     },
-    { field: "type", headerName: t("Type"), flex: 160, minWidth: 100 },
-  ]);
+    { field: 'type', headerName: t('Type'), flex: 160, minWidth: 100 },
+  ])
 
   const connRows = useMemo(() => {
     return connections.map((each) => {
-      const { metadata, rulePayload } = each;
-      const chains = [...each.chains].reverse().join(" / ");
-      const rule = rulePayload ? `${each.rule}(${rulePayload})` : each.rule;
+      const { metadata, rulePayload } = each
+      const chains = [...each.chains].reverse().join(' / ')
+      const rule = rulePayload ? `${each.rule}(${rulePayload})` : each.rule
       return {
         id: each.id,
         host: metadata.host
@@ -91,9 +92,9 @@ export const ConnectionTable = (props: Props) => {
         destinationIP: metadata.destinationIP,
         type: `${metadata.type}(${metadata.network})`,
         connectionData: each,
-      };
-    });
-  }, [connections]);
+      }
+    })
+  }, [connections])
 
   return (
     <DataGrid
@@ -103,14 +104,14 @@ export const ConnectionTable = (props: Props) => {
       onRowClick={(e) => onShowDetail(e.row.connectionData)}
       density="compact"
       sx={{
-        border: "none",
-        "div:focus": { outline: "none !important" },
-        "& div[aria-rowindex]": {
+        border: 'none',
+        'div:focus': { outline: 'none !important' },
+        '& div[aria-rowindex]': {
           backgroundColor: `${backgroundColor} !important`,
         },
       }}
       columnVisibilityModel={columnVisible}
       onColumnVisibilityModelChange={(e) => setColumnVisible(e)}
     />
-  );
-};
+  )
+}

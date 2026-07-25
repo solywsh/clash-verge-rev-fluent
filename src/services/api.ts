@@ -6,6 +6,7 @@
 // now bridges to that plugin (`tauri-plugin-mihomo-api`) instead, keeping the
 // same exported function names and return shapes so existing consumers and the
 // frontend `I*` types are unaffected.
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
 import {
   getVersion as mihomoGetVersion,
   getBaseConfig,
@@ -24,45 +25,44 @@ import {
   closeConnection,
   closeAllConnections as mihomoCloseAllConnections,
   delayGroup,
-} from "tauri-plugin-mihomo-api";
-import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
+} from 'tauri-plugin-mihomo-api'
 
-const DEFAULT_TEST_URL = "http://cp.cloudflare.com/generate_204";
+const DEFAULT_TEST_URL = 'http://cp.cloudflare.com/generate_204'
 
 /// Kept for backward compatibility. The mihomo plugin talks to the core over a
 /// local IPC pipe, so there is no axios instance / controller endpoint to
 /// (re)initialize anymore — this is now a no-op.
-export const getAxios = async (_force: boolean = false) => {};
+export const getAxios = async (_force: boolean = false) => {}
 
 /// Get Version
 export const getVersion = async () => {
   return (await mihomoGetVersion()) as {
-    premium: boolean;
-    meta?: boolean;
-    version: string;
-  };
-};
+    premium: boolean
+    meta?: boolean
+    version: string
+  }
+}
 
 /// Get current base configs
 export const getClashConfig = async () => {
-  return (await getBaseConfig()) as unknown as IConfigData;
-};
+  return (await getBaseConfig()) as unknown as IConfigData
+}
 
 /// Update geo data
 export const updateGeoData = async () => {
-  return updateGeo();
-};
+  return updateGeo()
+}
 
 /// Upgrade clash core
 export const upgradeCore = async () => {
-  return mihomoUpgradeCore();
-};
+  return mihomoUpgradeCore()
+}
 
 /// Get current rules
 export const getRules = async () => {
-  const response = await mihomoGetRules();
-  return (response?.rules ?? []) as unknown as IRuleItem[];
-};
+  const response = await mihomoGetRules()
+  return (response?.rules ?? []) as unknown as IRuleItem[]
+}
 
 /// Get Proxy delay
 export const getProxyDelay = async (
@@ -74,164 +74,163 @@ export const getProxyDelay = async (
     name,
     url || DEFAULT_TEST_URL,
     timeout || 10000,
-  );
-  return result as { delay: number };
-};
+  )
+  return result as { delay: number }
+}
 
 /// Update the Proxy Choose
 export const updateProxy = async (group: string, proxy: string) => {
-  return selectNodeForGroup(group, proxy);
-};
+  return selectNodeForGroup(group, proxy)
+}
 
 // get proxy
 export const getProxiesInner = async () => {
-  const response = await mihomoGetProxies();
-  return (response?.proxies || {}) as Record<string, IProxyItem>;
-};
+  const response = await mihomoGetProxies()
+  return (response?.proxies || {}) as Record<string, IProxyItem>
+}
 
 /// Get the Proxy information
 export const getProxies = async () => {
   const [proxyRecord, providerRecord] = await Promise.all([
     getProxiesInner(),
     getProxyProviders(),
-  ]);
+  ])
   // provider name map
   const providerMap = Object.fromEntries(
     Object.entries(providerRecord).flatMap(([provider, item]) =>
       item.proxies.map((p) => [p.name, { ...p, provider }]),
     ),
-  );
+  )
 
   // compatible with proxy-providers
   const generateItem = (name: string) => {
-    if (proxyRecord[name]) return proxyRecord[name];
-    if (providerMap[name]) return providerMap[name];
+    if (proxyRecord[name]) return proxyRecord[name]
+    if (providerMap[name]) return providerMap[name]
     return {
       name,
-      type: "unknown",
+      type: 'unknown',
       udp: false,
       xudp: false,
       tfo: false,
       mptcp: false,
       smux: false,
       history: [],
-    };
-  };
+    }
+  }
 
-  const { GLOBAL: global, DIRECT: direct, REJECT: reject } = proxyRecord;
+  const { GLOBAL: global, DIRECT: direct, REJECT: reject } = proxyRecord
 
   let groups: IProxyGroupItem[] = Object.values(proxyRecord).reduce<
     IProxyGroupItem[]
   >((acc, each) => {
-    if (each.name !== "GLOBAL" && each.all) {
+    if (each.name !== 'GLOBAL' && each.all) {
       acc.push({
         ...each,
         all: each.all!.map((item) => generateItem(item)),
-      });
+      })
     }
 
-    return acc;
-  }, []);
+    return acc
+  }, [])
 
   if (global?.all) {
-    let globalGroups: IProxyGroupItem[] = global.all.reduce<IProxyGroupItem[]>(
-      (acc, name) => {
-        if (proxyRecord[name]?.all) {
-          acc.push({
-            ...proxyRecord[name],
-            all: proxyRecord[name].all!.map((item) => generateItem(item)),
-          });
-        }
-        return acc;
-      },
-      [],
-    );
+    const globalGroups: IProxyGroupItem[] = global.all.reduce<
+      IProxyGroupItem[]
+    >((acc, name) => {
+      if (proxyRecord[name]?.all) {
+        acc.push({
+          ...proxyRecord[name],
+          all: proxyRecord[name].all!.map((item) => generateItem(item)),
+        })
+      }
+      return acc
+    }, [])
 
-    let globalNames = new Set(globalGroups.map((each) => each.name));
+    const globalNames = new Set(globalGroups.map((each) => each.name))
     groups = groups
       .filter((group) => {
-        return !globalNames.has(group.name);
+        return !globalNames.has(group.name)
       })
-      .concat(globalGroups);
+      .concat(globalGroups)
   }
 
   const proxies = [direct, reject].concat(
     Object.values(proxyRecord).filter(
-      (p) => !p.all?.length && p.name !== "DIRECT" && p.name !== "REJECT",
+      (p) => !p.all?.length && p.name !== 'DIRECT' && p.name !== 'REJECT',
     ),
-  );
+  )
 
   const _global: IProxyGroupItem = {
     ...global,
     all: global?.all?.map((item) => generateItem(item)) || [],
-  };
+  }
 
-  return { global: _global, direct, groups, records: proxyRecord, proxies };
-};
+  return { global: _global, direct, groups, records: proxyRecord, proxies }
+}
 
 // get proxy providers
 export const getProxyProviders = async () => {
-  const response = await mihomoGetProxyProviders();
+  const response = await mihomoGetProxyProviders()
 
   const providers = (response.providers || {}) as Record<
     string,
     IProxyProviderItem
-  >;
+  >
 
   return Object.fromEntries(
     Object.entries(providers).filter(([key, item]) => {
-      const type = item.vehicleType.toLowerCase();
-      return type === "http" || type === "file";
+      const type = item.vehicleType.toLowerCase()
+      return type === 'http' || type === 'file'
     }),
-  );
-};
+  )
+}
 
 export const getRuleProviders = async () => {
-  const response = await mihomoGetRuleProviders();
+  const response = await mihomoGetRuleProviders()
 
   const providers = (response.providers || {}) as Record<
     string,
     IRuleProviderItem
-  >;
+  >
 
   return Object.fromEntries(
     Object.entries(providers).filter(([key, item]) => {
-      const type = item.vehicleType.toLowerCase();
-      return type === "http" || type === "file";
+      const type = item.vehicleType.toLowerCase()
+      return type === 'http' || type === 'file'
     }),
-  );
-};
+  )
+}
 
 // proxy providers health check
 export const providerHealthCheck = async (name: string) => {
-  return healthcheckProxyProvider(name);
-};
+  return healthcheckProxyProvider(name)
+}
 
 export const proxyProviderUpdate = async (name: string) => {
-  return updateProxyProvider(name);
-};
+  return updateProxyProvider(name)
+}
 
 export const ruleProviderUpdate = async (name: string) => {
-  return updateRuleProvider(name);
-};
+  return updateRuleProvider(name)
+}
 
 export const getConnections = async () => {
-  const result = await mihomoGetConnections();
+  const result = await mihomoGetConnections()
   return {
     ...result,
     connections: result.connections ?? [],
-  } as unknown as IConnections;
-};
+  } as unknown as IConnections
+}
 
 // Close specific connection
 export const deleteConnection = async (id: string) => {
-  await closeConnection(id);
-};
+  await closeConnection(id)
+}
 
 // Close all connections
 export const closeAllConnections = async () => {
-  await mihomoCloseAllConnections();
-};
+  await mihomoCloseAllConnections()
+}
 
 // Get Group Proxy Delays
 export const getGroupProxyDelays = async (
@@ -243,89 +242,89 @@ export const getGroupProxyDelays = async (
     groupName,
     url || DEFAULT_TEST_URL,
     timeout || 10000,
-  );
-  return result as Record<string, number>;
-};
+  )
+  return result as Record<string, number>
+}
 
 // Is debug enabled
 //
 // The mihomo plugin does not expose the core's /debug endpoints, so the
 // memory-GC debug affordance is disabled under the IPC data layer.
 export const isDebugEnabled = async () => {
-  return false;
-};
+  return false
+}
 
 // GC — no-op (see isDebugEnabled).
-export const gc = async () => {};
+export const gc = async () => {}
 
 // Public IP / geolocation info (for the Home page IP card).
 export interface IpInfo {
-  ip: string;
-  country_code: string;
-  country: string;
-  region: string;
-  city: string;
-  organization: string;
-  asn: number;
-  asn_organization: string;
-  longitude: number;
-  latitude: number;
-  timezone: string;
+  ip: string
+  country_code: string
+  country: string
+  region: string
+  city: string
+  organization: string
+  asn: number
+  asn_organization: string
+  longitude: number
+  latitude: number
+  timezone: string
 }
 
 // Try a couple of public geoip services in order; first success wins.
 const IP_CHECK_SERVICES: {
-  url: string;
-  mapping: (data: any) => IpInfo;
+  url: string
+  mapping: (data: any) => IpInfo
 }[] = [
   {
-    url: "https://api.ip.sb/geoip",
+    url: 'https://api.ip.sb/geoip',
     mapping: (data) => ({
-      ip: data.ip || "",
-      country_code: data.country_code || "",
-      country: data.country || "",
-      region: data.region || "",
-      city: data.city || "",
-      organization: data.organization || data.isp || "",
+      ip: data.ip || '',
+      country_code: data.country_code || '',
+      country: data.country || '',
+      region: data.region || '',
+      city: data.city || '',
+      organization: data.organization || data.isp || '',
       asn: data.asn || 0,
-      asn_organization: data.asn_organization || "",
+      asn_organization: data.asn_organization || '',
       longitude: data.longitude || 0,
       latitude: data.latitude || 0,
-      timezone: data.timezone || "",
+      timezone: data.timezone || '',
     }),
   },
   {
-    url: "https://ipapi.co/json",
+    url: 'https://ipapi.co/json',
     mapping: (data) => ({
-      ip: data.ip || "",
-      country_code: data.country_code || "",
-      country: data.country_name || "",
-      region: data.region || "",
-      city: data.city || "",
-      organization: data.org || "",
-      asn: data.asn ? parseInt(String(data.asn).replace("AS", "")) : 0,
-      asn_organization: data.org || "",
+      ip: data.ip || '',
+      country_code: data.country_code || '',
+      country: data.country_name || '',
+      region: data.region || '',
+      city: data.city || '',
+      organization: data.org || '',
+      asn: data.asn ? parseInt(String(data.asn).replace('AS', '')) : 0,
+      asn_organization: data.org || '',
       longitude: data.longitude || 0,
       latitude: data.latitude || 0,
-      timezone: data.timezone || "",
+      timezone: data.timezone || '',
     }),
   },
-];
+]
 
 export const getIpInfo = async (): Promise<IpInfo> => {
-  let lastErr: unknown;
+  let lastErr: unknown
   for (const service of IP_CHECK_SERVICES) {
     try {
       const resp = await tauriFetch(service.url, {
-        method: "GET",
-        headers: { Accept: "application/json" },
-      });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const data = await resp.json();
-      return service.mapping(data);
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+      })
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
+      const data = await resp.json()
+      return service.mapping(data)
     } catch (err) {
-      lastErr = err;
+      lastErr = err
     }
   }
-  throw lastErr ?? new Error("Failed to fetch IP info");
-};
+  throw lastErr ?? new Error('Failed to fetch IP info')
+}

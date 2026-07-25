@@ -17,6 +17,13 @@
     "portable": "node scripts/portable.mjs",
     "portable-fixed-webview2": "node scripts/portable-fixed-webview2.mjs",
     "release-version": "node scripts/release-version.mjs",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "eslint -c eslint.config.ts --cache --cache-location .eslintcache src",
+    "lint:fix": "eslint -c eslint.config.ts --cache --cache-location .eslintcache --fix src",
+    "typecheck": "tsc --noEmit",
+    "knip:check": "knip",
+    "knip:report": "knip --no-exit-code",
     "prepare": "husky"
   },
   "dependencies": {
@@ -25,6 +32,8 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
+    "@fluentui/react-components": "^9.58.2",
+    "@fluentui/react-icons": "^2.0.247",
     "@juggle/resize-observer": "^3.4.0",
     "@mui/icons-material": "^6.3.0",
     "@mui/lab": "5.0.0-alpha.149",
@@ -43,8 +52,6 @@
     "@types/json-schema": "^7.0.15",
     "ahooks": "^3.8.4",
     "axios": "^1.7.9",
-    "@fluentui/react-components": "^9.58.2",
-    "@fluentui/react-icons": "^2.0.247",
     "cli-color": "^2.0.4",
     "dayjs": "1.11.13",
     "foxact": "^0.2.43",
@@ -76,6 +83,9 @@
   },
   "devDependencies": {
     "@actions/github": "^6.0.0",
+    "@biomejs/biome": "^2.4.15",
+    "@eslint-react/eslint-plugin": "^5.8.5",
+    "@eslint/js": "^10.0.1",
     "@tauri-apps/cli": "2.11.4",
     "@types/js-cookie": "^3.0.6",
     "@types/js-yaml": "^4.0.9",
@@ -88,24 +98,38 @@
     "adm-zip": "^0.5.16",
     "commander": "^15.0.0",
     "cross-env": "^7.0.3",
+    "eslint": "^10.4.0",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-es-x": "^9.6.0",
+    "eslint-plugin-import-x": "^4.16.2",
+    "eslint-plugin-react-compiler": "19.1.0-rc.2",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "eslint-plugin-sukka": "^9.5.0",
+    "eslint-plugin-unused-imports": "^4.4.1",
+    "globals": "^17.6.0",
     "https-proxy-agent": "^7.0.6",
     "husky": "^9.1.7",
+    "jiti": "^2.7.0",
+    "knip": "6.26.0",
+    "lint-staged": "^17.0.5",
     "meta-json-schema": "^1.19.1",
     "node-fetch": "^3.3.2",
-    "prettier": "^3.4.2",
-    "pretty-quick": "^4.0.0",
     "sass": "^1.83.0",
     "terser": "^5.37.0",
     "typescript": "^5.7.2",
+    "typescript-eslint": "^8.59.4",
     "vite": "^5.4.11",
     "vite-plugin-monaco-editor": "^1.1.0",
     "vite-plugin-svgr": "^4.3.0"
   },
-  "prettier": {
-    "tabWidth": 2,
-    "semi": true,
-    "singleQuote": false,
-    "endOfLine": "lf"
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "eslint -c eslint.config.ts --fix"
+    ],
+    "*.{ts,tsx,js,mjs,css,scss,json,yaml,yml}": [
+      "biome format --write"
+    ]
   },
   "type": "module",
   "packageManager": "pnpm@9.13.2"

@@ -1,20 +1,21 @@
-import { useState, useRef, memo, useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
-import { useVerge } from "@/hooks/use-verge";
-import { Notice } from "@/components/base";
-import { isValidUrl } from "@/utils/helper";
-import { useLockFn } from "ahooks";
-import { Button, Field, Input } from "@fluentui/react-components";
-import { EyeRegular, EyeOffRegular } from "@fluentui/react-icons";
-import { saveWebdavConfig, createWebdavBackup } from "@/services/cmds";
+import { Button, Field, Input } from '@fluentui/react-components'
+import { EyeRegular, EyeOffRegular } from '@fluentui/react-icons'
+import { useLockFn } from 'ahooks'
+import { useState, useRef, memo, useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
+
+import { Notice } from '@/components/base'
+import { useVerge } from '@/hooks/use-verge'
+import { saveWebdavConfig, createWebdavBackup } from '@/services/cmds'
+import { isValidUrl } from '@/utils/helper'
 
 export interface BackupConfigViewerProps {
-  onBackupSuccess: () => Promise<void>;
-  onSaveSuccess: () => Promise<void>;
-  onRefresh: () => Promise<void>;
-  onInit: () => Promise<void>;
-  setLoading: (loading: boolean) => void;
+  onBackupSuccess: () => Promise<void>
+  onSaveSuccess: () => Promise<void>
+  onRefresh: () => Promise<void>
+  onInit: () => Promise<void>
+  setLoading: (loading: boolean) => void
 }
 
 export const BackupConfigViewer = memo(
@@ -25,13 +26,13 @@ export const BackupConfigViewer = memo(
     onInit,
     setLoading,
   }: BackupConfigViewerProps) => {
-    const { t } = useTranslation();
-    const { verge } = useVerge();
-    const { webdav_url, webdav_username, webdav_password } = verge || {};
-    const [showPassword, setShowPassword] = useState(false);
-    const usernameRef = useRef<HTMLInputElement>(null);
-    const passwordRef = useRef<HTMLInputElement>(null);
-    const urlRef = useRef<HTMLInputElement>(null);
+    const { t } = useTranslation()
+    const { verge } = useVerge()
+    const { webdav_url, webdav_username, webdav_password } = verge || {}
+    const [showPassword, setShowPassword] = useState(false)
+    const usernameRef = useRef<HTMLInputElement>(null)
+    const passwordRef = useRef<HTMLInputElement>(null)
+    const urlRef = useRef<HTMLInputElement>(null)
 
     const { register, handleSubmit, watch } = useForm<IWebDavConfig>({
       defaultValues: {
@@ -39,122 +40,122 @@ export const BackupConfigViewer = memo(
         username: webdav_username,
         password: webdav_password,
       },
-    });
-    const url = watch("url");
-    const username = watch("username");
-    const password = watch("password");
+    })
+    const url = watch('url')
+    const username = watch('username')
+    const password = watch('password')
 
     const webdavChanged =
       webdav_url !== url ||
       webdav_username !== username ||
-      webdav_password !== password;
+      webdav_password !== password
 
     const handleClickShowPassword = () => {
-      setShowPassword((prev) => !prev);
-    };
+      setShowPassword((prev) => !prev)
+    }
 
     useEffect(() => {
       if (webdav_url && webdav_username && webdav_password) {
-        onInit();
+        onInit()
       }
-    }, []);
+    }, [])
 
     const checkForm = () => {
-      const username = usernameRef.current?.value;
-      const password = passwordRef.current?.value;
-      const url = urlRef.current?.value;
+      const username = usernameRef.current?.value
+      const password = passwordRef.current?.value
+      const url = urlRef.current?.value
 
       if (!url) {
-        urlRef.current?.focus();
-        Notice.error(t("WebDAV URL Required"));
-        throw new Error(t("WebDAV URL Required"));
+        urlRef.current?.focus()
+        Notice.error(t('WebDAV URL Required'))
+        throw new Error(t('WebDAV URL Required'))
       } else if (!isValidUrl(url)) {
-        urlRef.current?.focus();
-        Notice.error(t("Invalid WebDAV URL"));
-        throw new Error(t("Invalid WebDAV URL"));
+        urlRef.current?.focus()
+        Notice.error(t('Invalid WebDAV URL'))
+        throw new Error(t('Invalid WebDAV URL'))
       }
       if (!username) {
-        usernameRef.current?.focus();
-        Notice.error(t("WebDAV URL Required"));
-        throw new Error(t("Username Required"));
+        usernameRef.current?.focus()
+        Notice.error(t('WebDAV URL Required'))
+        throw new Error(t('Username Required'))
       }
       if (!password) {
-        passwordRef.current?.focus();
-        Notice.error(t("WebDAV URL Required"));
-        throw new Error(t("Password Required"));
+        passwordRef.current?.focus()
+        Notice.error(t('WebDAV URL Required'))
+        throw new Error(t('Password Required'))
       }
-    };
+    }
 
     const save = useLockFn(async (data: IWebDavConfig) => {
-      checkForm();
+      checkForm()
       try {
-        setLoading(true);
+        setLoading(true)
         await saveWebdavConfig(
           data.url.trim(),
           data.username.trim(),
           data.password,
         ).then(() => {
-          Notice.success(t("WebDAV Config Saved"));
-          onSaveSuccess();
-        });
+          Notice.success(t('WebDAV Config Saved'))
+          onSaveSuccess()
+        })
       } catch (error) {
-        Notice.error(t("WebDAV Config Save Failed", { error }), 3000);
+        Notice.error(t('WebDAV Config Save Failed', { error }), 3000)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    });
+    })
 
     const handleBackup = useLockFn(async () => {
-      checkForm();
+      checkForm()
       try {
-        setLoading(true);
+        setLoading(true)
         await createWebdavBackup().then(async () => {
-          await onBackupSuccess();
-          Notice.success(t("Backup Created"));
-        });
+          await onBackupSuccess()
+          Notice.success(t('Backup Created'))
+        })
       } catch (error) {
-        Notice.error(t("Backup Failed", { error }));
+        Notice.error(t('Backup Failed', { error }))
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    });
+    })
 
     const textInputProps = {
-      autoCorrect: "off" as const,
-      autoCapitalize: "off" as const,
+      autoCorrect: 'off' as const,
+      autoCapitalize: 'off' as const,
       spellCheck: false,
-    };
+    }
 
     return (
       <form onSubmit={(e) => e.preventDefault()}>
-        <div style={{ display: "flex", gap: 16, alignItems: "stretch" }}>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'stretch' }}>
           <div
             style={{
-              flex: "1 1 75%",
-              display: "flex",
-              flexDirection: "column",
+              flex: '1 1 75%',
+              display: 'flex',
+              flexDirection: 'column',
               gap: 12,
             }}
           >
-            <Field label={t("WebDAV Server URL")}>
+            <Field label={t('WebDAV Server URL')}>
               <Input
-                {...register("url")}
+                {...register('url')}
                 {...textInputProps}
                 input={{ ref: urlRef }}
               />
             </Field>
-            <div style={{ display: "flex", gap: 16 }}>
-              <Field label={t("Username")} style={{ flex: 1 }}>
+            <div style={{ display: 'flex', gap: 16 }}>
+              <Field label={t('Username')} style={{ flex: 1 }}>
                 <Input
-                  {...register("username")}
+                  {...register('username')}
                   {...textInputProps}
                   input={{ ref: usernameRef }}
                 />
               </Field>
-              <Field label={t("Password")} style={{ flex: 1 }}>
+              <Field label={t('Password')} style={{ flex: 1 }}>
                 <Input
-                  type={showPassword ? "text" : "password"}
-                  {...register("password")}
+                  type={showPassword ? 'text' : 'password'}
+                  {...register('password')}
                   {...textInputProps}
                   input={{ ref: passwordRef }}
                   contentAfter={
@@ -171,10 +172,10 @@ export const BackupConfigViewer = memo(
           </div>
           <div
             style={{
-              flex: "1 1 25%",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "flex-end",
+              flex: '1 1 25%',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-end',
               gap: 8,
             }}
           >
@@ -184,35 +185,35 @@ export const BackupConfigViewer = memo(
             webdav_password === undefined ? (
               <Button
                 appearance="primary"
-                style={{ width: "100%" }}
+                style={{ width: '100%' }}
                 type="button"
                 onClick={handleSubmit(save)}
               >
-                {t("Save")}
+                {t('Save')}
               </Button>
             ) : (
               <>
                 <Button
                   appearance="primary"
-                  style={{ width: "100%" }}
+                  style={{ width: '100%' }}
                   onClick={handleBackup}
                   type="button"
                 >
-                  {t("Backup")}
+                  {t('Backup')}
                 </Button>
                 <Button
                   appearance="outline"
-                  style={{ width: "100%" }}
+                  style={{ width: '100%' }}
                   onClick={onRefresh}
                   type="button"
                 >
-                  {t("Refresh")}
+                  {t('Refresh')}
                 </Button>
               </>
             )}
           </div>
         </div>
       </form>
-    );
+    )
   },
-);
+)

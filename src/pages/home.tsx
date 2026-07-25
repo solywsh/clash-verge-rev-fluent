@@ -1,6 +1,7 @@
-import { useTranslation } from "react-i18next";
-import { Box } from "@mui/material";
-import { BasePage } from "@/components/base";
+import { Box } from '@mui/material'
+import { useTranslation } from 'react-i18next'
+
+import { BasePage } from '@/components/base'
 import {
   TrafficStatsCard,
   ClashInfoCard,
@@ -9,20 +10,20 @@ import {
   ProxyTunCard,
   IpInfoCard,
   SystemInfoCard,
-} from "@/components/home/home-cards";
+} from '@/components/home/home-cards'
 
 const HomePage = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
   return (
-    <BasePage title={t("Label-Home")}>
+    <BasePage title={t('Label-Home')}>
       <Box
         sx={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
           gap: 1.5,
           p: 1,
-          alignItems: "stretch",
+          alignItems: 'stretch',
         }}
       >
         <HomeProfileCard />
@@ -34,7 +35,7 @@ const HomePage = () => {
         <IpInfoCard />
       </Box>
     </BasePage>
-  );
-};
+  )
+}
 
-export default HomePage;
+export default HomePage
