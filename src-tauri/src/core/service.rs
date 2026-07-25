@@ -298,6 +298,112 @@ fn install_service() -> Result<()> {
     Ok(())
 }
 
+/// Windows 服务名（与 installer.nsi / install.exe 注册的名字一致）
+#[cfg(target_os = "windows")]
+const SERVICE_NAME: &str = "clash_verge_service";
+
+/// 解析 `sc qc` 输出里的 START_TYPE 数值码。
+/// 2 = AUTO_START，3 = DEMAND_START(手动)，None = 服务未安装/无法解析。
+#[cfg(target_os = "windows")]
+fn query_service_start_type() -> Option<u32> {
+    use std::os::windows::process::CommandExt as _;
+
+    let output = StdCommand::new(sc_exe_path())
+        .args(["qc", SERVICE_NAME])
+        .creation_flags(0x08000000)
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        // 服务不存在时 sc 返回非零
+        return None;
+    }
+
+    let text = String::from_utf8_lossy(&output.stdout);
+    for line in text.lines() {
+        let trimmed = line.trim();
+        // START_TYPE 字段名在各语言的 sc qc 输出里保持英文
+        if let Some(rest) = trimmed.strip_prefix("START_TYPE") {
+            let rest = rest.trim_start_matches([':', ' ']);
+            if let Some(tok) = rest.split_whitespace().next()
+                && let Ok(n) = tok.parse::<u32>()
+            {
+                return Some(n);
+            }
+        }
+    }
+    None
+}
+
+#[cfg(target_os = "windows")]
+fn sc_exe_path() -> PathBuf {
+    let system_root = std::env::var("SystemRoot").unwrap_or_else(|_| "C:\\Windows".to_string());
+    PathBuf::from(system_root).join("System32").join("sc.exe")
+}
+
+/// 让特权服务的开机自启跟随 UI 的"开机自启"开关：
+/// - 开启自启  -> AUTO_START（开机由 Windows 拉起，UI 可随时经 IPC 用 TUN/系统代理）
+/// - 关闭自启  -> DEMAND_START（手动，开机不再自动启动服务）
+///
+/// 仅在服务已安装、且当前启动类型与目标不一致时才提权修改，避免无谓的 UAC 弹窗。
+/// 修改服务配置需要管理员权限：非提权进程会走 runas 触发一次 UAC。
+#[cfg(target_os = "windows")]
+pub fn sync_service_start_type(auto: bool) -> Result<()> {
+    use deelevate::{PrivilegeLevel, Token};
+    use runas::Command as RunasCommand;
+    use std::os::windows::process::CommandExt as _;
+
+    const AUTO_START: u32 = 2;
+    const DEMAND_START: u32 = 3;
+
+    let desired = if auto { AUTO_START } else { DEMAND_START };
+
+    match query_service_start_type() {
+        None => {
+            logging!(info, Type::Service, "服务未安装，跳过启动类型同步");
+            return Ok(());
+        }
+        Some(current) if current == desired => {
+            logging!(
+                info,
+                Type::Service,
+                "服务启动类型已是目标值 ({desired})，无需修改"
+            );
+            return Ok(());
+        }
+        Some(current) => {
+            logging!(info, Type::Service, "同步服务启动类型: {current} -> {desired}");
+        }
+    }
+
+    // sc 语法要求 `start=` 与取值之间有空格，作为两个独立参数传入即可
+    let start_arg = if auto { "auto" } else { "demand" };
+    let sc_path = sc_exe_path();
+
+    let token = Token::with_current_process()?;
+    let level = token.privilege_level()?;
+    let status = match level {
+        PrivilegeLevel::NotPrivileged => RunasCommand::new(&sc_path)
+            .args(&["config", SERVICE_NAME, "start=", start_arg])
+            .show(false)
+            .status()?,
+        _ => StdCommand::new(&sc_path)
+            .args(["config", SERVICE_NAME, "start=", start_arg])
+            .creation_flags(0x08000000)
+            .status()?,
+    };
+
+    if !status.success() {
+        bail!(
+            "failed to set service start type, code {}",
+            status.code().unwrap_or(-1)
+        );
+    }
+
+    logging!(info, Type::Service, "服务启动类型已更新为 {start_arg}");
+    Ok(())
+}
+
 fn check_output_error(output: &std::process::Output) -> Option<(i32, Cow<'_, str>)> {
     if output.status.success() {
         return None;

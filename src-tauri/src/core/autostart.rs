@@ -19,6 +19,17 @@ pub async fn update_launch() -> Result<()> {
     {
         let is_admin = is_current_app_handle_admin(Handle::app_handle());
         schtasks::set_auto_launch(is_enable, is_admin).await?;
+
+        // 让特权服务的开机自启跟随 UI 自启开关：关闭自启时服务改为手动启动，
+        // 避免用户未开启自启却仍在开机时后台常驻服务。修改服务配置需提权（一次 UAC），
+        // 失败（如用户拒绝 UAC）不影响 UI 自启本身，仅记录告警。
+        if let Err(err) = crate::core::service::sync_service_start_type(is_enable) {
+            logging!(
+                warn,
+                Type::Service,
+                "同步服务开机自启失败（不影响 UI 自启）: {err}"
+            );
+        }
     }
 
     #[cfg(not(target_os = "windows"))]
