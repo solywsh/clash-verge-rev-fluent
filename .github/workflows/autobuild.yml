@@ -86,6 +86,7 @@ jobs:
 
           ### macOS
           - [Apple M芯片](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_aarch64.dmg) | [Intel芯片](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_x64.dmg)
+          > ⚠️ macOS 包为 ad-hoc 签名、未经 Apple 公证。首次打开若提示"已损坏，无法打开"，请在终端执行 `sudo xattr -rd com.apple.quarantine "/Applications/Clash Verge.app"` 后重新打开。
 
           ### Linux
           #### DEB包(Debian系) 使用 apt ./路径 安装
@@ -576,6 +577,7 @@ jobs:
 
           ### macOS
           - [Apple M芯片](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_aarch64.dmg) | [Intel芯片](${{ env.DOWNLOAD_URL }}/Clash.Verge_${{ env.VERSION }}_x64.dmg)
+          > ⚠️ macOS 包为 ad-hoc 签名、未经 Apple 公证。首次打开若提示"已损坏，无法打开"，请在终端执行 `sudo xattr -rd com.apple.quarantine "/Applications/Clash Verge.app"` 后重新打开。
 
           ### Linux
           #### DEB包(Debian系) 使用 apt ./路径 安装
